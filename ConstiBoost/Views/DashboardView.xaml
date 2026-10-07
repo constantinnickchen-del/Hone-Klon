@@ -1,0 +1,208 @@
+<UserControl x:Class="ConstiBoost.Views.DashboardView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="clr-namespace:ConstiBoost.UI">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="0,0,0,32">
+            <DockPanel Margin="0,0,0,20">
+                <Button DockPanel.Dock="Right" Style="{StaticResource SecondaryButton}" Command="{Binding RescanCommand}" VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="&#xE72C;" FontFamily="{DynamicResource IconFont}" Margin="0,0,8,0" VerticalAlignment="Center" />
+                        <TextBlock Text="RESCAN" />
+                    </StackPanel>
+                </Button>
+                <StackPanel>
+                    <TextBlock Text="Dashboard" Style="{StaticResource Text.H1}" />
+                    <TextBlock Text="{Binding DeviceModel}" Style="{StaticResource Text.Body}" />
+                </StackPanel>
+            </DockPanel>
+
+            <Border Style="{StaticResource Card}" Margin="0,0,0,16" Visibility="{Binding IsScanning, Converter={StaticResource BoolToVis}}">
+                <StackPanel>
+                    <TextBlock Text="{Binding ScanText}" Style="{StaticResource Text.Body}" />
+                    <ProgressBar IsIndeterminate="True" Margin="0,10,0,0" />
+                </StackPanel>
+            </Border>
+
+            <!-- Low-end profile banner -->
+            <Border Style="{StaticResource Card}" Margin="0,0,0,16" Background="{DynamicResource AccentSoftBrush}" BorderBrush="{DynamicResource AccentBrush}"
+                    Visibility="{Binding IsLowEnd, Converter={StaticResource BoolToVis}}">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Left" Text="&#xE7F4;" FontFamily="{DynamicResource IconFont}" FontSize="26" Foreground="{DynamicResource AccentBrush}" Margin="0,0,16,0" VerticalAlignment="Center" />
+                    <StackPanel>
+                        <TextBlock Text="LOW-END GAMING PROFILE recommended" Style="{StaticResource Text.H3}" />
+                        <TextBlock Text="{Binding DeviceTitle}" Style="{StaticResource Text.Caption}" Margin="0,2,0,4" />
+                        <TextBlock Text="{Binding DeviceDescription}" Style="{StaticResource Text.Body}" />
+                    </StackPanel>
+                </DockPanel>
+            </Border>
+
+            <!-- Hero: score + optimize -->
+            <Grid Margin="0,0,0,16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1.25*" />
+                    <ColumnDefinition Width="16" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Border Style="{StaticResource Card}" Padding="26">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="170" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid Width="160" Height="160" VerticalAlignment="Top">
+                            <ui:ScoreRing Value="{Binding Score}" RingBrush="{DynamicResource AccentBrush}" Thickness="13" />
+                            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                                <TextBlock Text="{Binding Score}" Style="{StaticResource Text.Big}" FontSize="44" HorizontalAlignment="Center" />
+                                <TextBlock Text="/100" Style="{StaticResource Text.Caption}" HorizontalAlignment="Center" />
+                            </StackPanel>
+                        </Grid>
+                        <StackPanel Grid.Column="1" Margin="22,0,0,0">
+                            <TextBlock Text="GAMING READINESS" Style="{StaticResource Text.Caption}" />
+                            <StackPanel Orientation="Horizontal" Margin="0,6,0,12">
+                                <TextBlock Text="{Binding StatusEmoji}" FontSize="15" VerticalAlignment="Center" />
+                                <TextBlock Text="{Binding StatusText}" Style="{StaticResource Text.H2}" Margin="8,0,0,0"
+                                           Foreground="{Binding Status, Converter={StaticResource StatusBrush}}" />
+                            </StackPanel>
+                            <ItemsControl ItemsSource="{Binding Checks}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal" Margin="0,3">
+                                            <TextBlock Text="{Binding Symbol}" Width="18" FontWeight="Bold" Foreground="{Binding Status, Converter={StaticResource StatusBrush}}" />
+                                            <TextBlock Text="{Binding Text}" Style="{StaticResource Text.Body}" FontSize="12.5" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <Border Grid.Column="2" Style="{StaticResource Card}" Padding="26">
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="ONE-CLICK OPTIMIZE" Style="{StaticResource Text.Caption}" />
+                        <TextBlock Text="Analyze, review and apply safe optimizations – with a backup of every change." Style="{StaticResource Text.Body}" Margin="0,8,0,22" />
+                        <Button Style="{StaticResource HeroButton}" Command="{Binding OptimizeCommand}" HorizontalAlignment="Stretch">
+                            <TextBlock Text="⚡ OPTIMIZE MY PC" />
+                        </Button>
+                        <Button Style="{StaticResource GhostButton}" Command="{Binding FortniteCommand}" Margin="0,14,0,0" HorizontalAlignment="Center">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE7FC;" FontFamily="{DynamicResource IconFont}" Margin="0,0,8,0" VerticalAlignment="Center" />
+                                <TextBlock Text="Fortnite Boost" />
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- Specs -->
+            <UniformGrid Columns="4" Margin="-8,0,-8,16">
+                <Border Style="{StaticResource Card}" Margin="8,0">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE950;" Style="{StaticResource Icon}" />
+                            <TextBlock Text="CPU" Style="{StaticResource Text.Caption}" Margin="8,0,0,0" VerticalAlignment="Center" />
+                        </StackPanel>
+                        <TextBlock Text="{Binding CpuName}" Style="{StaticResource Text.Value}" Margin="0,10,0,2" ToolTip="{Binding CpuName}" />
+                        <TextBlock Text="{Binding CpuDetails}" Style="{StaticResource Text.Body}" FontSize="12" />
+                        <TextBlock Text="{Binding CpuUsage}" Style="{StaticResource Text.Big}" FontSize="26" Margin="0,10,0,0" />
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource Card}" Margin="8,0">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE7F4;" Style="{StaticResource Icon}" />
+                            <TextBlock Text="GPU" Style="{StaticResource Text.Caption}" Margin="8,0,0,0" VerticalAlignment="Center" />
+                        </StackPanel>
+                        <TextBlock Text="{Binding GpuName}" Style="{StaticResource Text.Value}" Margin="0,10,0,2" ToolTip="{Binding GpuName}" />
+                        <TextBlock Text="{Binding GpuDetails}" Style="{StaticResource Text.Body}" FontSize="12" />
+                        <TextBlock Text="{Binding GpuUsage}" Style="{StaticResource Text.Big}" FontSize="26" Margin="0,10,0,0" />
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource Card}" Margin="8,0">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE964;" Style="{StaticResource Icon}" />
+                            <TextBlock Text="RAM" Style="{StaticResource Text.Caption}" Margin="8,0,0,0" VerticalAlignment="Center" />
+                        </StackPanel>
+                        <TextBlock Text="{Binding RamText}" Style="{StaticResource Text.Value}" Margin="0,10,0,2" />
+                        <TextBlock Text="{Binding RamDetails}" Style="{StaticResource Text.Body}" FontSize="12" />
+                        <TextBlock Text="{Binding RamUsage}" Style="{StaticResource Text.Big}" FontSize="26" Margin="0,10,0,0" />
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource Card}" Margin="8,0">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE7F8;" Style="{StaticResource Icon}" />
+                            <TextBlock Text="WINDOWS" Style="{StaticResource Text.Caption}" Margin="8,0,0,0" VerticalAlignment="Center" />
+                        </StackPanel>
+                        <TextBlock Text="{Binding WindowsName}" Style="{StaticResource Text.Value}" Margin="0,10,0,2" ToolTip="{Binding WindowsName}" />
+                        <TextBlock Text="{Binding WindowsVersion}" Style="{StaticResource Text.Body}" FontSize="12" />
+                        <TextBlock Text="{Binding PowerText}" Style="{StaticResource Text.Body}" FontSize="12" Margin="0,14,0,0" />
+                    </StackPanel>
+                </Border>
+            </UniformGrid>
+
+            <!-- Temperatures + gaming features -->
+            <Grid Margin="0,0,0,16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="16" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Border Style="{StaticResource Card}">
+                    <StackPanel>
+                        <TextBlock Text="TEMPERATURES" Style="{StaticResource Text.Caption}" />
+                        <Grid Margin="0,12,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition />
+                                <ColumnDefinition />
+                                <ColumnDefinition />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="CPU" Style="{StaticResource Text.Body}" />
+                                <TextBlock Text="Unavailable" Style="{StaticResource Text.Value}" Margin="0,4,0,0" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="1">
+                                <TextBlock Text="GPU" Style="{StaticResource Text.Body}" />
+                                <TextBlock Text="Unavailable" Style="{StaticResource Text.Value}" Margin="0,4,0,0" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="ACPI thermal zone" Style="{StaticResource Text.Body}" />
+                                <TextBlock Text="{Binding ThermalText}" Style="{StaticResource Text.Value}" Margin="0,4,0,0" />
+                            </StackPanel>
+                        </Grid>
+                        <TextBlock Style="{StaticResource Text.Body}" FontSize="11.5" Margin="0,12,0,0" Foreground="{DynamicResource TextMutedBrush}"
+                                   Text="CPU/GPU die temperatures need vendor kernel drivers. ConstiBoost does not install drivers and never estimates values. The ACPI zone is a firmware sensor (often motherboard area)." />
+                    </StackPanel>
+                </Border>
+                <Border Grid.Column="2" Style="{StaticResource Card}">
+                    <StackPanel>
+                        <TextBlock Text="GAMING FEATURES" Style="{StaticResource Text.Caption}" />
+                        <UniformGrid Columns="2" Margin="0,8,0,0">
+                            <StackPanel Margin="0,4">
+                                <TextBlock Text="Game Mode" Style="{StaticResource Text.Body}" />
+                                <TextBlock Text="{Binding GameModeText}" Style="{StaticResource Text.Value}" />
+                            </StackPanel>
+                            <StackPanel Margin="0,4">
+                                <TextBlock Text="Xbox Game Bar" Style="{StaticResource Text.Body}" />
+                                <TextBlock Text="{Binding GameBarText}" Style="{StaticResource Text.Value}" />
+                            </StackPanel>
+                            <StackPanel Margin="0,4">
+                                <TextBlock Text="HW GPU Scheduling" Style="{StaticResource Text.Body}" />
+                                <TextBlock Text="{Binding HagsText}" Style="{StaticResource Text.Value}" />
+                            </StackPanel>
+                            <StackPanel Margin="0,4">
+                                <TextBlock Text="Startup apps" Style="{StaticResource Text.Body}" />
+                                <TextBlock Text="{Binding StartupText}" Style="{StaticResource Text.Value}" />
+                            </StackPanel>
+                        </UniformGrid>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- Gaming mode -->
+            <ContentControl Content="{Binding GamingMode}" ContentTemplate="{StaticResource GamingModeCard}" Focusable="False" />
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

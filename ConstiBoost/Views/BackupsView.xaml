@@ -1,0 +1,96 @@
+<UserControl x:Class="ConstiBoost.Views.BackupsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <DockPanel Margin="0,0,0,24">
+        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,16">
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                <Button Style="{StaticResource SecondaryButton}" Content="OPEN FOLDER" Command="{Binding OpenFolderCommand}" Margin="0,0,10,0" />
+                <Button Style="{StaticResource SecondaryButton}" Content="SYSTEM RESTORE" Command="{Binding OpenSystemRestoreCommand}" Margin="0,0,10,0" />
+                <Button Style="{StaticResource AccentButton}" Content="CREATE RESTORE POINT" Command="{Binding RestorePointCommand}" />
+            </StackPanel>
+            <StackPanel>
+                <TextBlock Text="Backups &amp; Restore" Style="{StaticResource Text.H1}" />
+                <TextBlock Text="{Binding BackupFolder}" Style="{StaticResource Text.Body}" />
+            </StackPanel>
+        </DockPanel>
+
+        <TabControl>
+            <TabItem Header="Backups">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <Border Style="{StaticResource Card}" Visibility="{Binding Items, Converter={StaticResource InvNullToVis}}">
+                            <TextBlock Style="{StaticResource Text.Body}" Text="No backups yet. ConstiBoost creates one automatically before the first change." />
+                        </Border>
+                        <ItemsControl ItemsSource="{Binding Items}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Style="{StaticResource Card}" Margin="0,0,0,12" Padding="18">
+                                        <StackPanel>
+                                            <DockPanel>
+                                                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <Button Style="{StaticResource GhostButton}" Content="Delete" Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,8,0"
+                                                            Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" />
+                                                    <Button Style="{StaticResource AccentButton}" Content="RESTORE"
+                                                            Command="{Binding DataContext.RestoreCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" />
+                                                </StackPanel>
+                                                <TextBlock DockPanel.Dock="Left" Text="&#xE81C;" Style="{StaticResource Icon}" FontSize="22" Margin="0,0,14,0" />
+                                                <StackPanel>
+                                                    <TextBlock Text="{Binding Title}" Style="{StaticResource Text.H3}" FontSize="15" />
+                                                    <TextBlock Style="{StaticResource Text.Body}" FontSize="12">
+                                                        <Run Text="{Binding DateText, Mode=OneWay}" /><Run Text=" · " /><Run Text="{Binding CountText, Mode=OneWay}" /><Run Text=" · " /><Run Text="{Binding Id, Mode=OneWay}" />
+                                                    </TextBlock>
+                                                    <TextBlock Text="{Binding RestoredText}" Style="{StaticResource Text.Body}" FontSize="12" Foreground="{DynamicResource GoodBrush}"
+                                                               Visibility="{Binding IsRestored, Converter={StaticResource BoolToVis}}" />
+                                                </StackPanel>
+                                            </DockPanel>
+                                            <Expander Margin="0,10,0,0">
+                                                <Expander.Header>
+                                                    <TextBlock Text="Saved values" Foreground="{DynamicResource AccentBrush}" FontSize="12" FontWeight="SemiBold" />
+                                                </Expander.Header>
+                                                <ItemsControl ItemsSource="{Binding Entries}" Margin="0,8,0,0">
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <TextBlock Text="{Binding}" Style="{StaticResource Text.Body}" FontSize="12" Margin="0,2" />
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </Expander>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+            <TabItem Header="Activity log">
+                <DockPanel>
+                    <DockPanel DockPanel.Dock="Top" Margin="0,0,0,12">
+                        <Button DockPanel.Dock="Right" Style="{StaticResource SecondaryButton}" Content="OPEN LOG FILES" Command="{Binding OpenLogsCommand}" />
+                        <TextBlock Text="Every change: timestamp, action, old → new value and result. Full history is in the log files." Style="{StaticResource Text.Body}" VerticalAlignment="Center" />
+                    </DockPanel>
+                    <Border Style="{StaticResource Card}" Padding="8">
+                        <DataGrid ItemsSource="{Binding Log}" RowHeight="40">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="TIME" Binding="{Binding TimeText}" Width="90" />
+                                <DataGridTextColumn Header="ACTION" Binding="{Binding Action}" Width="2*" />
+                                <DataGridTextColumn Header="CHANGE" Binding="{Binding ChangeText}" Width="2*" />
+                                <DataGridTemplateColumn Header="RESULT" Width="1.4*" SortMemberPath="Success">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <StackPanel VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding ResultText}" FontWeight="Bold" Foreground="{Binding Success, Converter={StaticResource StatusBrush}}" />
+                                                <TextBlock Text="{Binding Reason, StringFormat='Reason: {0}'}" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" TextTrimming="CharacterEllipsis"
+                                                           ToolTip="{Binding Reason}" Visibility="{Binding Reason, Converter={StaticResource NullToVis}}" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Border>
+                </DockPanel>
+            </TabItem>
+        </TabControl>
+    </DockPanel>
+</UserControl>

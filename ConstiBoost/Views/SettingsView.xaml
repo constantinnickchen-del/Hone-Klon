@@ -1,0 +1,83 @@
+<UserControl x:Class="ConstiBoost.Views.SettingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="0,0,0,32" MaxWidth="900" HorizontalAlignment="Left">
+            <TextBlock Text="Settings" Style="{StaticResource Text.H1}" Margin="0,0,0,20" />
+
+            <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+                <StackPanel>
+                    <TextBlock Text="Theme" Style="{StaticResource Text.H3}" />
+                    <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                        <RadioButton Style="{StaticResource Segment}" GroupName="Theme" Content="Dark" IsChecked="{Binding IsDarkTheme}" />
+                        <RadioButton Style="{StaticResource Segment}" GroupName="Theme" Content="Midnight (OLED black)" IsChecked="{Binding IsMidnightTheme}" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+                <StackPanel>
+                    <TextBlock Text="Accent Color" Style="{StaticResource Text.H3}" />
+                    <ItemsControl ItemsSource="{Binding Accents}" Margin="0,12,0,0">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <RadioButton Style="{StaticResource Swatch}" GroupName="Accent" Background="{Binding Hex}" IsChecked="{Binding IsSelected, Mode=OneWay}"
+                                             Command="{Binding DataContext.SelectAccentCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"
+                                             ToolTip="{Binding Hex}" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+                <StackPanel>
+                    <DockPanel Margin="0,0,0,16">
+                        <CheckBox DockPanel.Dock="Right" Style="{StaticResource ToggleSwitch}" IsChecked="{Binding StartWithWindows}" />
+                        <StackPanel>
+                            <TextBlock Text="Start with Windows" Style="{StaticResource Text.H3}" />
+                            <TextBlock Text="Starts ConstiBoost minimized at sign-in (per-user, no admin rights). It stays idle until you open it." Style="{StaticResource Text.Body}" />
+                        </StackPanel>
+                    </DockPanel>
+                    <DockPanel Margin="0,0,0,16">
+                        <CheckBox DockPanel.Dock="Right" Style="{StaticResource ToggleSwitch}" IsChecked="{Binding CreateRestorePoint}" />
+                        <StackPanel>
+                            <TextBlock Text="Create Restore Point" Style="{StaticResource Text.H3}" />
+                            <TextBlock Text="Offer a Windows System Restore point (UAC) before larger optimization runs. Windows allows at most one every 24 hours by default." Style="{StaticResource Text.Body}" />
+                        </StackPanel>
+                    </DockPanel>
+                    <DockPanel Margin="0,0,0,16">
+                        <CheckBox DockPanel.Dock="Right" Style="{StaticResource ToggleSwitch}" IsChecked="{Binding AutomaticBackup, Mode=OneWay}" IsEnabled="False" />
+                        <StackPanel>
+                            <TextBlock Text="Automatic Backup" Style="{StaticResource Text.H3}" />
+                            <TextBlock Text="Always on for safety: ConstiBoost never changes a system setting without saving the previous value first." Style="{StaticResource Text.Body}" />
+                        </StackPanel>
+                    </DockPanel>
+                    <DockPanel>
+                        <CheckBox DockPanel.Dock="Right" Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Notifications}" />
+                        <StackPanel>
+                            <TextBlock Text="Notifications" Style="{StaticResource Text.H3}" />
+                            <TextBlock Text="In-app success/info messages. Warnings and errors are always shown." Style="{StaticResource Text.Body}" />
+                        </StackPanel>
+                    </DockPanel>
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+                <StackPanel>
+                    <TextBlock Text="Privacy &amp; safety" Style="{StaticResource Text.H3}" />
+                    <TextBlock Style="{StaticResource Text.Body}" Margin="0,8,0,0"
+                               Text="ConstiBoost works 100 % locally: no account, no cloud, no telemetry, no ads. It never disables Defender, the firewall or Windows Update, never reads passwords, cookies or browser data, and never deletes personal files. The only network access is the optional speed/ping/DNS test you start yourself." />
+                    <TextBlock Text="{Binding DataFolder, StringFormat='Data folder (settings, backups, logs): {0}'}" Style="{StaticResource Text.Caption}" Margin="0,10,0,0" TextWrapping="Wrap" />
+                    <TextBlock Text="{Binding VersionText}" Style="{StaticResource Text.Caption}" Margin="0,4,0,0" />
+                    <Button Style="{StaticResource GhostButton}" Content="Show welcome screen again" Command="{Binding ShowWelcomeCommand}" HorizontalAlignment="Left" Padding="0,10,0,0" />
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

@@ -1,0 +1,25 @@
+<Application x:Class="ConstiBoost.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:ConstiBoost.ViewModels"
+             xmlns:views="clr-namespace:ConstiBoost.Views"
+             ShutdownMode="OnMainWindowClose">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/ConstiBoost;component/Resources/Theme.xaml" />
+                <ResourceDictionary Source="/ConstiBoost;component/Resources/Templates.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+
+            <DataTemplate DataType="{x:Type vm:DashboardViewModel}"><views:DashboardView /></DataTemplate>
+            <DataTemplate DataType="{x:Type vm:OptimizerViewModel}"><views:OptimizerView /></DataTemplate>
+            <DataTemplate DataType="{x:Type vm:FortniteViewModel}"><views:FortniteView /></DataTemplate>
+            <DataTemplate DataType="{x:Type vm:CleanerViewModel}"><views:CleanerView /></DataTemplate>
+            <DataTemplate DataType="{x:Type vm:StartupViewModel}"><views:StartupView /></DataTemplate>
+            <DataTemplate DataType="{x:Type vm:HardwareViewModel}"><views:HardwareView /></DataTemplate>
+            <DataTemplate DataType="{x:Type vm:BackupsViewModel}"><views:BackupsView /></DataTemplate>
+            <DataTemplate DataType="{x:Type vm:SettingsViewModel}"><views:SettingsView /></DataTemplate>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

@@ -21,6 +21,11 @@ dotnet publish ConstiBoost -c Release -r win-x64 --self-contained true -o publis
 ```
 `publish\ConstiBoost.exe` ist eine einzelne, selbstständige Datei (keine .NET-Installation nötig). Einfach irgendwohin kopieren und starten.
 
+Kleine Variante (~2,6 MB, benötigt die [.NET 8 Desktop Runtime x64](https://dotnet.microsoft.com/download/dotnet/8.0)):
+```powershell
+dotnet publish ConstiBoost -c Release -r win-x64 --self-contained false -o publish-small
+```
+
 ### Variante B – aus dem Quellcode starten
 Benötigt das [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0).
 ```powershell

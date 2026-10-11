@@ -1,0 +1,77 @@
+<UserControl x:Class="ConstiBoost.Views.BoostLabView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="0,0,0,32">
+            <DockPanel Margin="0,0,0,16">
+                <Button DockPanel.Dock="Right" Style="{StaticResource SecondaryButton}" Content="ANALYZE AGAIN" Command="{Binding RefreshCommand}" VerticalAlignment="Center" />
+                <StackPanel>
+                    <TextBlock Text="🧪 Boost Lab" Style="{StaticResource Text.H1}" />
+                    <TextBlock Text="Your PC can do more than you think. Find what really limits your FPS – and apply every safe low-end tweak in one place." Style="{StaticResource Text.Body}" />
+                </StackPanel>
+            </DockPanel>
+
+            <Border Style="{StaticResource Card}" Margin="0,0,0,16" BorderBrush="{DynamicResource AccentBrush}">
+                <StackPanel>
+                    <TextBlock Text="{Binding HeadlineText}" Style="{StaticResource Text.H2}" TextWrapping="Wrap" />
+                    <TextBlock Text="{Binding ProfileText}" Style="{StaticResource Text.Body}" Margin="0,6,0,0" />
+                    <StackPanel Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}" Margin="0,10,0,0">
+                        <TextBlock Text="{Binding ProgressText}" Style="{StaticResource Text.Body}" />
+                        <ProgressBar IsIndeterminate="True" Margin="0,6,0,0" />
+                    </StackPanel>
+                    <WrapPanel Margin="0,12,0,0">
+                        <Button Style="{StaticResource GhostButton}" Content="→ FPS estimates &amp; Game Focus in Games" Command="{Binding OpenGamesCommand}" Padding="0,0,20,0" />
+                        <Button Style="{StaticResource GhostButton}" Content="→ Heat check in Thermal" Command="{Binding OpenThermalCommand}" Padding="0" />
+                    </WrapPanel>
+                </StackPanel>
+            </Border>
+
+            <TextBlock Text="Hardware insights" Style="{StaticResource SectionTitle}" />
+            <TextBlock Text="Real configuration details that matter most for low-end gaming. ConstiBoost only explains – it never changes BIOS or hardware settings." Style="{StaticResource Text.Body}" Margin="0,-6,0,12" />
+            <ItemsControl ItemsSource="{Binding Insights}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border Style="{StaticResource Card}" Margin="0,0,0,10" Padding="18">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <Ellipse Width="10" Height="10" VerticalAlignment="Top" Margin="0,6,14,0" Fill="{Binding Status, Converter={StaticResource StatusBrush}}" />
+                                <StackPanel Grid.Column="1">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="{Binding Title}" Style="{StaticResource Text.H3}" FontSize="15" />
+                                        <TextBlock Text="{Binding Current, StringFormat='  ·  {0}'}" Style="{StaticResource Text.Body}" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                    <TextBlock Text="{Binding Detail}" Style="{StaticResource Text.Body}" Margin="0,4,0,0" />
+                                    <TextBlock Text="{Binding Recommendation, StringFormat='→ {0}'}" Style="{StaticResource Text.Body}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,4,0,0" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2" Margin="12,0,0,0">
+                                    <TextBlock Text="FPS IMPACT" Style="{StaticResource Text.Caption}" HorizontalAlignment="Right" />
+                                    <TextBlock Text="{Binding ImpactText}" FontWeight="Bold" HorizontalAlignment="Right" Foreground="{Binding Impact, Converter={StaticResource StatusBrush}}" />
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <DockPanel Margin="0,16,0,12">
+                <Button DockPanel.Dock="Right" Style="{StaticResource HeroButton}" Content="⚡ APPLY BOOST PACK" Command="{Binding ApplyCommand}" VerticalAlignment="Center" />
+                <StackPanel>
+                    <TextBlock Text="Low-End Boost Pack" Style="{StaticResource Text.H2}" />
+                    <TextBlock Text="Every safe Windows setting that frees CPU/GPU time on weak PCs. Each change is backed up and can be restored." Style="{StaticResource Text.Body}" />
+                </StackPanel>
+            </DockPanel>
+            <ItemsControl ItemsSource="{Binding Results}" Margin="0,0,0,8">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding}" Style="{StaticResource Text.Body}" Foreground="{DynamicResource TextPrimaryBrush}" />
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <ItemsControl ItemsSource="{Binding Pack}" ItemTemplate="{StaticResource OptimizationCard}" />
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

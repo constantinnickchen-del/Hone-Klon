@@ -14,7 +14,8 @@
 
             <DataTemplate DataType="{x:Type vm:DashboardViewModel}"><views:DashboardView /></DataTemplate>
             <DataTemplate DataType="{x:Type vm:OptimizerViewModel}"><views:OptimizerView /></DataTemplate>
-            <DataTemplate DataType="{x:Type vm:FortniteViewModel}"><views:FortniteView /></DataTemplate>
+            <DataTemplate DataType="{x:Type vm:GamesViewModel}"><views:GamesView /></DataTemplate>
+            <DataTemplate DataType="{x:Type vm:BoostLabViewModel}"><views:BoostLabView /></DataTemplate>
             <DataTemplate DataType="{x:Type vm:ThermalViewModel}"><views:ThermalView /></DataTemplate>
             <DataTemplate DataType="{x:Type vm:CleanerViewModel}"><views:CleanerView /></DataTemplate>
             <DataTemplate DataType="{x:Type vm:StartupViewModel}"><views:StartupView /></DataTemplate>

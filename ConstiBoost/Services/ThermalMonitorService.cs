@@ -105,7 +105,13 @@ public sealed class ThermalMonitorService
         }
     }
 
-    public static bool IsGameProcess(string name) => GameProcesses.Contains(name);
+    private static HashSet<string> _libraryGames = new(StringComparer.OrdinalIgnoreCase);
+
+    public static bool IsGameProcess(string name) => GameProcesses.Contains(name) || _libraryGames.Contains(name);
+
+    /// <summary>Main executables of the games found in the library (so any installed game counts as "gaming load").</summary>
+    public static void RegisterLibraryGames(IEnumerable<string> executableNames) =>
+        _libraryGames = new HashSet<string>(executableNames, StringComparer.OrdinalIgnoreCase);
 
     private void OnSample(MonitorSnapshot s)
     {
@@ -128,6 +134,7 @@ public sealed class ThermalMonitorService
         }
 
         EvaluateAlerts(sample);
+        AutoCoolService.Instance.Evaluate(sample);
         SampleAdded?.Invoke(sample);
     }
 
@@ -140,7 +147,7 @@ public sealed class ThermalMonitorService
             {
                 using (p)
                 {
-                    if (found is null && GameProcesses.Contains(p.ProcessName))
+                    if (found is null && IsGameProcess(p.ProcessName))
                     {
                         found = p.ProcessName;
                     }
@@ -162,8 +169,12 @@ public sealed class ThermalMonitorService
         double? t = sample.Temperature;
         var previous = Alert;
 
-        _highSince = t >= 85 ? _highSince ?? now : null;
-        _criticalSince = t >= 95 ? _criticalSince ?? now : null;
+        var settings = SettingsService.Instance.Current;
+        int high = Math.Clamp(settings.ThermalHighThreshold, 70, 95);
+        int critical = Math.Clamp(settings.ThermalCriticalThreshold, high + 1, 100);
+        int sustain = Math.Clamp(settings.ThermalSustainSeconds, 15, 120);
+        _highSince = t >= high ? _highSince ?? now : null;
+        _criticalSince = t >= critical ? _criticalSince ?? now : null;
 
         if (_criticalSince.HasValue && now - _criticalSince.Value >= TimeSpan.FromSeconds(10))
         {
@@ -174,7 +185,7 @@ public sealed class ThermalMonitorService
                 NotificationService.Instance.Show("🔴 CRITICAL TEMPERATURE – The system may be under excessive thermal load. Consider stopping the workload and checking cooling.", NotificationKind.Error);
             }
         }
-        else if (_highSince.HasValue && now - _highSince.Value >= TimeSpan.FromSeconds(45))
+        else if (_highSince.HasValue && now - _highSince.Value >= TimeSpan.FromSeconds(sustain))
         {
             Alert = ThermalAlertLevel.High;
             if (now - _lastHighAlert > TimeSpan.FromMinutes(10))
@@ -183,7 +194,7 @@ public sealed class ThermalMonitorService
                 NotificationService.Instance.Show("🟠 HIGH TEMPERATURE – Your CPU temperature is currently high. Check CPU load and cooling conditions.", NotificationKind.Warning);
             }
         }
-        else if (t is null || t < 82)
+        else if (t is null || t < high - 3)
         {
             Alert = ThermalAlertLevel.None; // small hysteresis
         }

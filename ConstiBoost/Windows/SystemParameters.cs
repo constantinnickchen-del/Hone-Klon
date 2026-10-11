@@ -44,6 +44,24 @@ public static class SystemParametersTweaks
         }
     }
 
+    /// <summary>Boolean SPI settings whose SET call takes the value in pvParam (menu/tooltip/combobox animations, smooth scrolling…).</summary>
+    public static bool? GetBool(uint getAction)
+    {
+        int value = 0;
+        return NativeMethods.SystemParametersInfo(getAction, 0, ref value, 0) ? value != 0 : null;
+    }
+
+    public static void SetBool(uint setAction, bool enabled, bool valueInUiParam = false)
+    {
+        bool ok = valueInUiParam
+            ? NativeMethods.SystemParametersInfo(setAction, enabled ? 1u : 0u, System.IntPtr.Zero, Persist)
+            : NativeMethods.SystemParametersInfo(setAction, 0, enabled ? new System.IntPtr(1) : System.IntPtr.Zero, Persist);
+        if (!ok)
+        {
+            throw new Win32Exception(Marshal.GetLastWin32Error());
+        }
+    }
+
     /// <summary>Returns [threshold1, threshold2, acceleration]; acceleration 1 = "Enhance pointer precision" on.</summary>
     public static int[]? GetMouseParams()
     {

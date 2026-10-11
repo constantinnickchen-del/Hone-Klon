@@ -107,6 +107,80 @@
         </Border>
     </DataTemplate>
 
+    <!-- Optimization card (Optimizer + Boost Lab) -->
+    <DataTemplate x:Key="OptimizationCard">
+        <Border Style="{StaticResource Card}" Margin="0,0,0,12" Padding="18">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <CheckBox IsChecked="{Binding IsSelected}" IsEnabled="{Binding IsAvailable}" VerticalAlignment="Top" Margin="0,8,14,0" />
+                <StackPanel Grid.Column="1">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="{Binding Icon}" Style="{StaticResource Icon}" Margin="0,0,10,0" />
+                        <TextBlock Text="{Binding Name}" Style="{StaticResource Text.H3}" FontSize="15" VerticalAlignment="Center" />
+                        <Border Style="{StaticResource Pill}" Margin="10,0,0,0" Background="{Binding StatusText, Converter={StaticResource StatusSoftBrush}}">
+                            <TextBlock Text="{Binding StatusText}" FontSize="11" FontWeight="SemiBold" Foreground="{Binding StatusText, Converter={StaticResource StatusBrush}}" />
+                        </Border>
+                        <Border Style="{StaticResource Pill}" Margin="6,0,0,0" Background="{DynamicResource InputBrush}">
+                            <TextBlock Text="{Binding Category}" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" />
+                        </Border>
+                        <Border Style="{StaticResource Pill}" Margin="6,0,0,0" Background="{DynamicResource WarnSoftBrush}"
+                                Visibility="{Binding RequiresAdmin, Converter={StaticResource BoolToVis}}">
+                            <TextBlock Text="Admin (UAC)" FontSize="11" Foreground="{DynamicResource WarnBrush}" />
+                        </Border>
+                    </StackPanel>
+
+                    <Grid Margin="0,12,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="CURRENT" Style="{StaticResource Text.Caption}" />
+                            <TextBlock Text="{Binding CurrentState}" Style="{StaticResource Text.Value}" FontSize="13.5" TextWrapping="Wrap" TextTrimming="None" Margin="0,2,12,0" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Text="RECOMMENDED" Style="{StaticResource Text.Caption}" />
+                            <TextBlock Text="{Binding RecommendedState}" Style="{StaticResource Text.Value}" FontSize="13.5" TextWrapping="Wrap" TextTrimming="None"
+                                       Foreground="{DynamicResource AccentBrush}" Margin="0,2,0,0" />
+                        </StackPanel>
+                    </Grid>
+
+                    <TextBlock Margin="0,10,0,0" Style="{StaticResource Text.Body}">
+                        <Run Text="Why: " FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" /><Run Text="{Binding Reason, Mode=OneWay}" />
+                    </TextBlock>
+                    <TextBlock Text="{Binding UnavailableReason}" Style="{StaticResource Text.Body}" Foreground="{DynamicResource WarnBrush}" Margin="0,6,0,0"
+                               Visibility="{Binding UnavailableReason, Converter={StaticResource NullToVis}}" />
+
+                    <Expander Margin="0,8,0,0" Foreground="{DynamicResource TextSecondaryBrush}">
+                        <Expander.Header>
+                            <TextBlock Text="What does it do? · Possible downsides" Foreground="{DynamicResource AccentBrush}" FontSize="12" FontWeight="SemiBold" />
+                        </Expander.Header>
+                        <StackPanel Margin="0,8,0,0">
+                            <TextBlock Text="{Binding WhatItDoes}" Style="{StaticResource Text.Body}" />
+                            <TextBlock Margin="0,6,0,0" Style="{StaticResource Text.Body}">
+                                <Run Text="Downsides: " FontWeight="SemiBold" Foreground="{DynamicResource WarnBrush}" /><Run Text="{Binding Downsides, Mode=OneWay}" />
+                            </TextBlock>
+                            <TextBlock Text="{Binding ReversibleText}" Style="{StaticResource Text.Caption}" Margin="0,6,0,0" />
+                        </StackPanel>
+                    </Expander>
+
+                    <TextBlock Text="{Binding ResultText}" Margin="0,8,0,0" FontWeight="SemiBold" TextWrapping="Wrap"
+                               Foreground="{Binding ResultSuccess, Converter={StaticResource StatusBrush}}"
+                               Visibility="{Binding ResultText, Converter={StaticResource NullToVis}}" />
+                </StackPanel>
+                <StackPanel Grid.Column="2" Margin="12,0,0,0" HorizontalAlignment="Right">
+                    <TextBlock Text="IMPACT" Style="{StaticResource Text.Caption}" HorizontalAlignment="Right" />
+                    <TextBlock Text="{Binding ImpactText}" FontWeight="Bold" HorizontalAlignment="Right" Margin="0,2,0,0"
+                               Foreground="{Binding Impact, Converter={StaticResource StatusBrush}}" />
+                </StackPanel>
+            </Grid>
+        </Border>
+    </DataTemplate>
+
     <!-- Section header -->
     <Style x:Key="SectionTitle" TargetType="TextBlock" BasedOn="{StaticResource Text.H2}">
         <Setter Property="Margin" Value="0,10,0,12" />

@@ -49,7 +49,9 @@ public partial class App : Application
         SettingsService.Instance.Load();
         ThemeService.Apply(SettingsService.Instance.Current.Theme, SettingsService.Instance.Current.AccentColor);
         GamingModeService.Instance.LoadPersistedState();
-        if (SettingsService.Instance.Current.ThermalMonitoringEnabled)
+        Games.GameFocusService.Instance.LoadPersisted();
+        AutoCoolService.Instance.RestoreLeftover();
+        if (SettingsService.Instance.Current.ThermalMonitoringEnabled || SettingsService.Instance.Current.AutoCoolEnabled)
         {
             ThermalMonitorService.Instance.SetAutomaticMonitoring(true);
         }

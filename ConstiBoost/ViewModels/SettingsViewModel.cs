@@ -136,14 +136,14 @@ public sealed class SettingsViewModel : PageViewModel
         {
             _settings.Current.ThermalMonitoringEnabled = value;
             _settings.Save();
-            ThermalMonitorService.Instance.SetAutomaticMonitoring(value);
+            ThermalMonitorService.Instance.SetAutomaticMonitoring(value || _settings.Current.AutoCoolEnabled);
             OnPropertyChanged();
         }
     }
 
     public string DataFolder => AppPaths.Root;
 
-    public string VersionText => "ConstiBoost 1.0.0 · local only · no accounts · no telemetry";
+    public string VersionText => "ConstiBoost 2.0 PRO · local only · no accounts · no telemetry";
 
     private void Save()
     {

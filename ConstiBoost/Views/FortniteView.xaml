@@ -1,8 +1,7 @@
 <UserControl x:Class="ConstiBoost.Views.FortniteView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <StackPanel Margin="0,0,0,32">
+    <StackPanel Margin="0,0,0,8">
             <DockPanel Margin="0,0,0,20">
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
                     <Button Style="{StaticResource SecondaryButton}" Content="REFRESH" Command="{Binding RefreshCommand}" Margin="0,0,10,0" />
@@ -10,7 +9,7 @@
                             IsEnabled="{Binding IsInstalled}" />
                 </StackPanel>
                 <StackPanel>
-                    <TextBlock Text="🎮 Fortnite Boost" Style="{StaticResource Text.H1}" />
+                    <TextBlock Text="Fortnite Tools" Style="{StaticResource Text.H2}" />
                     <TextBlock Text="Presets for Fortnite's own settings file – transparent, backed up, no FPS promises." Style="{StaticResource Text.Body}" />
                 </StackPanel>
             </DockPanel>
@@ -271,7 +270,5 @@
                 </StackPanel>
             </Border>
 
-            <ContentControl Content="{Binding GamingMode}" ContentTemplate="{StaticResource GamingModeCard}" Focusable="False" />
-        </StackPanel>
-    </ScrollViewer>
+    </StackPanel>
 </UserControl>

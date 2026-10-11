@@ -11,5 +11,13 @@ public sealed class AppSettings
     public bool FirstRunCompleted { get; set; }
     public bool GamingModeRelaunchClosedApps { get; set; } = true;
     public bool ThermalMonitoringEnabled { get; set; }
+    public int ThermalHighThreshold { get; set; } = 85;
+    public int ThermalCriticalThreshold { get; set; } = 95;
+    public int ThermalSustainSeconds { get; set; } = 45;
+    public bool ThermalDeepScan { get; set; }
+    public bool AutoCoolEnabled { get; set; }
+    public int AutoCoolTrigger { get; set; } = 88;
+    public bool AutoCoolDuringGaming { get; set; }
+    public bool AutoCoolLimitBoost { get; set; }
     public GamingProfile GamingProfile { get; set; } = GamingProfile.MaxFps;
 }

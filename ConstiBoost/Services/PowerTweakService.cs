@@ -10,7 +10,7 @@ namespace ConstiBoost.Services;
 /// <summary>Writes the processor maximum state in-process, falling back to the allow-listed elevated helper.</summary>
 public static class PowerTweakService
 {
-    public static async Task<OperationResult> SetProcessorMaxStateAsync(Guid scheme, uint ac, uint dc, string action)
+    public static async Task<OperationResult> SetProcessorMaxStateAsync(Guid scheme, uint ac, uint dc, string action, bool allowElevation = true)
     {
         var before = PowerManager.GetProcessorMaxState(scheme);
         string oldText = before is null ? "unknown" : $"AC {before.Value.ac} % / DC {before.Value.dc} %";
@@ -20,6 +20,11 @@ public static class PowerTweakService
             PowerManager.SetProcessorMaxState(scheme, ac, dc);
             ActionLog.Success(action, oldText, newText);
             return OperationResult.Ok(newText);
+        }
+        catch (Win32Exception ex) when (ex.NativeErrorCode == 5 && !allowElevation)
+        {
+            ActionLog.Failed(action, oldText, newText, "Access denied (no UAC prompt in automatic mode)");
+            return OperationResult.Fail("Access denied", "Windows requires administrator permission for this setting.");
         }
         catch (Win32Exception ex) when (ex.NativeErrorCode == 5)
         {

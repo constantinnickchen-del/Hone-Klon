@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace ConstiBoost.Models;
@@ -41,6 +42,8 @@ public sealed class GpuInfo
     public int? HorizontalResolution { get; set; }
     public int? VerticalResolution { get; set; }
     public bool IsIntegrated { get; set; }
+    public long? AdapterRamBytes { get; set; }
+    public DateTime? DriverDate { get; set; }
     public string Vendor { get; set; } = "Unknown";
 }
 

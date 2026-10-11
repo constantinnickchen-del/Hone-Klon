@@ -25,7 +25,9 @@ public sealed class DashboardViewModel : PageViewModel
     {
         RescanCommand = new AsyncRelayCommand(ScanAsync, () => !IsScanning);
         OptimizeCommand = new RelayCommand(() => MainViewModel.Instance?.Optimizer.StartOneClick());
-        FortniteCommand = new RelayCommand(() => MainViewModel.Instance?.Navigate("fortnite"));
+        FortniteCommand = new RelayCommand(() => MainViewModel.Instance?.Navigate("games"));
+        BoostLabCommand = new RelayCommand(() => MainViewModel.Instance?.Navigate("boostlab"));
+        ThermalCommand = new RelayCommand(() => MainViewModel.Instance?.Navigate("thermal"));
         ScanService.Instance.Completed += r => Application.Current?.Dispatcher.BeginInvoke(() => Apply(r));
     }
 
@@ -36,6 +38,8 @@ public sealed class DashboardViewModel : PageViewModel
     public ICommand RescanCommand { get; }
     public ICommand OptimizeCommand { get; }
     public ICommand FortniteCommand { get; }
+    public ICommand BoostLabCommand { get; }
+    public ICommand ThermalCommand { get; }
 
     public GamingModeViewModel GamingMode => GamingModeViewModel.Shared;
 

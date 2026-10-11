@@ -100,7 +100,7 @@ public static class HardwareScanner
 
     private static void ReadGpus(HardwareInfo info)
     {
-        foreach (var gpu in Query("SELECT Name, DriverVersion, CurrentRefreshRate, CurrentHorizontalResolution, CurrentVerticalResolution, AdapterCompatibility FROM Win32_VideoController"))
+        foreach (var gpu in Query("SELECT Name, DriverVersion, DriverDate, AdapterRAM, CurrentRefreshRate, CurrentHorizontalResolution, CurrentVerticalResolution, AdapterCompatibility FROM Win32_VideoController"))
         {
             string name = Str(gpu, "Name") ?? Formatting.Unavailable;
             string compat = Str(gpu, "AdapterCompatibility") ?? string.Empty;
@@ -112,6 +112,8 @@ public static class HardwareScanner
                 HorizontalResolution = (int?)Num(gpu, "CurrentHorizontalResolution"),
                 VerticalResolution = (int?)Num(gpu, "CurrentVerticalResolution"),
                 Vendor = DetectVendor(name + " " + compat),
+                AdapterRamBytes = Num(gpu, "AdapterRAM") is long ram && ram > 0 ? ram : null,
+                DriverDate = ParseCimDate(Str(gpu, "DriverDate")),
             };
             item.IsIntegrated = IntegratedAmd.IsMatch(name) || IntegratedIntel.IsMatch(name);
             if (item.RefreshRate is <= 1)
@@ -132,6 +134,16 @@ public static class HardwareScanner
             .OrderBy(g => g.Name.Contains("Microsoft Basic Display", StringComparison.OrdinalIgnoreCase))
             .ThenBy(g => g.IsIntegrated)
             .ToList();
+    }
+
+    private static DateTime? ParseCimDate(string? cim)
+    {
+        if (cim is null || cim.Length < 8)
+        {
+            return null;
+        }
+
+        return DateTime.TryParseExact(cim[..8], "yyyyMMdd", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var d) ? d : null;
     }
 
     private static string DetectVendor(string text)

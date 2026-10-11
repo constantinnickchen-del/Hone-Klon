@@ -17,6 +17,8 @@ public static class OptimizationCatalog
         new ShaderCacheOptimization(),
         new TransparencyOptimization(),
         new AnimationsOptimization(),
+        new DesktopEffectsOptimization(),
+        new SuggestionsOptimization(),
         new BackgroundAppsOptimization(),
         new MouseAccelerationOptimization(),
         new HagsOptimization(),

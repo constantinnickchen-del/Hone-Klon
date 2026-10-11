@@ -51,7 +51,7 @@ public sealed class ThermalScanResult
 /// </summary>
 public static class ThermalAnalysisService
 {
-    private const int ScanSeconds = 10;
+    private static int ScanSeconds => SettingsService.Instance.Current.ThermalDeepScan ? 20 : 8;
 
     public static readonly HashSet<string> OverlayProcesses = new(StringComparer.OrdinalIgnoreCase)
     {

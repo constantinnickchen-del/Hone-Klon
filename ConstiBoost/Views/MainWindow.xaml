@@ -22,14 +22,19 @@
         <!-- Sidebar -->
         <Border Grid.Column="0" Background="{DynamicResource SidebarBrush}" BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="0,0,1,0">
             <DockPanel Margin="14,16,14,16">
-                <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="8,4,0,28">
+                <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="8,4,0,22">
                     <Border Width="36" Height="36" CornerRadius="10" Background="{DynamicResource AccentBrush}">
                         <TextBlock Text="&#xE945;" FontFamily="{DynamicResource IconFont}" FontSize="18" Foreground="{DynamicResource OnAccentBrush}"
                                    HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Border>
                     <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
-                        <TextBlock Text="ConstiBoost" FontSize="17" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" />
-                        <TextBlock Text="Performance Optimizer" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" />
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="ConstiBoost" FontSize="17" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" />
+                            <Border Background="{DynamicResource AccentBrush}" CornerRadius="5" Padding="5,1" Margin="7,2,0,0" VerticalAlignment="Center">
+                                <TextBlock Text="PRO" FontSize="9.5" FontWeight="Black" Foreground="{DynamicResource OnAccentBrush}" />
+                            </Border>
+                        </StackPanel>
+                        <TextBlock Text="Performance Suite" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" />
                     </StackPanel>
                 </StackPanel>
 
@@ -42,7 +47,7 @@
                         </StackPanel>
                     </Border>
                     <TextBlock Text="{Binding AdminText}" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" Margin="8,0" TextWrapping="Wrap" />
-                    <TextBlock Text="v1.0 · 100 % local" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" Margin="8,4,0,0" />
+                    <TextBlock Text="v2.0 PRO · 100 % local" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" Margin="8,4,0,0" />
                 </StackPanel>
 
                 <ItemsControl ItemsSource="{Binding Pages}">

@@ -85,12 +85,11 @@
                         <Button Style="{StaticResource HeroButton}" Command="{Binding OptimizeCommand}" HorizontalAlignment="Stretch">
                             <TextBlock Text="⚡ OPTIMIZE MY PC" />
                         </Button>
-                        <Button Style="{StaticResource GhostButton}" Command="{Binding FortniteCommand}" Margin="0,14,0,0" HorizontalAlignment="Center">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="&#xE7FC;" FontFamily="{DynamicResource IconFont}" Margin="0,0,8,0" VerticalAlignment="Center" />
-                                <TextBlock Text="Fortnite Boost" />
-                            </StackPanel>
-                        </Button>
+                        <UniformGrid Columns="3" Margin="0,16,0,0">
+                            <Button Style="{StaticResource SecondaryButton}" Command="{Binding BoostLabCommand}" Margin="0,0,6,0" Padding="8,10" Content="🧪 Boost Lab" />
+                            <Button Style="{StaticResource SecondaryButton}" Command="{Binding FortniteCommand}" Margin="3,0" Padding="8,10" Content="🎮 Games" />
+                            <Button Style="{StaticResource SecondaryButton}" Command="{Binding ThermalCommand}" Margin="6,0,0,0" Padding="8,10" Content="🌡️ Thermal" />
+                        </UniformGrid>
                     </StackPanel>
                 </Border>
             </Grid>

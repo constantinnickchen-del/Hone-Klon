@@ -55,6 +55,8 @@
                 </StackPanel>
             </Border>
 
+            <TextBlock Text="{Binding AutoCoolStatus}" Style="{StaticResource Text.H3}" Foreground="{DynamicResource AccentBrush}" Margin="0,0,0,12" />
+
             <!-- Alert -->
             <Border Style="{StaticResource Card}" Margin="0,0,0,16" Background="{DynamicResource WarnSoftBrush}" BorderBrush="{DynamicResource WarnBrush}"
                     Visibility="{Binding HasAlert, Converter={StaticResource BoolToVis}}">
@@ -445,6 +447,60 @@
                     </ItemsControl>
                     <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,6,0,0"
                                Text="FPS are not shown because ConstiBoost has no supported FPS source – the CPU clock is used as a measured performance indicator instead." />
+                </StackPanel>
+            </Border>
+
+            <!-- Thermal settings -->
+            <Border Style="{StaticResource Card}" Margin="0,0,0,16">
+                <StackPanel>
+                    <TextBlock Text="⚙️ THERMAL SETTINGS" Style="{StaticResource Text.H2}" />
+                    <Grid Margin="0,14,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="32" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="ALERTS" Style="{StaticResource Text.Caption}" Margin="0,0,0,8" />
+                            <DockPanel Margin="0,0,0,6">
+                                <TextBlock DockPanel.Dock="Right" Text="{Binding HighThreshold, StringFormat='{}{0} °C'}" Width="55" TextAlignment="Right" Foreground="{DynamicResource TextPrimaryBrush}" FontWeight="SemiBold" />
+                                <TextBlock DockPanel.Dock="Left" Text="🟠 High alert at" Style="{StaticResource Text.Body}" Width="130" VerticalAlignment="Center" />
+                                <Slider Minimum="70" Maximum="95" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding HighThreshold}" />
+                            </DockPanel>
+                            <DockPanel Margin="0,0,0,6">
+                                <TextBlock DockPanel.Dock="Right" Text="{Binding CriticalThreshold, StringFormat='{}{0} °C'}" Width="55" TextAlignment="Right" Foreground="{DynamicResource TextPrimaryBrush}" FontWeight="SemiBold" />
+                                <TextBlock DockPanel.Dock="Left" Text="🔴 Critical at" Style="{StaticResource Text.Body}" Width="130" VerticalAlignment="Center" />
+                                <Slider Minimum="80" Maximum="100" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding CriticalThreshold}" />
+                            </DockPanel>
+                            <DockPanel Margin="0,0,0,10">
+                                <TextBlock DockPanel.Dock="Right" Text="{Binding SustainSeconds, StringFormat='{}{0} s'}" Width="55" TextAlignment="Right" Foreground="{DynamicResource TextPrimaryBrush}" FontWeight="SemiBold" />
+                                <TextBlock DockPanel.Dock="Left" Text="High for at least" Style="{StaticResource Text.Body}" Width="130" VerticalAlignment="Center" />
+                                <Slider Minimum="15" Maximum="120" TickFrequency="15" IsSnapToTickEnabled="True" Value="{Binding SustainSeconds}" />
+                            </DockPanel>
+                            <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding DeepScan}">
+                                <TextBlock Text="Deep scan (20 s measurement instead of 8 s – more accurate)" TextWrapping="Wrap" />
+                            </CheckBox>
+                            <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,8,0,0"
+                                       Text="Alerts are calm in-app messages only. Your CPU and Windows keep all built-in thermal protection regardless of these settings." />
+                        </StackPanel>
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Text="❄️ AUTO-COOL GUARD" Style="{StaticResource Text.Caption}" Margin="0,0,0,8" />
+                            <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding AutoCoolEnabled}" Margin="0,0,0,10">
+                                <TextBlock Text="Enable Auto-Cool" FontWeight="SemiBold" />
+                            </CheckBox>
+                            <DockPanel Margin="0,0,0,8">
+                                <TextBlock DockPanel.Dock="Right" Text="{Binding AutoCoolTrigger, StringFormat='{}{0} °C'}" Width="55" TextAlignment="Right" Foreground="{DynamicResource TextPrimaryBrush}" FontWeight="SemiBold" />
+                                <TextBlock DockPanel.Dock="Left" Text="Trigger above" Style="{StaticResource Text.Body}" Width="110" VerticalAlignment="Center" />
+                                <Slider Minimum="75" Maximum="95" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding AutoCoolTrigger}" />
+                            </DockPanel>
+                            <CheckBox Content="Also while a game is running" IsChecked="{Binding AutoCoolDuringGaming}" Margin="0,0,0,8"
+                                      ToolTip="Off = performance first: Auto-Cool stays out of your games." />
+                            <CheckBox Content="Also turn off CPU boost (max processor state 99 %)" IsChecked="{Binding AutoCoolLimitBoost}" Margin="0,0,0,8"
+                                      ToolTip="Strongest cooling effect, but noticeably less CPU performance while engaged. Only applied if Windows allows it without an admin prompt." />
+                            <TextBlock Style="{StaticResource Text.Body}" FontSize="12" TextWrapping="Wrap"
+                                       Text="If the temperature stays above the trigger for 60 s, ConstiBoost switches to the Balanced power mode. After 2 minutes at least 8 °C cooler, the previous settings are restored automatically. Paused while Gaming Mode / Game Focus is active." />
+                        </StackPanel>
+                    </Grid>
                 </StackPanel>
             </Border>
 

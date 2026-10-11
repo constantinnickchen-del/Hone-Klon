@@ -63,6 +63,7 @@ public sealed class ThermalViewModel : PageViewModel
         TestCommand = new AsyncRelayCommand(RunTestAsync, () => !IsBusy && !TestRunning);
         CancelCommand = new RelayCommand(() => _cts?.Cancel(), () => IsBusy || TestRunning);
         _monitor.AlertChanged += () => Application.Current?.Dispatcher.BeginInvoke(RaiseAlert);
+        AutoCoolService.Instance.Changed += () => Application.Current?.Dispatcher.BeginInvoke(() => OnPropertyChanged(nameof(AutoCoolStatus)));
         LoadComparison();
     }
 
@@ -127,9 +128,59 @@ public sealed class ThermalViewModel : PageViewModel
         {
             SettingsService.Instance.Current.ThermalMonitoringEnabled = value;
             SettingsService.Instance.Save();
-            _monitor.SetAutomaticMonitoring(value);
+            _monitor.SetAutomaticMonitoring(value || S.AutoCoolEnabled);
             OnPropertyChanged();
         }
+    }
+
+    // ---------- Thermal settings ----------
+    private AppSettings S => SettingsService.Instance.Current;
+
+    public int HighThreshold { get => S.ThermalHighThreshold; set { S.ThermalHighThreshold = Math.Clamp(value, 70, 95); if (S.ThermalCriticalThreshold <= S.ThermalHighThreshold) S.ThermalCriticalThreshold = S.ThermalHighThreshold + 5; SaveSettings(); OnPropertyChanged(nameof(CriticalThreshold)); } }
+    public int CriticalThreshold { get => S.ThermalCriticalThreshold; set { S.ThermalCriticalThreshold = Math.Clamp(value, S.ThermalHighThreshold + 1, 100); SaveSettings(); } }
+    public int SustainSeconds { get => S.ThermalSustainSeconds; set { S.ThermalSustainSeconds = Math.Clamp(value, 15, 120); SaveSettings(); } }
+    public bool DeepScan { get => S.ThermalDeepScan; set { S.ThermalDeepScan = value; SaveSettings(); } }
+
+    public bool AutoCoolEnabled
+    {
+        get => S.AutoCoolEnabled;
+        set
+        {
+            if (value && !S.AutoCoolEnabled && !DialogService.Confirm("Enable Auto-Cool?",
+                    "When the temperature stays above the trigger for 60 seconds, ConstiBoost switches to the Balanced power mode (and optionally turns off CPU boost). After 2 minutes of lower temperature the previous settings are restored. Fans, voltages and thermal protection are never touched. Thermal Monitoring runs in the background while Auto-Cool is on.",
+                    null, "ENABLE"))
+            {
+                OnPropertyChanged();
+                return;
+            }
+
+            bool wasMonitoring = S.ThermalMonitoringEnabled || S.AutoCoolEnabled;
+            S.AutoCoolEnabled = value;
+            SaveSettings();
+            bool monitor = S.ThermalMonitoringEnabled || S.AutoCoolEnabled;
+            if (monitor != wasMonitoring)
+            {
+                _monitor.SetAutomaticMonitoring(monitor);
+            }
+
+            if (!value && AutoCoolService.Instance.IsEngaged)
+            {
+                _ = AutoCoolService.Instance.DisengageAsync("Auto-Cool turned off");
+            }
+
+            OnPropertyChanged();
+        }
+    }
+
+    public int AutoCoolTrigger { get => S.AutoCoolTrigger; set { S.AutoCoolTrigger = Math.Clamp(value, 75, 95); SaveSettings(); } }
+    public bool AutoCoolDuringGaming { get => S.AutoCoolDuringGaming; set { S.AutoCoolDuringGaming = value; SaveSettings(); } }
+    public bool AutoCoolLimitBoost { get => S.AutoCoolLimitBoost; set { S.AutoCoolLimitBoost = value; SaveSettings(); } }
+    public string AutoCoolStatus => AutoCoolService.Instance.IsEngaged ? $"❄️ Auto-Cool ENGAGED since {AutoCoolService.Instance.EngagedAt:HH:mm}" : S.AutoCoolEnabled ? "Auto-Cool armed – watching the temperature" : "Auto-Cool off";
+
+    private void SaveSettings()
+    {
+        SettingsService.Instance.Save();
+        OnPropertyChanged(string.Empty);
     }
 
     // ---------- Alerts ----------

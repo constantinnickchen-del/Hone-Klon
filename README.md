@@ -59,6 +59,8 @@ Das Projekt setzt `EnableWindowsTargeting=true`, daher lässt es sich auch auf L
 | **Windows Optimizer** | Game Mode, Energieprofil (Windows-„Power mode: Best performance“ bzw. Höchstleistung), Xbox-Hintergrundaufnahme, Game-DVR-Captures, Autostart-Apps, Hintergrund-Apps schließen, Temp-Dateien, Shader-Cache, Transparenz, Animationen, Store-Hintergrund-Apps, Mausbeschleunigung, HAGS (Toggle, UAC) – jeweils mit *Current / Recommended / Why / Downsides / Impact* |
 | **Gaming Features** | Game Mode, Xbox Game Bar, Hardware-accelerated GPU Scheduling: Status + Erklärung + Nachteile; Status der Xbox/Gaming Services (nur Anzeige) |
 | **Fortnite Boost** | Erkennung über die Install-Manifeste des Epic Games Launchers (+ gängige Ordner), Presets **MAX FPS / BALANCED / QUALITY** mit *Estimated impact LOW/MEDIUM/HIGH*, 3D-Auflösungs-Slider, VSync/Motion Blur/Vollbild/FPS-Cap, Erklärungen (Performance Mode, VSync, Nanite/Lumen, Reflex), Prozesspriorität „Above normal“ (reversibel), Shader-Cache, Hintergrund-Apps schließen, Launch über Epic |
+| **🌡️ Thermal Monitor** | Live: CPU-/GPU-Temperatur, CPU-/GPU-Last, RAM, CPU-Takt, GPU-Takt, Lüfter, Energieprofil, Prozessanzahl · Stufen Cool/Normal/Warm/Hot/Critical (Richtwerte) · Verlauf (5 min Chart + Minutentabelle mit Phasen Idle/Gaming/Heavy) · 🔍 SCAN MY PC mit Ursachenerkennung (CPU-Last, Hintergrund, Energieprofil, Gaming, Kühlung) · ❄️ FIND WAYS TO LOWER TEMPERATURE · ❄️ OPTIMIZE TEMPERATURE mit Backup + Nachmessung (Before/After) · 🌡️ 60 SECOND THERMAL TEST · Thermal Health Score · Alerts · Cooling Check · Fan Check · Fortnite Thermal Mode · Ryzen-Erkennung (z. B. „AMD Ryzen 7 5700U detected.“, Zen 2) |
+| **🎮 Cool Gaming Mode** | Profile **MAX FPS** (Best performance), **BALANCED** (Balanced, Boost an, optionaler Fortnite-FPS-Cap), **COOL** (Balanced + max. Prozessorzustand 99 % = CPU-Boost aus) · Vergleich der Profile anhand echter Thermal-Tests (Temperatur vs. CPU-Takt) |
 | **Cleaner** | Temporary Files, Windows Temporary Files (UAC), Shader Cache, Crash Reports, Browser Cache – mit „This will remove approximately XX MB.“ |
 | **Startup Manager** | App, Publisher, Startup Impact (typisch, nicht gemessen), Enabled/Disabled – gleicher Mechanismus wie der Task-Manager; System-/Treiber-/Sicherheits-Apps geschützt |
 | **Hardware** | Live-Charts CPU/GPU/RAM (1 s), Thermal Zone, Systemdetails, Laufwerke |
@@ -71,7 +73,8 @@ Das Projekt setzt `EnableWindowsTargeting=true`, daher lässt es sich auch auf L
 ### Bewusst NICHT enthalten
 - Keine „Network Booster“, „RAM Booster“, „CPU/GPU Unlock“, „0 Ping“-Registry-Tweaks oder andere Placebo-Tweaks.
 - Keine Fake-FPS: Ohne unterstützte FPS-Quelle steht dort *„Unavailable“*. ConstiBoost injiziert sich nicht in Spiele (Anti-Cheat-sicher).
-- Keine geschätzten Temperaturen: CPU-/GPU-Die-Temperaturen bräuchten einen Kernel-Treiber (z. B. WinRing0, inzwischen von Defender als verwundbar markiert) – ConstiBoost installiert keine Treiber und zeigt *„Temperature unavailable“*. Angezeigt wird nur die echte ACPI-Thermal-Zone, klar als solche beschriftet.
+- Keine geschätzten Temperaturen. ConstiBoost installiert keine Kernel-Treiber. Echte CPU-/GPU-Temperaturen, GPU-Takt und Lüfter-RPM werden **read-only** übernommen, wenn **HWiNFO** (Einstellung „Shared Memory Support“) oder **LibreHardwareMonitor** im Hintergrund laufen. Sonst wird die Windows-ACPI-Thermal-Zone genutzt und als „indirekt“ gekennzeichnet; ist nichts lesbar: *„Sensor unavailable“*.
+- Keine Spannungsänderungen, kein Undervolting/Overclocking, kein BIOS-/Firmware-Zugriff, keine Lüftersteuerung, kein Abschalten von Thermal Throttling.
 - Kein automatisches Umstellen des Fortnite-Rendering-Modus: ConstiBoost erklärt den Schritt im Spiel, statt unsichere Config-Keys zu erfinden.
 
 ---
@@ -124,7 +127,9 @@ SUCCESS
 |---|---|
 | „Administrator permission was declined (UAC)“ | Aktion erneut ausführen und die UAC-Abfrage bestätigen. Normale Funktionen brauchen keine Adminrechte. |
 | GPU-Auslastung „Unavailable“ | Die Windows-Leistungsindikatoren „GPU Engine“ fehlen/sind defekt. In einer Admin-Konsole `lodctr /R` ausführen und neu starten. Grafiktreiber aktualisieren. |
-| Temperaturen „Unavailable“ | Erwartet – siehe oben. Für Die-Temperaturen z. B. AMD Software: Adrenalin Edition oder HWiNFO verwenden. |
+| Temperaturen „Unavailable“ / nur ACPI | HWiNFO starten → Settings → „Shared Memory Support“ aktivieren (oder LibreHardwareMonitor starten). ConstiBoost erkennt das innerhalb von ~20 s automatisch. |
+| Lüfter „Fan speed unavailable on this device.“ | Viele Laptops (auch Acer Aspire) melden die Lüfterdrehzahl nicht an Windows – das ist normal. |
+| COOL-Profil fragt nach Adminrechten | Windows erlaubt das Ändern des max. Prozessorzustands je nach System nur mit UAC. Ablehnen ist unkritisch – dann bleibt der Boost an. |
 | Wiederherstellungspunkt wird nicht erstellt | Computerschutz für Laufwerk C: aktivieren (`SystemPropertiesProtection.exe`). Windows erlaubt standardmäßig nur einen Punkt pro 24 h. |
 | Fortnite wird nicht gefunden | Fortnite einmal über den Epic Games Launcher starten bzw. den Launcher-Bibliotheksordner prüfen. |
 | „Settings file not found“ | Fortnite einmal starten und beenden, damit `%LOCALAPPDATA%\FortniteGame\Saved\Config\WindowsClient\GameUserSettings.ini` entsteht. |
@@ -172,6 +177,7 @@ ConstiBoost/
 | 9 Backup/Restore | `Backup/*`, `Services/ElevationService.cs`, `Services/ElevatedTaskRunner.cs`, `Services/RestorePointService.cs` | Backups-Seite: Einträge ansehen, RESTORE, CREATE RESTORE POINT |
 | 10 Hardware Monitor | `Services/MonitorService.cs`, `Hardware/GpuUsageSampler.cs`, `Hardware/ThermalSampler.cs`, `UI/SparklineChart.cs`, `ViewModels/HardwareViewModel.cs`, `ViewModels/ProcessesViewModel.cs`, `ViewModels/NetworkViewModel.cs` | Hardware → Monitor mit Task-Manager vergleichen; Processes sortieren; Network → Ping/DNS |
 | 11 Benchmark | `Hardware/BenchmarkService.cs`, `ViewModels/BenchmarkViewModel.cs` | RUN BEFORE → optimieren → RUN AFTER → Difference |
+| 13 Thermal System | `Hardware/Sensors/*` (HWiNFO, LibreHardwareMonitor, ACPI), `Hardware/CpuFrequencySampler.cs`, `Hardware/GpuMemoryReader.cs`, `Hardware/CpuDatabase.cs`, `Services/ThermalMonitorService.cs`, `Services/ThermalAnalysisService.cs`, `Services/ThermalTestService.cs`, `Services/PowerTweakService.cs`, `ViewModels/ThermalViewModel.cs`, `Views/ThermalView.xaml` | Thermal → SCAN MY PC; Werte mit HWiNFO vergleichen; 60-s-Test in MAX FPS und COOL während Fortnite → Vergleichstabelle |
 | 12 Polishing | Animationen (Seitenwechsel, Score-Ring, Toggles), Toasts, Pause bei Minimierung, Gaming-Mode-Abfrage beim Schließen | – |
 
 ## Lizenz / Haftung

@@ -25,12 +25,13 @@ public sealed class MainViewModel : ObservableObject
         Dashboard = new DashboardViewModel();
         Optimizer = new OptimizerViewModel();
         Fortnite = new FortniteViewModel();
+        Thermal = new ThermalViewModel();
         Cleaner = new CleanerViewModel();
         Startup = new StartupViewModel();
         Hardware = new HardwareViewModel();
         Backups = new BackupsViewModel();
         Settings = new SettingsViewModel();
-        Pages = new List<PageViewModel> { Dashboard, Optimizer, Fortnite, Cleaner, Startup, Hardware, Backups, Settings };
+        Pages = new List<PageViewModel> { Dashboard, Optimizer, Fortnite, Thermal, Cleaner, Startup, Hardware, Backups, Settings };
         Welcome = new WelcomeViewModel(this);
 
         _currentPage = Dashboard;
@@ -53,6 +54,7 @@ public sealed class MainViewModel : ObservableObject
     public DashboardViewModel Dashboard { get; }
     public OptimizerViewModel Optimizer { get; }
     public FortniteViewModel Fortnite { get; }
+    public ThermalViewModel Thermal { get; }
     public CleanerViewModel Cleaner { get; }
     public StartupViewModel Startup { get; }
     public HardwareViewModel Hardware { get; }

@@ -59,7 +59,24 @@ public sealed class BackupService
         var entries = session.Manifest.Entries.AsEnumerable().Reverse().ToList();
 
         var adminEntries = entries.Where(e => e.RequiresAdmin).ToList();
-        foreach (var entry in entries.Where(e => !e.RequiresAdmin))
+        foreach (var entry in entries.Where(e => e.Kind == BackupKinds.ProcessorMaxState))
+        {
+            string[] parts = (entry.Data ?? string.Empty).Split('|');
+            var result = parts.Length == 3
+                ? await PowerTweakService.SetProcessorMaxStateAsync(Guid.Parse(parts[0]), uint.Parse(parts[1]), uint.Parse(parts[2]), "Restore: " + entry.Description)
+                : OperationResult.Fail("Invalid backup entry");
+            if (result.Success)
+            {
+                restored++;
+            }
+            else
+            {
+                failed++;
+                messages.Add($"{entry.Description}: {result.TechnicalDetails ?? result.Message}");
+            }
+        }
+
+        foreach (var entry in entries.Where(e => !e.RequiresAdmin && e.Kind != BackupKinds.ProcessorMaxState))
         {
             try
             {
@@ -131,7 +148,7 @@ public sealed class BackupService
     private static string Describe(BackupEntry entry) => entry.Kind switch
     {
         BackupKinds.Registry => entry.Registry?.DisplayValue ?? string.Empty,
-        BackupKinds.PowerScheme or BackupKinds.PowerOverlay => entry.Name ?? entry.Data ?? string.Empty,
+        BackupKinds.PowerScheme or BackupKinds.PowerOverlay or BackupKinds.ProcessorMaxState => entry.Name ?? entry.Data ?? string.Empty,
         BackupKinds.File => entry.BackupFileName is null ? "(file removed)" : "original file",
         _ => entry.Data ?? string.Empty,
     };

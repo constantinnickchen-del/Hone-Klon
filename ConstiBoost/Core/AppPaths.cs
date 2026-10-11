@@ -22,6 +22,8 @@ public static class AppPaths
 
     public static string BenchmarkFile => Path.Combine(Ensure(Root), "benchmarks.json");
 
+    public static string ThermalTestsFile => Path.Combine(Ensure(Root), "thermal-tests.json");
+
     public static string GamingModeStateFile => Path.Combine(Ensure(Root), "gamingmode-state.json");
 
     public static string ExecutablePath => Environment.ProcessPath

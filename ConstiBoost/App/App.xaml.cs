@@ -49,6 +49,10 @@ public partial class App : Application
         SettingsService.Instance.Load();
         ThemeService.Apply(SettingsService.Instance.Current.Theme, SettingsService.Instance.Current.AccentColor);
         GamingModeService.Instance.LoadPersistedState();
+        if (SettingsService.Instance.Current.ThermalMonitoringEnabled)
+        {
+            ThermalMonitorService.Instance.SetAutomaticMonitoring(true);
+        }
 
         var viewModel = new MainViewModel();
         var window = new MainWindow { DataContext = viewModel };

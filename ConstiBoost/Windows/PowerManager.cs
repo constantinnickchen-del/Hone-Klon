@@ -21,6 +21,59 @@ public static class PowerManager
     public static readonly Guid OverlayBetterPerformance = new("3af9b8d9-7c97-431d-ad78-34a8bfea439f");
     public static readonly Guid OverlayBestPerformance = new("ded574b5-45a0-4f42-8737-46345c09c238");
 
+    // Documented power setting: Processor power management > Maximum processor state (percent).
+    public static readonly Guid SubProcessor = new("54533251-82be-4824-96c1-47b60b740d00");
+    public static readonly Guid ProcessorMaxState = new("bc5038f7-23e0-4960-96da-33abaf5935ec");
+
+    /// <summary>Reads "Maximum processor state" (AC, DC) of a scheme, or null.</summary>
+    public static (uint ac, uint dc)? GetProcessorMaxState(Guid scheme)
+    {
+        try
+        {
+            Guid sub = SubProcessor, setting = ProcessorMaxState;
+            if (NativeMethods.PowerReadACValueIndex(IntPtr.Zero, ref scheme, ref sub, ref setting, out uint ac) != 0 ||
+                NativeMethods.PowerReadDCValueIndex(IntPtr.Zero, ref scheme, ref sub, ref setting, out uint dc) != 0)
+            {
+                return null;
+            }
+
+            return (ac, dc);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Writes "Maximum processor state" and re-applies the scheme. Only 50–100 % is accepted.
+    /// This never disables thermal protection – Windows and the CPU keep all safety limits.
+    /// </summary>
+    public static void SetProcessorMaxState(Guid scheme, uint ac, uint dc)
+    {
+        if (ac is < 50 or > 100 || dc is < 50 or > 100)
+        {
+            throw new ArgumentOutOfRangeException(nameof(ac), "Only 50–100 % is allowed.");
+        }
+
+        Guid sub = SubProcessor, setting = ProcessorMaxState;
+        uint status = NativeMethods.PowerWriteACValueIndex(IntPtr.Zero, ref scheme, ref sub, ref setting, ac);
+        if (status == 0)
+        {
+            status = NativeMethods.PowerWriteDCValueIndex(IntPtr.Zero, ref scheme, ref sub, ref setting, dc);
+        }
+
+        if (status != 0)
+        {
+            throw new System.ComponentModel.Win32Exception((int)status);
+        }
+
+        if (GetActiveSchemeId() == scheme)
+        {
+            SetActiveScheme(scheme); // apply immediately
+        }
+    }
+
     public static Guid? GetActiveSchemeId()
     {
         try

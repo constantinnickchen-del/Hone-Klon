@@ -9,6 +9,7 @@ public static class ElevatedOperations
     public const string RegistrySetDword = "registry-set-dword";
     public const string CleanPaths = "clean-paths";
     public const string CreateRestorePoint = "create-restore-point";
+    public const string ProcessorMaxState = "processor-max-state";
 }
 
 public sealed class DwordWrite
@@ -28,6 +29,9 @@ public sealed class ElevatedTask
     public List<string> Paths { get; set; } = new();
     public string? Description { get; set; }
     public double MinAgeHours { get; set; }
+    public string? PowerScheme { get; set; }
+    public uint AcValue { get; set; }
+    public uint DcValue { get; set; }
 }
 
 public sealed class ElevatedResult

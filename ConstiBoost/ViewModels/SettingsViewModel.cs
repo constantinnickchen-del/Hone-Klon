@@ -129,6 +129,18 @@ public sealed class SettingsViewModel : PageViewModel
         }
     }
 
+    public bool ThermalMonitoring
+    {
+        get => _settings.Current.ThermalMonitoringEnabled;
+        set
+        {
+            _settings.Current.ThermalMonitoringEnabled = value;
+            _settings.Save();
+            ThermalMonitorService.Instance.SetAutomaticMonitoring(value);
+            OnPropertyChanged();
+        }
+    }
+
     public string DataFolder => AppPaths.Root;
 
     public string VersionText => "ConstiBoost 1.0.0 · local only · no accounts · no telemetry";

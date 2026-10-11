@@ -161,11 +161,11 @@
                             </Grid.ColumnDefinitions>
                             <StackPanel>
                                 <TextBlock Text="CPU" Style="{StaticResource Text.Body}" />
-                                <TextBlock Text="Unavailable" Style="{StaticResource Text.Value}" Margin="0,4,0,0" />
+                                <TextBlock Text="{Binding CpuTempText}" Style="{StaticResource Text.Value}" Margin="0,4,0,0" />
                             </StackPanel>
                             <StackPanel Grid.Column="1">
                                 <TextBlock Text="GPU" Style="{StaticResource Text.Body}" />
-                                <TextBlock Text="Unavailable" Style="{StaticResource Text.Value}" Margin="0,4,0,0" />
+                                <TextBlock Text="{Binding GpuTempText}" Style="{StaticResource Text.Value}" Margin="0,4,0,0" />
                             </StackPanel>
                             <StackPanel Grid.Column="2">
                                 <TextBlock Text="ACPI thermal zone" Style="{StaticResource Text.Body}" />
@@ -173,7 +173,8 @@
                             </StackPanel>
                         </Grid>
                         <TextBlock Style="{StaticResource Text.Body}" FontSize="11.5" Margin="0,12,0,0" Foreground="{DynamicResource TextMutedBrush}"
-                                   Text="CPU/GPU die temperatures need vendor kernel drivers. ConstiBoost does not install drivers and never estimates values. The ACPI zone is a firmware sensor (often motherboard area)." />
+                                   Text="CPU/GPU temperatures are read from HWiNFO or LibreHardwareMonitor when they run in the background. ConstiBoost installs no drivers and never estimates values. The ACPI zone is a Windows firmware sensor (indirect)." />
+                        <TextBlock Text="{Binding TempSourceText}" Style="{StaticResource Text.Caption}" Margin="0,4,0,0" />
                     </StackPanel>
                 </Border>
                 <Border Grid.Column="2" Style="{StaticResource Card}">

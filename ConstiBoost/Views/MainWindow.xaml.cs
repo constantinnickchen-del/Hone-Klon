@@ -32,24 +32,32 @@ public partial class MainWindow : Window
         Closing += OnClosing;
     }
 
-    private void OnClosing(object? sender, CancelEventArgs e)
+    private bool _closeConfirmed;
+
+    private async void OnClosing(object? sender, CancelEventArgs e)
     {
-        if (!GamingModeService.Instance.IsActive)
+        if (_closeConfirmed || !GamingModeService.Instance.IsActive)
         {
             return;
         }
 
-        if (DialogService.Confirm("Gaming Mode is still active", "Stop Gaming Mode and restore your previous settings before closing? If you keep it, ConstiBoost will offer to stop it the next time it starts.", null, "STOP AND CLOSE"))
+        if (!DialogService.Confirm("Gaming Mode is still active", "Stop Gaming Mode and restore your previous settings before closing? If you keep it, ConstiBoost will offer to stop it the next time it starts.", null, "STOP AND CLOSE"))
         {
-            try
-            {
-                GamingModeService.Instance.DeactivateAsync(SettingsService.Instance.Current.GamingModeRelaunchClosedApps).GetAwaiter().GetResult();
-            }
-            catch (Exception ex)
-            {
-                Logging.AppLog.Error("Gaming Mode restore on exit failed", ex);
-            }
+            return;
         }
+
+        e.Cancel = true; // restore asynchronously (may need a UAC prompt), then close
+        try
+        {
+            await GamingModeService.Instance.DeactivateAsync(SettingsService.Instance.Current.GamingModeRelaunchClosedApps);
+        }
+        catch (Exception ex)
+        {
+            Logging.AppLog.Error("Gaming Mode restore on exit failed", ex);
+        }
+
+        _closeConfirmed = true;
+        Close();
     }
 
     private void PageHost_TargetUpdated(object? sender, DataTransferEventArgs e)

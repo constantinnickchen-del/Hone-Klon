@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using ConstiBoost.Core;
+using ConstiBoost.Fortnite;
 using ConstiBoost.Logging;
 using ConstiBoost.Models;
 using ConstiBoost.WinSys;
@@ -20,7 +21,14 @@ public sealed class GamingModeState
     public string? PreviousOverlay { get; set; }
     public List<ClosedApp> ClosedApps { get; set; } = new();
     public List<PriorityChange> PriorityChanges { get; set; } = new();
+    public GamingProfile Profile { get; set; } = GamingProfile.MaxFps;
+    public string? ProcessorMaxScheme { get; set; }
+    public uint? PreviousProcessorMaxAc { get; set; }
+    public uint? PreviousProcessorMaxDc { get; set; }
+    public string? PreviousFortniteFrameLimit { get; set; }
 }
+
+public sealed record GamingModeOptions(GamingProfile Profile, bool LowerBackgroundPriority, int? FortniteFpsCap);
 
 public sealed class ClosedApp
 {
@@ -51,6 +59,15 @@ public sealed class GamingModeService : ObservableObject
 
     public DateTime? ActivatedAt => _state?.ActivatedAt;
 
+    public GamingProfile? ActiveProfile => _state?.Profile;
+
+    public static string ProfileName(GamingProfile profile) => profile switch
+    {
+        GamingProfile.MaxFps => "MAX FPS",
+        GamingProfile.Balanced => "BALANCED",
+        _ => "COOL",
+    };
+
     public event Action? Changed;
 
     public void LoadPersistedState()
@@ -69,15 +86,19 @@ public sealed class GamingModeService : ObservableObject
         }
     }
 
-    public async Task<List<string>> ActivateAsync(IEnumerable<AppGroup> appsToClose, bool lowerBackgroundPriority)
+    public Task<List<string>> ActivateAsync(IEnumerable<AppGroup> appsToClose, bool lowerBackgroundPriority) =>
+        ActivateAsync(appsToClose, new GamingModeOptions(GamingProfile.MaxFps, lowerBackgroundPriority, null));
+
+    public async Task<List<string>> ActivateAsync(IEnumerable<AppGroup> appsToClose, GamingModeOptions options)
     {
+        bool lowerBackgroundPriority = options.LowerBackgroundPriority;
         var messages = new List<string>();
         if (_state != null)
         {
             return messages;
         }
 
-        var state = new GamingModeState { ActivatedAt = DateTime.Now };
+        var state = new GamingModeState { ActivatedAt = DateTime.Now, Profile = options.Profile };
         _state = state;
         Persist();
 
@@ -97,29 +118,70 @@ public sealed class GamingModeService : ObservableObject
 
         Persist();
 
-        // 2. Power
+        // 2. Power – depends on the profile.
+        //    MAX FPS:  Best performance power mode (highest clocks, most heat)
+        //    BALANCED: Balanced power mode (CPU still boosts, less sustained heat)
+        //    COOL:     Balanced + maximum processor state 99 % (disables CPU boost; Windows keeps all thermal protection)
         try
         {
             var overlay = PowerManager.GetOverlay();
             var scheme = PowerManager.GetActiveSchemeId();
+            Guid targetOverlay = options.Profile == GamingProfile.MaxFps ? PowerManager.OverlayBestPerformance : PowerManager.OverlayBalanced;
             if (overlay != null && scheme == PowerManager.Balanced)
             {
-                state.PreviousOverlay = overlay.Value.ToString();
-                PowerManager.SetOverlay(PowerManager.OverlayBestPerformance);
-                ActionLog.Success("Gaming Mode: Power mode", PowerManager.OverlayName(overlay), "Best performance");
+                if (overlay != targetOverlay)
+                {
+                    state.PreviousOverlay = overlay.Value.ToString();
+                    PowerManager.SetOverlay(targetOverlay);
+                    ActionLog.Success("Gaming Mode: Power mode", PowerManager.OverlayName(overlay), PowerManager.OverlayName(targetOverlay));
+                }
             }
-            else if (scheme != null && scheme != PowerManager.HighPerformance && scheme != PowerManager.UltimatePerformance &&
+            else if (options.Profile == GamingProfile.MaxFps && scheme != null && scheme != PowerManager.HighPerformance && scheme != PowerManager.UltimatePerformance &&
                      PowerManager.GetSchemes().Any(s => s.Id == PowerManager.HighPerformance))
             {
                 state.PreviousScheme = scheme.Value.ToString();
                 PowerManager.SetActiveScheme(PowerManager.HighPerformance);
                 ActionLog.Success("Gaming Mode: Power plan", PowerManager.GetFriendlyName(scheme.Value), "High performance");
             }
+            else if (options.Profile != GamingProfile.MaxFps && (scheme == PowerManager.HighPerformance || scheme == PowerManager.UltimatePerformance) &&
+                     PowerManager.GetSchemes().Any(s => s.Id == PowerManager.Balanced))
+            {
+                state.PreviousScheme = scheme.Value.ToString();
+                PowerManager.SetActiveScheme(PowerManager.Balanced);
+                ActionLog.Success("Gaming Mode: Power plan", PowerManager.GetFriendlyName(scheme.Value), "Balanced");
+            }
         }
         catch (Exception ex)
         {
             messages.Add("Power: " + Safe.Describe(ex));
-            ActionLog.Failed("Gaming Mode: Power", null, "Best performance", Safe.Describe(ex));
+            ActionLog.Failed("Gaming Mode: Power", null, ProfileName(options.Profile), Safe.Describe(ex));
+        }
+
+        if (options.Profile == GamingProfile.Cool && PowerManager.GetActiveSchemeId() is Guid active && PowerManager.GetProcessorMaxState(active) is { } max)
+        {
+            state.ProcessorMaxScheme = active.ToString();
+            state.PreviousProcessorMaxAc = max.ac;
+            state.PreviousProcessorMaxDc = max.dc;
+            Persist();
+            var r = await PowerTweakService.SetProcessorMaxStateAsync(active, Math.Min(max.ac, 99u), Math.Min(max.dc, 99u), "Gaming Mode (COOL): maximum processor state");
+            if (!r.Success)
+            {
+                state.ProcessorMaxScheme = null;
+                messages.Add("CPU boost limit: " + (r.TechnicalDetails ?? r.Message));
+            }
+        }
+
+        if (options.FortniteFpsCap is int cap)
+        {
+            var (result, previous) = FortniteConfigService.SetFrameRateLimit(cap.ToString("0.000000", System.Globalization.CultureInfo.InvariantCulture), null);
+            if (result.Success)
+            {
+                state.PreviousFortniteFrameLimit = previous;
+            }
+            else
+            {
+                messages.Add(result.Message);
+            }
         }
 
         Persist();
@@ -233,6 +295,24 @@ public sealed class GamingModeService : ObservableObject
             ActionLog.Failed("Gaming Mode: restore power", null, null, Safe.Describe(ex));
         }
 
+        if (state.ProcessorMaxScheme != null && state.PreviousProcessorMaxAc is uint ac && state.PreviousProcessorMaxDc is uint dc)
+        {
+            var r = await PowerTweakService.SetProcessorMaxStateAsync(Guid.Parse(state.ProcessorMaxScheme), ac, dc, "Gaming Mode: restore maximum processor state");
+            if (!r.Success)
+            {
+                messages.Add("CPU boost limit: " + (r.TechnicalDetails ?? r.Message));
+            }
+        }
+
+        if (state.PreviousFortniteFrameLimit != null)
+        {
+            var (result, _) = FortniteConfigService.SetFrameRateLimit(state.PreviousFortniteFrameLimit, null);
+            if (!result.Success)
+            {
+                messages.Add(result.Message);
+            }
+        }
+
         int restoredPriorities = 0;
         foreach (var change in state.PriorityChanges)
         {
@@ -275,7 +355,6 @@ public sealed class GamingModeService : ObservableObject
         _state = null;
         Safe.Try(() => File.Delete(AppPaths.GamingModeStateFile));
         ActionLog.Success("Gaming Mode", "ACTIVE", "OFF");
-        await Task.CompletedTask;
         RaiseChanged();
         return messages;
     }
@@ -296,6 +375,7 @@ public sealed class GamingModeService : ObservableObject
     {
         OnPropertyChanged(nameof(IsActive));
         OnPropertyChanged(nameof(ActivatedAt));
+        OnPropertyChanged(nameof(ActiveProfile));
         Changed?.Invoke();
     }
 }

@@ -10,4 +10,6 @@ public sealed class AppSettings
     public bool Notifications { get; set; } = true;
     public bool FirstRunCompleted { get; set; }
     public bool GamingModeRelaunchClosedApps { get; set; } = true;
+    public bool ThermalMonitoringEnabled { get; set; }
+    public GamingProfile GamingProfile { get; set; } = GamingProfile.MaxFps;
 }

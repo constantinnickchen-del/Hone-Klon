@@ -10,6 +10,7 @@ public static class BackupKinds
     public const string PowerOverlay = "PowerOverlay";
     public const string SystemParameter = "SystemParameter";
     public const string File = "File";
+    public const string ProcessorMaxState = "ProcessorMaxState";
 }
 
 /// <summary>One recorded "before" state. Restoring an entry puts exactly this state back.</summary>
@@ -31,6 +32,7 @@ public sealed class BackupEntry
         BackupKinds.Registry => $"{Description} ({Registry?.FullPath} = {Registry?.DisplayValue})",
         BackupKinds.PowerScheme => $"{Description} ({Data})",
         BackupKinds.PowerOverlay => $"{Description} ({Data})",
+        BackupKinds.ProcessorMaxState => $"{Description} ({Name})",
         BackupKinds.File => $"{Description} ({OriginalPath})",
         _ => $"{Description} ({Name} = {Data})",
     };

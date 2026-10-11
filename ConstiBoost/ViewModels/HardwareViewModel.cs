@@ -62,6 +62,12 @@ public sealed class HardwareViewModel : PageViewModel
     public string RamNow { get => _ramNow; private set => SetProperty(ref _ramNow, value); }
     public string RamDetail { get => _ramDetail; private set => SetProperty(ref _ramDetail, value); }
     public string ThermalNow { get => _thermalNow; private set => SetProperty(ref _thermalNow, value); }
+
+    private string _cpuTempNow = "Temperature unavailable";
+    private string _gpuTempNow = "Temperature unavailable";
+
+    public string CpuTempNow { get => _cpuTempNow; private set => SetProperty(ref _cpuTempNow, value); }
+    public string GpuTempNow { get => _gpuTempNow; private set => SetProperty(ref _gpuTempNow, value); }
     public string ThermalZone { get => _thermalZone; private set => SetProperty(ref _thermalZone, value); }
     public IReadOnlyList<double> CpuHistory { get => _cpuHistory; private set => SetProperty(ref _cpuHistory, value); }
     public IReadOnlyList<double> GpuHistory { get => _gpuHistory; private set => SetProperty(ref _gpuHistory, value); }
@@ -170,6 +176,8 @@ public sealed class HardwareViewModel : PageViewModel
             GpuNow = MonitorService.Instance.GpuAvailable ? Formatting.Percent(s.GpuPercent) : Formatting.Unavailable;
             RamNow = Formatting.Percent(s.RamPercent);
             RamDetail = s.RamTotalBytes > 0 ? $"{Formatting.Bytes(s.RamUsedBytes)} of {Formatting.Bytes(s.RamTotalBytes)}" : string.Empty;
+            CpuTempNow = s.Sensors.CpuTemperature is double ct ? $"{ct:0} °C ({s.Sensors.Provider})" : "Temperature unavailable";
+            GpuTempNow = s.Sensors.GpuTemperature is double gt ? $"{gt:0} °C ({s.Sensors.Provider})" : "Temperature unavailable";
             ThermalNow = s.Thermal is null ? "Temperature unavailable" : $"{Math.Round(s.Thermal.Celsius)} °C";
             ThermalZone = s.Thermal is null
                 ? "No readable sensor. CPU/GPU die temperatures need vendor drivers, which ConstiBoost does not install."

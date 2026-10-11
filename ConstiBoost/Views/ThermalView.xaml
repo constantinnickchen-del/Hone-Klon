@@ -1,0 +1,486 @@
+<UserControl x:Class="ConstiBoost.Views.ThermalView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="clr-namespace:ConstiBoost.UI">
+    <UserControl.Resources>
+        <DataTemplate x:Key="ProcessList">
+            <Grid Margin="0,3">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="2*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="1.2*" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="{Binding Name}" Foreground="{DynamicResource TextPrimaryBrush}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                <TextBlock Grid.Column="1" Text="{Binding CpuText, StringFormat='CPU {0}'}" Style="{StaticResource Text.Body}" />
+                <TextBlock Grid.Column="2" Text="{Binding RamText, StringFormat='RAM {0}'}" Style="{StaticResource Text.Body}" />
+                <TextBlock Grid.Column="3" Text="{Binding GpuText, StringFormat='GPU {0}'}" Style="{StaticResource Text.Body}" />
+                <TextBlock Grid.Column="4" Text="{Binding Kind}" Style="{StaticResource Text.Caption}" VerticalAlignment="Center" />
+            </Grid>
+        </DataTemplate>
+        <Style x:Key="LiveValue" TargetType="TextBlock" BasedOn="{StaticResource Text.Value}">
+            <Setter Property="FontSize" Value="18" />
+            <Setter Property="Margin" Value="0,6,0,0" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="TextTrimming" Value="None" />
+        </Style>
+    </UserControl.Resources>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="0,0,0,32">
+            <!-- Header -->
+            <DockPanel Margin="0,0,0,16">
+                <CheckBox DockPanel.Dock="Right" Style="{StaticResource ToggleSwitch}" IsChecked="{Binding ThermalMonitoringEnabled}" VerticalAlignment="Center"
+                          ToolTip="Measures every second in the background (also when this page is closed) and shows in-app alerts if the temperature stays very high.">
+                    <TextBlock Text="Enable Thermal Monitoring" />
+                </CheckBox>
+                <StackPanel>
+                    <TextBlock Text="🌡️ Thermal Monitor" Style="{StaticResource Text.H1}" />
+                    <TextBlock Text="Real sensor values, diagnosis and safe measures against unnecessary heat. Temperature levels are guide values, not a technical guarantee." Style="{StaticResource Text.Body}" />
+                </StackPanel>
+            </DockPanel>
+
+            <WrapPanel Margin="0,0,0,16">
+                <Button Style="{StaticResource HeroButton}" Content="🔍 SCAN MY PC" Command="{Binding ScanCommand}" Margin="0,0,14,8" />
+                <Button Style="{StaticResource AccentButton}" Content="❄️ FIND WAYS TO LOWER TEMPERATURE" Command="{Binding FindWaysCommand}" Margin="0,0,14,8" Padding="20,14" />
+                <Button Style="{StaticResource SecondaryButton}" Content="🌡️ 60 SECOND THERMAL TEST" Command="{Binding TestCommand}" Margin="0,0,14,8" Padding="20,14" />
+                <Button Style="{StaticResource GhostButton}" Content="Cancel" Command="{Binding CancelCommand}" Margin="0,0,0,8" />
+            </WrapPanel>
+
+            <Border Style="{StaticResource Card}" Margin="0,0,0,16" Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}">
+                <StackPanel>
+                    <TextBlock Text="{Binding ProgressText}" Style="{StaticResource Text.H3}" />
+                    <ProgressBar IsIndeterminate="True" Margin="0,10,0,0" />
+                </StackPanel>
+            </Border>
+
+            <!-- Alert -->
+            <Border Style="{StaticResource Card}" Margin="0,0,0,16" Background="{DynamicResource WarnSoftBrush}" BorderBrush="{DynamicResource WarnBrush}"
+                    Visibility="{Binding HasAlert, Converter={StaticResource BoolToVis}}">
+                <StackPanel>
+                    <TextBlock Text="{Binding AlertTitle}" Style="{StaticResource Text.H2}" />
+                    <TextBlock Text="{Binding AlertText}" Style="{StaticResource Text.Body}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,4,0,0" />
+                </StackPanel>
+            </Border>
+
+            <!-- CPU detection -->
+            <Border Style="{StaticResource Card}" Margin="0,0,0,16" Visibility="{Binding CpuDetected, Converter={StaticResource NullToVis}}">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Left" Text="&#xE950;" Style="{StaticResource Icon}" FontSize="26" Margin="0,0,16,0" />
+                    <StackPanel>
+                        <TextBlock Text="{Binding CpuDetected}" Style="{StaticResource Text.H3}" Foreground="{DynamicResource AccentBrush}" />
+                        <WrapPanel Margin="0,6,0,0">
+                            <TextBlock Style="{StaticResource Text.Body}" Margin="0,0,24,0"><Run Text="CPU: " /><Run Text="{Binding CpuName, Mode=OneWay}" Foreground="{DynamicResource TextPrimaryBrush}" /></TextBlock>
+                            <TextBlock Style="{StaticResource Text.Body}" Margin="0,0,24,0"><Run Text="Architecture: " /><Run Text="{Binding CpuArchitecture, Mode=OneWay}" Foreground="{DynamicResource TextPrimaryBrush}" /></TextBlock>
+                            <TextBlock Style="{StaticResource Text.Body}" Margin="0,0,24,0"><Run Text="Cores: " /><Run Text="{Binding CpuCores, Mode=OneWay}" Foreground="{DynamicResource TextPrimaryBrush}" /></TextBlock>
+                            <TextBlock Style="{StaticResource Text.Body}" Margin="0,0,24,0"><Run Text="Threads: " /><Run Text="{Binding CpuThreads, Mode=OneWay}" Foreground="{DynamicResource TextPrimaryBrush}" /></TextBlock>
+                            <TextBlock Style="{StaticResource Text.Body}"><Run Text="Base clock: " /><Run Text="{Binding CpuBase, Mode=OneWay}" Foreground="{DynamicResource TextPrimaryBrush}" /></TextBlock>
+                        </WrapPanel>
+                    </StackPanel>
+                </DockPanel>
+            </Border>
+
+            <!-- Live dashboard -->
+            <Grid Margin="0,0,0,16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1.1*" />
+                    <ColumnDefinition Width="16" />
+                    <ColumnDefinition Width="2*" />
+                </Grid.ColumnDefinitions>
+                <Border Style="{StaticResource Card}">
+                    <StackPanel>
+                        <TextBlock Text="CPU TEMPERATURE" Style="{StaticResource Text.Caption}" />
+                        <TextBlock Text="{Binding CpuTemp}" Style="{StaticResource Text.Big}" FontSize="44" Margin="0,8,0,0" TextWrapping="Wrap"
+                                   Foreground="{Binding LevelStatus, Converter={StaticResource StatusBrush}}" />
+                        <Border Style="{StaticResource Pill}" Margin="0,6,0,0" Background="{Binding LevelStatus, Converter={StaticResource StatusSoftBrush}}">
+                            <TextBlock Text="{Binding LevelText}" FontWeight="Bold" FontSize="12" Foreground="{Binding LevelStatus, Converter={StaticResource StatusBrush}}" />
+                        </Border>
+                        <TextBlock Text="{Binding TempSource}" Style="{StaticResource Text.Body}" FontSize="11.5" Margin="0,10,0,0" />
+                        <TextBlock Style="{StaticResource Text.Body}" FontSize="11" Margin="0,8,0,0" Foreground="{DynamicResource TextMutedBrush}"
+                                   Text="&lt; 60 °C Cool · 60–75 Normal · 75–85 Warm · 85–95 Hot · ≥ 95 Critical. Guide values only – laptop CPUs are designed to run warm under load and protect themselves automatically." />
+                        <TextBlock Style="{StaticResource Text.Body}" FontSize="11" Margin="0,8,0,0" Foreground="{DynamicResource TextMutedBrush}"
+                                   Text="Exact CPU temperature: run HWiNFO (Settings → Shared Memory Support) or LibreHardwareMonitor in the background. ConstiBoost only reads their values; it installs no drivers. Otherwise the Windows ACPI thermal zone is used (indirect)." />
+                    </StackPanel>
+                </Border>
+                <Border Grid.Column="2" Style="{StaticResource Card}">
+                    <UniformGrid Columns="3">
+                        <StackPanel Margin="0,0,12,14"><TextBlock Text="CPU LOAD" Style="{StaticResource Text.Caption}" /><TextBlock Text="{Binding CpuLoad}" Style="{StaticResource LiveValue}" /></StackPanel>
+                        <StackPanel Margin="0,0,12,14"><TextBlock Text="CPU CLOCK" Style="{StaticResource Text.Caption}" /><TextBlock Text="{Binding CpuClock}" Style="{StaticResource LiveValue}" /></StackPanel>
+                        <StackPanel Margin="0,0,0,14"><TextBlock Text="GPU LOAD" Style="{StaticResource Text.Caption}" /><TextBlock Text="{Binding GpuLoad}" Style="{StaticResource LiveValue}" /></StackPanel>
+                        <StackPanel Margin="0,0,12,14"><TextBlock Text="GPU CLOCK" Style="{StaticResource Text.Caption}" /><TextBlock Text="{Binding GpuClock}" Style="{StaticResource LiveValue}" /></StackPanel>
+                        <StackPanel Margin="0,0,12,14"><TextBlock Text="GPU TEMPERATURE" Style="{StaticResource Text.Caption}" /><TextBlock Text="{Binding GpuTemp}" Style="{StaticResource LiveValue}" /></StackPanel>
+                        <StackPanel Margin="0,0,0,14"><TextBlock Text="RAM" Style="{StaticResource Text.Caption}" /><TextBlock Text="{Binding Ram}" Style="{StaticResource LiveValue}" FontSize="15" /></StackPanel>
+                        <StackPanel Margin="0,0,12,0"><TextBlock Text="FAN" Style="{StaticResource Text.Caption}" /><TextBlock Text="{Binding Fan}" Style="{StaticResource LiveValue}" FontSize="13" /></StackPanel>
+                        <StackPanel Margin="0,0,12,0"><TextBlock Text="POWER PROFILE" Style="{StaticResource Text.Caption}" /><TextBlock Text="{Binding Power}" Style="{StaticResource LiveValue}" FontSize="13" /></StackPanel>
+                        <StackPanel><TextBlock Text="ACTIVE PROCESSES" Style="{StaticResource Text.Caption}" /><TextBlock Text="{Binding Processes}" Style="{StaticResource LiveValue}" /></StackPanel>
+                    </UniformGrid>
+                </Border>
+            </Grid>
+
+            <!-- History -->
+            <Grid Margin="0,0,0,16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="2*" />
+                    <ColumnDefinition Width="16" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Border Style="{StaticResource Card}">
+                    <StackPanel>
+                        <TextBlock Text="TEMPERATURE HISTORY (LAST 5 MINUTES, 0–110 °C)" Style="{StaticResource Text.Caption}" />
+                        <ui:SparklineChart Height="110" Margin="0,10,0,0" Values="{Binding TempHistory}" Maximum="110" Capacity="300" Stroke="{DynamicResource BadBrush}" />
+                        <TextBlock Text="CPU LOAD (0–100 %)" Style="{StaticResource Text.Caption}" Margin="0,12,0,0" />
+                        <ui:SparklineChart Height="70" Margin="0,8,0,0" Values="{Binding LoadHistory}" Maximum="100" Capacity="300" Stroke="{DynamicResource ChartCpuBrush}" />
+                    </StackPanel>
+                </Border>
+                <Border Grid.Column="2" Style="{StaticResource Card}">
+                    <StackPanel>
+                        <TextBlock Text="PER MINUTE" Style="{StaticResource Text.Caption}" Margin="0,0,0,8" />
+                        <Grid Margin="0,0,0,4">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="50" /><ColumnDefinition Width="*" /><ColumnDefinition Width="50" /><ColumnDefinition Width="85" /></Grid.ColumnDefinitions>
+                            <TextBlock Text="Time" Style="{StaticResource Text.Caption}" />
+                            <TextBlock Grid.Column="1" Text="Temperature" Style="{StaticResource Text.Caption}" />
+                            <TextBlock Grid.Column="2" Text="CPU" Style="{StaticResource Text.Caption}" />
+                            <TextBlock Grid.Column="3" Text="Phase" Style="{StaticResource Text.Caption}" />
+                        </Grid>
+                        <ItemsControl ItemsSource="{Binding Minutes}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="0,2">
+                                        <Grid.ColumnDefinitions><ColumnDefinition Width="50" /><ColumnDefinition Width="*" /><ColumnDefinition Width="50" /><ColumnDefinition Width="85" /></Grid.ColumnDefinitions>
+                                        <TextBlock Text="{Binding Time}" Style="{StaticResource Text.Body}" FontSize="12" />
+                                        <TextBlock Grid.Column="1" Text="{Binding Temperature}" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="12" />
+                                        <TextBlock Grid.Column="2" Text="{Binding CpuLoad}" Style="{StaticResource Text.Body}" FontSize="12" />
+                                        <TextBlock Grid.Column="3" Text="{Binding Phase}" Foreground="{DynamicResource AccentBrush}" FontSize="12" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- Fortnite thermal mode -->
+            <Border Style="{StaticResource Card}" Margin="0,0,0,16" BorderBrush="{DynamicResource AccentBrush}"
+                    Visibility="{Binding IsFortniteRunning, Converter={StaticResource BoolToVis}}">
+                <StackPanel>
+                    <TextBlock Text="🎮 FORTNITE THERMAL MODE" Style="{StaticResource Text.H2}" />
+                    <TextBlock Text="Fortnite detected" Style="{StaticResource Text.Body}" Foreground="{DynamicResource GoodBrush}" />
+                    <WrapPanel Margin="0,10,0,0">
+                        <TextBlock Style="{StaticResource Text.Body}" Margin="0,0,24,0"><Run Text="CPU: " /><Run Text="{Binding CpuLoad, Mode=OneWay}" Foreground="{DynamicResource TextPrimaryBrush}" /></TextBlock>
+                        <TextBlock Style="{StaticResource Text.Body}" Margin="0,0,24,0"><Run Text="GPU: " /><Run Text="{Binding GpuLoad, Mode=OneWay}" Foreground="{DynamicResource TextPrimaryBrush}" /></TextBlock>
+                        <TextBlock Style="{StaticResource Text.Body}" Margin="0,0,24,0"><Run Text="RAM: " /><Run Text="{Binding Ram, Mode=OneWay}" Foreground="{DynamicResource TextPrimaryBrush}" /></TextBlock>
+                        <TextBlock Style="{StaticResource Text.Body}" Margin="0,0,24,0"><Run Text="Temperature: " /><Run Text="{Binding CpuTemp, Mode=OneWay}" Foreground="{DynamicResource TextPrimaryBrush}" /></TextBlock>
+                    </WrapPanel>
+                    <TextBlock Text="{Binding FpsText}" Style="{StaticResource Text.Body}" FontSize="12" Margin="0,4,0,0" />
+                    <ItemsControl ItemsSource="{Binding FortniteRecommendations}" Margin="0,10,0,0">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding StringFormat='• {0}'}" Style="{StaticResource Text.Body}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,2" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
+            <!-- Scan result -->
+            <StackPanel Visibility="{Binding HasScan, Converter={StaticResource BoolToVis}}">
+                <Grid Margin="0,0,0,16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1.4*" />
+                        <ColumnDefinition Width="16" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Border Style="{StaticResource Card}" BorderBrush="{DynamicResource AccentBrush}">
+                        <StackPanel>
+                            <TextBlock Text="SCAN COMPLETE" Style="{StaticResource Text.H2}" />
+                            <Grid Margin="0,12,0,0">
+                                <Grid.ColumnDefinitions><ColumnDefinition Width="170" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /></Grid.RowDefinitions>
+                                <TextBlock Text="Temperature:" Style="{StaticResource Text.Body}" />
+                                <TextBlock Grid.Column="1" Style="{StaticResource Text.Value}"><Run Text="{Binding ScanTemperature, Mode=OneWay}" /><Run Text="  " /><Run Text="{Binding ScanTempRange, Mode=OneWay}" FontSize="12" FontWeight="Normal" /></TextBlock>
+                                <TextBlock Grid.Row="1" Text="CPU Load:" Style="{StaticResource Text.Body}" />
+                                <TextBlock Grid.Row="1" Grid.Column="1" Style="{StaticResource Text.Value}"><Run Text="{Binding ScanCpuLoad, Mode=OneWay}" /><Run Text=" · " /><Run Text="{Binding ScanCpuClock, Mode=OneWay}" /></TextBlock>
+                                <TextBlock Grid.Row="2" Text="GPU:" Style="{StaticResource Text.Body}" />
+                                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding ScanGpu}" Style="{StaticResource Text.Value}" />
+                                <TextBlock Grid.Row="3" Text="VRAM:" Style="{StaticResource Text.Body}" />
+                                <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding ScanVram}" Style="{StaticResource Text.Value}" />
+                                <TextBlock Grid.Row="4" Text="RAM:" Style="{StaticResource Text.Body}" />
+                                <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding ScanRam}" Style="{StaticResource Text.Value}" />
+                                <TextBlock Grid.Row="5" Text="Power:" Style="{StaticResource Text.Body}" />
+                                <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding ScanPower}" Style="{StaticResource Text.Value}" />
+                                <TextBlock Grid.Row="6" Text="Main cause:" Style="{StaticResource Text.Body}" />
+                                <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding MainCause}" Style="{StaticResource Text.Value}" Foreground="{DynamicResource AccentBrush}" />
+                                <TextBlock Grid.Row="7" Text="Recommendations:" Style="{StaticResource Text.Body}" />
+                                <TextBlock Grid.Row="7" Grid.Column="1" Text="{Binding RecommendationCount}" Style="{StaticResource Text.Value}" />
+                                <TextBlock Grid.Row="8" Text="Potential improvements:" Style="{StaticResource Text.Body}" />
+                                <TextBlock Grid.Row="8" Grid.Column="1" Text="{Binding Potential}" Style="{StaticResource Text.Value}" Foreground="{Binding PotentialLevel, Converter={StaticResource StatusBrush}}" />
+                            </Grid>
+                            <TextBlock Text="{Binding ScanSource, StringFormat='Temperature source: {0}'}" Style="{StaticResource Text.Caption}" Margin="0,10,0,0" TextWrapping="Wrap" />
+                            <Button Style="{StaticResource AccentButton}" Content="APPLY SAFE OPTIMIZATIONS" Command="{Binding OptimizeCommand}" HorizontalAlignment="Left" Margin="0,16,0,0" />
+                        </StackPanel>
+                    </Border>
+                    <Border Grid.Column="2" Style="{StaticResource Card}">
+                        <StackPanel>
+                            <TextBlock Text="THERMAL HEALTH" Style="{StaticResource Text.Caption}" />
+                            <Grid Width="130" Height="130" Margin="0,12,0,0" HorizontalAlignment="Left">
+                                <ui:ScoreRing Value="{Binding Score}" RingBrush="{DynamicResource AccentBrush}" Thickness="11" />
+                                <TextBlock Text="{Binding ScoreText}" Style="{StaticResource Text.H2}" HorizontalAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" MaxWidth="100" />
+                            </Grid>
+                            <TextBlock Style="{StaticResource Text.Body}" Margin="0,12,0,0"><Run Text="Temperature: " /><Run Text="{Binding ScoreTemperature, Mode=OneWay}" Foreground="{DynamicResource TextPrimaryBrush}" /></TextBlock>
+                            <TextBlock Style="{StaticResource Text.Body}"><Run Text="CPU Load: " /><Run Text="{Binding ScanCpuLoad, Mode=OneWay}" Foreground="{DynamicResource TextPrimaryBrush}" /></TextBlock>
+                            <TextBlock Style="{StaticResource Text.Body}"><Run Text="Cooling: " /><Run Text="{Binding ScoreCooling, Mode=OneWay}" Foreground="{DynamicResource TextPrimaryBrush}" /></TextBlock>
+                            <TextBlock Style="{StaticResource Text.Body}"><Run Text="Background Load: " /><Run Text="{Binding ScoreBackground, Mode=OneWay}" Foreground="{DynamicResource TextPrimaryBrush}" /></TextBlock>
+                            <TextBlock Text="{Binding ScoreSummary}" Style="{StaticResource Text.Body}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,10,0,0" />
+                            <TextBlock Style="{StaticResource Text.Caption}" Margin="0,8,0,0" TextWrapping="Wrap"
+                                       Text="The score is a rough guide based on measured values – not a technical or safety statement." />
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+                <!-- Causes -->
+                <TextBlock Text="Thermal cause detection" Style="{StaticResource SectionTitle}" />
+                <ItemsControl ItemsSource="{Binding Causes}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Style="{StaticResource Card}" Margin="0,0,0,10" Padding="18">
+                                <StackPanel>
+                                    <TextBlock Text="{Binding Title}" Style="{StaticResource Text.H3}" Foreground="{Binding Severity, Converter={StaticResource StatusBrush}}" />
+                                    <TextBlock Text="{Binding Description}" Style="{StaticResource Text.Body}" Margin="0,4,0,0" />
+                                    <ItemsControl ItemsSource="{Binding Details}" Margin="0,6,0,0">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding StringFormat='• {0}'}" Style="{StaticResource Text.Body}" Foreground="{DynamicResource TextPrimaryBrush}" />
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <!-- Smart recommendations -->
+                <Border Style="{StaticResource Card}" Margin="0,6,0,16">
+                    <StackPanel>
+                        <TextBlock Text="SMART RECOMMENDATIONS" Style="{StaticResource Text.Caption}" Margin="0,0,0,8" />
+                        <ItemsControl ItemsSource="{Binding Recommendations}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding StringFormat='• {0}'}" Style="{StaticResource Text.Body}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,2" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+
+                <!-- Processes -->
+                <TabControl Margin="0,0,0,16">
+                    <TabItem Header="Top CPU">
+                        <Border Style="{StaticResource Card}"><ItemsControl ItemsSource="{Binding TopCpu}" ItemTemplate="{StaticResource ProcessList}" /></Border>
+                    </TabItem>
+                    <TabItem Header="Top RAM">
+                        <Border Style="{StaticResource Card}"><ItemsControl ItemsSource="{Binding TopRam}" ItemTemplate="{StaticResource ProcessList}" /></Border>
+                    </TabItem>
+                    <TabItem Header="Top GPU">
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <ItemsControl ItemsSource="{Binding TopGpu}" ItemTemplate="{StaticResource ProcessList}" />
+                                <TextBlock Text="No process used the GPU noticeably during the scan." Style="{StaticResource Text.Body}"
+                                           Visibility="{Binding TopGpu, Converter={StaticResource InvNullToVis}}" />
+                            </StackPanel>
+                        </Border>
+                    </TabItem>
+                </TabControl>
+
+                <!-- Findings -->
+                <DockPanel Margin="0,4,0,12">
+                    <Button DockPanel.Dock="Right" Style="{StaticResource HeroButton}" Content="❄️ OPTIMIZE TEMPERATURE" Command="{Binding OptimizeCommand}" VerticalAlignment="Center" />
+                    <StackPanel>
+                        <TextBlock Text="Ways to lower temperature" Style="{StaticResource Text.H2}" />
+                        <TextBlock Text="{Binding FoundText}" Style="{StaticResource Text.Body}" />
+                        <TextBlock Text="Sorted by priority: real CPU load → background → power mode → startup → overlays → cooling → optional Windows settings. No measure promises a specific temperature drop."
+                                   Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,4,0,0" />
+                    </StackPanel>
+                </DockPanel>
+                <ItemsControl ItemsSource="{Binding Findings}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Style="{StaticResource Card}" Margin="0,0,0,10" Padding="16">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <CheckBox IsChecked="{Binding IsSelected}" IsEnabled="{Binding CanApply}" VerticalAlignment="Top" Margin="0,4,14,0" />
+                                    <StackPanel Grid.Column="1">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="{Binding Problem}" Style="{StaticResource Text.H3}" />
+                                            <Border Style="{StaticResource Pill}" Margin="10,0,0,0" Background="{DynamicResource InputBrush}">
+                                                <TextBlock Text="{Binding Category}" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" />
+                                            </Border>
+                                            <Border Style="{StaticResource Pill}" Margin="6,0,0,0" Background="{DynamicResource InputBrush}">
+                                                <TextBlock Text="{Binding KindText}" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" />
+                                            </Border>
+                                        </StackPanel>
+                                        <Grid Margin="0,8,0,0">
+                                            <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition /></Grid.ColumnDefinitions>
+                                            <StackPanel>
+                                                <TextBlock Text="CURRENT" Style="{StaticResource Text.Caption}" />
+                                                <TextBlock Text="{Binding Current}" Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap" Margin="0,2,12,0" />
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="1">
+                                                <TextBlock Text="RECOMMENDED" Style="{StaticResource Text.Caption}" />
+                                                <TextBlock Text="{Binding Recommended}" Foreground="{DynamicResource AccentBrush}" TextWrapping="Wrap" Margin="0,2,0,0" />
+                                            </StackPanel>
+                                        </Grid>
+                                        <TextBlock Text="{Binding ImpactNote}" Style="{StaticResource Text.Body}" FontSize="12" Margin="0,8,0,0" />
+                                        <TextBlock Text="{Binding Tradeoff, StringFormat='Trade-off: {0}'}" Style="{StaticResource Text.Body}" FontSize="12" Foreground="{DynamicResource WarnBrush}"
+                                                   Visibility="{Binding Tradeoff, Converter={StaticResource NullToVis}}" />
+                                        <TextBlock Text="{Binding ResultText}" FontWeight="SemiBold" Margin="0,6,0,0" TextWrapping="Wrap"
+                                                   Foreground="{Binding ResultSuccess, Converter={StaticResource StatusBrush}}" Visibility="{Binding ResultText, Converter={StaticResource NullToVis}}" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2" Margin="12,0,0,0">
+                                        <TextBlock Text="POTENTIAL THERMAL IMPACT" Style="{StaticResource Text.Caption}" HorizontalAlignment="Right" />
+                                        <TextBlock Text="{Binding ImpactText}" FontWeight="Bold" HorizontalAlignment="Right" Foreground="{Binding Impact, Converter={StaticResource StatusBrush}}" />
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+
+            <!-- Before / after -->
+            <Border Style="{StaticResource Card}" Margin="0,6,0,16" Visibility="{Binding HasResult, Converter={StaticResource BoolToVis}}">
+                <StackPanel>
+                    <TextBlock Text="THERMAL RESULT" Style="{StaticResource Text.H2}" />
+                    <Grid Margin="0,12,0,0">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="2*" /><ColumnDefinition /><ColumnDefinition /><ColumnDefinition /></Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /></Grid.RowDefinitions>
+                        <TextBlock Grid.Column="1" Text="BEFORE" Style="{StaticResource Text.Caption}" />
+                        <TextBlock Grid.Column="2" Text="AFTER" Style="{StaticResource Text.Caption}" />
+                        <TextBlock Grid.Column="3" Text="DIFFERENCE" Style="{StaticResource Text.Caption}" />
+                        <TextBlock Grid.Row="1" Text="Temperature (average)" Style="{StaticResource Text.Body}" />
+                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding BeforeTemp}" Style="{StaticResource Text.Value}" />
+                        <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding AfterTemp}" Style="{StaticResource Text.Value}" />
+                        <TextBlock Grid.Row="1" Grid.Column="3" Text="{Binding TempDifference}" Style="{StaticResource Text.Value}" Foreground="{DynamicResource AccentBrush}" />
+                        <TextBlock Grid.Row="2" Text="CPU load" Style="{StaticResource Text.Body}" />
+                        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding CpuBefore}" Foreground="{DynamicResource TextPrimaryBrush}" />
+                        <TextBlock Grid.Row="2" Grid.Column="2" Text="{Binding CpuAfter}" Foreground="{DynamicResource TextPrimaryBrush}" />
+                        <TextBlock Grid.Row="3" Text="RAM" Style="{StaticResource Text.Body}" />
+                        <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding RamBefore}" Foreground="{DynamicResource TextPrimaryBrush}" />
+                        <TextBlock Grid.Row="3" Grid.Column="2" Text="{Binding RamAfter}" Foreground="{DynamicResource TextPrimaryBrush}" />
+                        <TextBlock Grid.Row="4" Text="Background processes" Style="{StaticResource Text.Body}" />
+                        <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding BgBefore}" Foreground="{DynamicResource TextPrimaryBrush}" />
+                        <TextBlock Grid.Row="4" Grid.Column="2" Text="{Binding BgAfter}" Foreground="{DynamicResource TextPrimaryBrush}" />
+                    </Grid>
+                    <TextBlock Text="{Binding ResultVerdict}" Style="{StaticResource Text.H3}" Margin="0,14,0,0" TextWrapping="Wrap" />
+                    <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,6,0,0"
+                               Text="Temperatures need a few minutes to settle and depend on workload and room temperature. Run the 60 second thermal test again later for a better comparison." />
+                </StackPanel>
+            </Border>
+
+            <!-- Thermal test -->
+            <Border Style="{StaticResource Card}" Margin="0,0,0,16">
+                <StackPanel>
+                    <TextBlock Text="🌡️ 60 SECOND THERMAL TEST" Style="{StaticResource Text.H2}" />
+                    <TextBlock Style="{StaticResource Text.Body}" Margin="0,4,0,0" Text="Measures the real temperature and CPU load every second for 60 seconds. Nothing is simulated." />
+                    <TextBlock Text="{Binding PreTest}" Style="{StaticResource Text.Body}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,8,0,0" Visibility="{Binding PreTest, Converter={StaticResource NullToVis}}" />
+                    <StackPanel Visibility="{Binding TestRunning, Converter={StaticResource BoolToVis}}" Margin="0,10,0,0">
+                        <TextBlock Text="{Binding TestSeconds, StringFormat='Monitoring… {0}/60 s'}" Style="{StaticResource Text.Body}" />
+                        <ProgressBar Value="{Binding TestSeconds, Mode=OneWay}" Maximum="60" Margin="0,6,0,0" />
+                    </StackPanel>
+                    <UniformGrid Columns="6" Margin="0,14,0,0" Visibility="{Binding HasTest, Converter={StaticResource BoolToVis}}">
+                        <StackPanel><TextBlock Text="START" Style="{StaticResource Text.Caption}" /><TextBlock Text="{Binding TestStart}" Style="{StaticResource LiveValue}" /></StackPanel>
+                        <StackPanel><TextBlock Text="AVERAGE" Style="{StaticResource Text.Caption}" /><TextBlock Text="{Binding TestAverage}" Style="{StaticResource LiveValue}" /></StackPanel>
+                        <StackPanel><TextBlock Text="MAXIMUM" Style="{StaticResource Text.Caption}" /><TextBlock Text="{Binding TestMax}" Style="{StaticResource LiveValue}" /></StackPanel>
+                        <StackPanel><TextBlock Text="FINAL" Style="{StaticResource Text.Caption}" /><TextBlock Text="{Binding TestFinal}" Style="{StaticResource LiveValue}" /></StackPanel>
+                        <StackPanel><TextBlock Text="AVG CPU LOAD" Style="{StaticResource Text.Caption}" /><TextBlock Text="{Binding TestLoad}" Style="{StaticResource LiveValue}" /></StackPanel>
+                        <StackPanel><TextBlock Text="AVG CPU CLOCK" Style="{StaticResource Text.Caption}" /><TextBlock Text="{Binding TestClock}" Style="{StaticResource LiveValue}" /></StackPanel>
+                    </UniformGrid>
+                    <TextBlock Text="{Binding TestInfo}" Style="{StaticResource Text.Caption}" Margin="0,8,0,0" TextWrapping="Wrap" />
+                </StackPanel>
+            </Border>
+
+            <!-- Cool gaming mode + comparison -->
+            <TextBlock Text="🎮 COOL GAMING MODE" Style="{StaticResource SectionTitle}" />
+            <TextBlock Text="Best possible gaming performance with less unnecessary heat. ConstiBoost never disables thermal protection, changes voltages or touches the fan control." Style="{StaticResource Text.Body}" Margin="0,-6,0,12" />
+            <ContentControl Content="{Binding GamingMode}" ContentTemplate="{StaticResource GamingModeCard}" Focusable="False" />
+
+            <Border Style="{StaticResource Card}" Margin="0,16,0,16">
+                <StackPanel>
+                    <TextBlock Text="PERFORMANCE vs. TEMPERATURE (MEASURED)" Style="{StaticResource Text.Caption}" Margin="0,0,0,8" />
+                    <Grid Margin="0,0,0,4">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="2*" /><ColumnDefinition /><ColumnDefinition /><ColumnDefinition /><ColumnDefinition /><ColumnDefinition /></Grid.ColumnDefinitions>
+                        <TextBlock Text="Profile" Style="{StaticResource Text.Caption}" />
+                        <TextBlock Grid.Column="1" Text="Avg temp" Style="{StaticResource Text.Caption}" />
+                        <TextBlock Grid.Column="2" Text="Max temp" Style="{StaticResource Text.Caption}" />
+                        <TextBlock Grid.Column="3" Text="Avg CPU clock" Style="{StaticResource Text.Caption}" />
+                        <TextBlock Grid.Column="4" Text="Avg load" Style="{StaticResource Text.Caption}" />
+                        <TextBlock Grid.Column="5" Text="Tested" Style="{StaticResource Text.Caption}" />
+                    </Grid>
+                    <ItemsControl ItemsSource="{Binding Comparison}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="0,3">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="2*" /><ColumnDefinition /><ColumnDefinition /><ColumnDefinition /><ColumnDefinition /><ColumnDefinition /></Grid.ColumnDefinitions>
+                                    <TextBlock Text="{Binding Profile}" Foreground="{DynamicResource TextPrimaryBrush}" FontWeight="SemiBold" />
+                                    <TextBlock Grid.Column="1" Text="{Binding AvgTemp}" Foreground="{DynamicResource TextPrimaryBrush}" />
+                                    <TextBlock Grid.Column="2" Text="{Binding MaxTemp}" Style="{StaticResource Text.Body}" />
+                                    <TextBlock Grid.Column="3" Text="{Binding AvgClock}" Foreground="{DynamicResource TextPrimaryBrush}" />
+                                    <TextBlock Grid.Column="4" Text="{Binding AvgLoad}" Style="{StaticResource Text.Body}" />
+                                    <TextBlock Grid.Column="5" Text="{Binding Time}" Style="{StaticResource Text.Body}" />
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <ItemsControl ItemsSource="{Binding ComparisonStatements}" Margin="0,10,0,0">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding StringFormat='• {0}'}" Style="{StaticResource Text.Body}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,2" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,6,0,0"
+                               Text="FPS are not shown because ConstiBoost has no supported FPS source – the CPU clock is used as a measured performance indicator instead." />
+                </StackPanel>
+            </Border>
+
+            <!-- Cooling + fan check -->
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1.5*" />
+                    <ColumnDefinition Width="16" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Border Style="{StaticResource Card}">
+                    <StackPanel>
+                        <TextBlock Text="🧊 COOLING CHECK" Style="{StaticResource Text.H2}" />
+                        <TextBlock Style="{StaticResource Text.Body}" Margin="0,6,0,8" Text="Things software cannot fix – often the biggest lever on laptops:" />
+                        <TextBlock Style="{StaticResource Text.Body}" Foreground="{DynamicResource TextPrimaryBrush}" Text="• Place the laptop on a hard, flat surface (desk, laptop stand)." />
+                        <TextBlock Style="{StaticResource Text.Body}" Foreground="{DynamicResource TextPrimaryBrush}" Text="• Do not block the vents – the Aspire 3 takes in air from the bottom." />
+                        <TextBlock Style="{StaticResource Text.Body}" Foreground="{DynamicResource TextPrimaryBrush}" Text="• Do not use it on a bed, blanket or your lap while gaming." />
+                        <TextBlock Style="{StaticResource Text.Body}" Foreground="{DynamicResource TextPrimaryBrush}" Text="• Consider the room temperature – a warm room means a warmer laptop." />
+                        <TextBlock Style="{StaticResource Text.Body}" Foreground="{DynamicResource TextPrimaryBrush}" Text="• Dust may reduce cooling performance. Consider checking the vents and cleaning them carefully if needed (laptop off, short bursts of compressed air, hold the fan still)." />
+                        <TextBlock Style="{StaticResource Text.Body}" Foreground="{DynamicResource TextPrimaryBrush}" Text="• A slightly raised rear edge can improve airflow under the laptop." />
+                    </StackPanel>
+                </Border>
+                <Border Grid.Column="2" Style="{StaticResource Card}">
+                    <StackPanel>
+                        <TextBlock Text="FAN CHECK" Style="{StaticResource Text.H2}" />
+                        <TextBlock Text="{Binding FanCheck}" Style="{StaticResource Text.Value}" Margin="0,10,0,0" TextWrapping="Wrap" TextTrimming="None" />
+                        <TextBlock Style="{StaticResource Text.Body}" Margin="0,8,0,0" FontSize="12"
+                                   Text="Many laptops (including most Acer Aspire models) do not report fan speed to Windows. If HWiNFO or LibreHardwareMonitor can read it, ConstiBoost shows it here. No RPM values are ever estimated." />
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <Border Style="{StaticResource InnerCard}" Margin="0,16,0,0">
+                <TextBlock Style="{StaticResource Text.Body}" FontSize="12"
+                           Text="Safety: ConstiBoost never changes CPU voltages, never modifies the BIOS or firmware, never controls or turns off fans, never disables thermal throttling or other protection, never disables Defender or Windows Update and never shows invented temperature values. No undervolting or overclocking." />
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

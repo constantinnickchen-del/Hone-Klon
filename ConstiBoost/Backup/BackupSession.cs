@@ -101,6 +101,13 @@ public sealed class BackupSession
         AddOnce(BackupKinds.PowerOverlay, "Previous power mode", overlay.Value.ToString(), PowerManager.OverlayName(overlay));
     }
 
+    public void CaptureProcessorMaxState(Guid scheme)
+    {
+        var value = PowerManager.GetProcessorMaxState(scheme)
+            ?? throw new InvalidOperationException("Maximum processor state could not be read.");
+        AddOnce(BackupKinds.ProcessorMaxState, "Previous maximum processor state", $"{scheme}|{value.ac}|{value.dc}", $"{PowerManager.GetFriendlyName(scheme)}: AC {value.ac} % / DC {value.dc} %");
+    }
+
     public void CaptureSystemParameter(string name, string data, string description) =>
         AddOnce(BackupKinds.SystemParameter, description, data, name);
 
@@ -151,7 +158,7 @@ public sealed class BackupSession
                 return;
             }
 
-            if ((kind == BackupKinds.PowerScheme || kind == BackupKinds.PowerOverlay) && Manifest.Entries.Any(e => e.Kind == kind))
+            if ((kind == BackupKinds.PowerScheme || kind == BackupKinds.PowerOverlay || kind == BackupKinds.ProcessorMaxState) && Manifest.Entries.Any(e => e.Kind == kind))
             {
                 return;
             }

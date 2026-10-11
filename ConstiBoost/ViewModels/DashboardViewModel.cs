@@ -86,6 +86,14 @@ public sealed class DashboardViewModel : PageViewModel
     public string RamUsage { get => _ramUsage; private set => SetProperty(ref _ramUsage, value); }
     public string ThermalText { get => _thermalText; private set => SetProperty(ref _thermalText, value); }
 
+    private string _cpuTempText = "Unavailable";
+    private string _gpuTempText = "Unavailable";
+    private string _tempSourceText = string.Empty;
+
+    public string CpuTempText { get => _cpuTempText; private set => SetProperty(ref _cpuTempText, value); }
+    public string GpuTempText { get => _gpuTempText; private set => SetProperty(ref _gpuTempText, value); }
+    public string TempSourceText { get => _tempSourceText; private set => SetProperty(ref _tempSourceText, value); }
+
     public override void OnNavigatedTo()
     {
         if (!_subscribed)
@@ -123,6 +131,9 @@ public sealed class DashboardViewModel : PageViewModel
             GpuUsage = MonitorService.Instance.GpuAvailable ? Formatting.Percent(s.GpuPercent) : Formatting.Unavailable;
             RamUsage = Formatting.Percent(s.RamPercent);
             ThermalText = s.Thermal is null ? "Unavailable" : $"{Math.Round(s.Thermal.Celsius)} °C";
+            CpuTempText = s.Sensors.CpuTemperature is double c ? $"{c:0} °C" : "Unavailable";
+            GpuTempText = s.Sensors.GpuTemperature is double g ? $"{g:0} °C" : "Unavailable";
+            TempSourceText = s.Sensors.Provider is { } p ? $"CPU/GPU values read from {p}." : string.Empty;
         });
     }
 

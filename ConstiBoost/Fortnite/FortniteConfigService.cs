@@ -142,6 +142,42 @@ public static class FortniteConfigService
         return delta <= 2 ? ImpactLevel.Low : delta <= 8 ? ImpactLevel.Medium : ImpactLevel.High;
     }
 
+    /// <summary>Changes only FrameRateLimit (used by Cool Gaming Mode). Returns the previous raw value.</summary>
+    public static (OperationResult result, string? previous) SetFrameRateLimit(string value, BackupSession? backup)
+    {
+        string path = ConfigPath;
+        if (!File.Exists(path))
+        {
+            return (OperationResult.Unavailable("Fortnite's settings file was not found."), null);
+        }
+
+        if (IsFortniteRunning())
+        {
+            return (OperationResult.Fail("Fortnite is running – it overwrites its settings on exit. Set the frame rate limit in-game instead."), null);
+        }
+
+        try
+        {
+            backup?.CaptureFile(path, "Fortnite GameUserSettings.ini");
+            var ini = IniDocument.Load(path);
+            string? old = ini.Get("FrameRateLimit");
+            if (old is null)
+            {
+                return (OperationResult.Unavailable("FrameRateLimit is not in your settings file. Set it in-game (Video > Frame Rate Limit)."), null);
+            }
+
+            ini.Set("FrameRateLimit", value);
+            ini.Save(path);
+            ActionLog.Success("Fortnite: FrameRateLimit", old, value);
+            return (OperationResult.Ok($"Fortnite frame rate limit: {old} → {value}"), old);
+        }
+        catch (Exception ex)
+        {
+            ActionLog.Failed("Fortnite: FrameRateLimit", null, value, Safe.Describe(ex));
+            return (OperationResult.Fail("The frame rate limit couldn't be changed.", Safe.Describe(ex)), null);
+        }
+    }
+
     public static (OperationResult result, List<string> missingKeys) Apply(FortnitePreset preset, PresetOptions options, BackupSession backup)
     {
         var missing = new List<string>();

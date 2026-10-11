@@ -51,11 +51,38 @@
                     </StackPanel>
                 </DockPanel>
                 <TextBlock Style="{StaticResource Text.Body}" Margin="0,12,0,0"
-                           Text="Temporary session: Game Mode ON, performance power mode, selected apps closed and background apps lowered in priority. Stopping Gaming Mode restores everything that can be restored (and reopens closed apps if enabled)." />
+                           Text="Temporary session: Game Mode ON, power settings for the chosen profile, selected apps closed and background apps lowered in priority. Stopping Gaming Mode restores everything that can be restored (and reopens closed apps if enabled)." />
+                <TextBlock Text="{Binding ActiveProfileText}" Style="{StaticResource Text.H3}" Foreground="{DynamicResource GoodBrush}" Margin="0,8,0,0"
+                           Visibility="{Binding IsActive, Converter={StaticResource BoolToVis}}" />
                 <StackPanel Visibility="{Binding IsActive, Converter={StaticResource InvBoolToVis}}">
+                    <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+                        <RadioButton Style="{StaticResource Segment}" GroupName="GamingProfile" IsChecked="{Binding IsMaxFps}">
+                            <StackPanel>
+                                <TextBlock Text="MAX FPS" FontWeight="Bold" />
+                                <TextBlock Text="max performance · warmer" FontSize="10.5" Opacity="0.75" />
+                            </StackPanel>
+                        </RadioButton>
+                        <RadioButton Style="{StaticResource Segment}" GroupName="GamingProfile" IsChecked="{Binding IsBalanced}">
+                            <StackPanel>
+                                <TextBlock Text="BALANCED" FontWeight="Bold" />
+                                <TextBlock Text="good FPS · cooler" FontSize="10.5" Opacity="0.75" />
+                            </StackPanel>
+                        </RadioButton>
+                        <RadioButton Style="{StaticResource Segment}" GroupName="GamingProfile" IsChecked="{Binding IsCool}">
+                            <StackPanel>
+                                <TextBlock Text="COOL" FontWeight="Bold" />
+                                <TextBlock Text="less heat · less FPS" FontSize="10.5" Opacity="0.75" />
+                            </StackPanel>
+                        </RadioButton>
+                    </StackPanel>
+                    <TextBlock Text="{Binding ProfileDescription}" Style="{StaticResource Text.Body}" Margin="0,8,0,0" />
                     <WrapPanel Margin="0,14,0,0">
                         <CheckBox Content="Lower priority of browsers/launchers" IsChecked="{Binding LowerPriority}" Margin="0,0,24,8" />
                         <CheckBox Content="Reopen closed apps afterwards" IsChecked="{Binding RelaunchClosedApps}" Margin="0,0,24,8" />
+                        <CheckBox IsChecked="{Binding CapFortniteFps}" Margin="0,0,24,8"
+                                  ToolTip="An FPS cap is one of the most effective ways to reduce gaming heat. Only applied while Fortnite is closed; the previous value is restored when Gaming Mode stops.">
+                            <TextBlock Text="{Binding FortniteFpsCap, StringFormat='Cap Fortnite at {0} FPS'}" />
+                        </CheckBox>
                         <Button Style="{StaticResource GhostButton}" Content="Choose apps to close…" Command="{Binding LoadAppsCommand}" Padding="0,0,0,8" />
                     </WrapPanel>
                     <ItemsControl ItemsSource="{Binding Apps}" Visibility="{Binding ShowApps, Converter={StaticResource BoolToVis}}" Margin="0,6,0,0">

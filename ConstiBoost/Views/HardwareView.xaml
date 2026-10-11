@@ -50,14 +50,14 @@
                             <Border Style="{StaticResource Card}" Margin="8,0">
                                 <StackPanel>
                                     <TextBlock Text="CPU TEMPERATURE" Style="{StaticResource Text.Caption}" />
-                                    <TextBlock Text="Temperature unavailable" Style="{StaticResource Text.Value}" Margin="0,8,0,0" />
-                                    <TextBlock Text="Requires a vendor kernel driver – not installed by ConstiBoost." Style="{StaticResource Text.Body}" FontSize="11.5" />
+                                    <TextBlock Text="{Binding CpuTempNow}" Style="{StaticResource Text.Value}" Margin="0,8,0,0" />
+                                    <TextBlock Text="Read from HWiNFO / LibreHardwareMonitor if running – ConstiBoost installs no drivers." Style="{StaticResource Text.Body}" FontSize="11.5" />
                                 </StackPanel>
                             </Border>
                             <Border Style="{StaticResource Card}" Margin="8,0">
                                 <StackPanel>
                                     <TextBlock Text="GPU TEMPERATURE" Style="{StaticResource Text.Caption}" />
-                                    <TextBlock Text="Temperature unavailable" Style="{StaticResource Text.Value}" Margin="0,8,0,0" />
+                                    <TextBlock Text="{Binding GpuTempNow}" Style="{StaticResource Text.Value}" Margin="0,8,0,0" />
                                     <TextBlock Text="Integrated GPUs share the CPU package sensor; no supported source." Style="{StaticResource Text.Body}" FontSize="11.5" />
                                 </StackPanel>
                             </Border>

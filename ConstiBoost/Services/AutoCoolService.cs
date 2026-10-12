@@ -6,6 +6,7 @@ using ConstiBoost.Core;
 using ConstiBoost.Logging;
 using ConstiBoost.Models;
 using ConstiBoost.WinSys;
+using ConstiBoost.Localization;
 
 namespace ConstiBoost.Services;
 
@@ -146,14 +147,14 @@ public sealed class AutoCoolService
             if (!changed)
             {
                 // Already in the coolest software settings – nothing to do; remind about cooling instead.
-                NotificationService.Instance.Show($"❄️ Auto-Cool: temperature stayed above {trigger} °C, but the power settings are already balanced. Check CPU load and cooling conditions.", NotificationKind.Warning);
+                NotificationService.Instance.Show(L.F("❄️ Auto-Cool: temperature stayed above {0} °C, but the power settings are already balanced. Check CPU load and cooling conditions.", trigger), NotificationKind.Warning);
                 _hotSince = null;
                 return;
             }
 
             _state = state;
             File.WriteAllText(StateFile, JsonSerializer.Serialize(state));
-            NotificationService.Instance.Show($"❄️ Auto-Cool engaged: the temperature stayed above {trigger} °C for a minute, so ConstiBoost switched to cooler power settings. They are restored automatically when it cools down.", NotificationKind.Info);
+            NotificationService.Instance.Show(L.F("❄️ Auto-Cool engaged: the temperature stayed above {0} °C for a minute, so ConstiBoost switched to cooler power settings. They are restored automatically when it cools down.", trigger), NotificationKind.Info);
             Changed?.Invoke();
         }
         catch (Exception ex)
@@ -193,7 +194,7 @@ public sealed class AutoCoolService
             }
 
             ActionLog.Success("Auto-Cool released", "Engaged", $"Restored ({reason})");
-            NotificationService.Instance.Show($"❄️ Auto-Cool released ({reason}) – previous power settings restored.", NotificationKind.Info);
+            NotificationService.Instance.Show(L.F("❄️ Auto-Cool released ({0}) – previous power settings restored.", L.T(reason)), NotificationKind.Info);
         }
         catch (Exception ex)
         {

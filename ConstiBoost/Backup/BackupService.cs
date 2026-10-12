@@ -7,6 +7,7 @@ using ConstiBoost.Core;
 using ConstiBoost.Logging;
 using ConstiBoost.Services;
 using ConstiBoost.WinSys;
+using ConstiBoost.Localization;
 
 namespace ConstiBoost.Backup;
 
@@ -64,7 +65,7 @@ public sealed class BackupService
             string[] parts = (entry.Data ?? string.Empty).Split('|');
             var result = parts.Length == 3
                 ? await PowerTweakService.SetProcessorMaxStateAsync(Guid.Parse(parts[0]), uint.Parse(parts[1]), uint.Parse(parts[2]), "Restore: " + entry.Description)
-                : OperationResult.Fail("Invalid backup entry");
+                : OperationResult.Fail(L.T("Invalid backup entry"));
             if (result.Success)
             {
                 restored++;
@@ -72,7 +73,7 @@ public sealed class BackupService
             else
             {
                 failed++;
-                messages.Add($"{entry.Description}: {result.TechnicalDetails ?? result.Message}");
+                messages.Add($"{entry.DisplayDescription}: {result.TechnicalDetails ?? result.Message}");
             }
         }
 
@@ -82,7 +83,7 @@ public sealed class BackupService
             var def = parts.Length == 4 ? PowerSettings.Find(Guid.Parse(parts[1]), Guid.Parse(parts[2])) : null;
             var result = def != null
                 ? await PowerTweakService.SetPowerSettingAsync(Guid.Parse(parts[0]), def, uint.Parse(parts[3]), "Restore: " + entry.Description)
-                : OperationResult.Fail("Invalid backup entry");
+                : OperationResult.Fail(L.T("Invalid backup entry"));
             if (result.Success)
             {
                 restored++;
@@ -90,7 +91,7 @@ public sealed class BackupService
             else
             {
                 failed++;
-                messages.Add($"{entry.Description}: {result.TechnicalDetails ?? result.Message}");
+                messages.Add($"{entry.DisplayDescription}: {result.TechnicalDetails ?? result.Message}");
             }
         }
 
@@ -106,9 +107,9 @@ public sealed class BackupService
             {
                 failed++;
                 string reason = Safe.Describe(ex);
-                messages.Add($"{entry.Description}: {reason}");
+                messages.Add($"{entry.DisplayDescription}: {reason}");
                 ActionLog.Failed("Restore: " + entry.Description, null, Describe(entry), reason);
-                AppLog.Error("Restore failed for " + entry.Summary, ex);
+                AppLog.Error("Restore failed for " + entry.Description + " (" + entry.Kind + ")", ex);
             }
         }
 

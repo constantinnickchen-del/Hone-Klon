@@ -5,6 +5,7 @@ using System.Text.Json;
 using ConstiBoost.Core;
 using ConstiBoost.Logging;
 using ConstiBoost.WinSys;
+using ConstiBoost.Localization;
 
 namespace ConstiBoost.Services;
 
@@ -26,6 +27,8 @@ public static class ElevatedTaskRunner
 
     public static int RunFromCommandLine(string taskFile, string resultFile)
     {
+        // The helper runs as its own process: use the same app language for the messages it returns.
+        Safe.Try(() => L.Init(SettingsService.Instance.Current.Language), "Helper language");
         ElevatedResult result;
         try
         {
@@ -65,7 +68,7 @@ public static class ElevatedTaskRunner
                         snapshot.Restore();
                     }
 
-                    return new ElevatedResult { Success = true, Message = $"{task.Snapshots.Count} value(s) restored." };
+                    return new ElevatedResult { Success = true, Message = L.F("{0} value(s) restored.", task.Snapshots.Count) };
 
                 case ElevatedOperations.RegistrySetDword:
                     foreach (var write in task.DwordWrites)
@@ -74,7 +77,7 @@ public static class ElevatedTaskRunner
                         RegistryHelper.WriteDword(write.Hive, write.KeyPath, write.ValueName, write.Value);
                     }
 
-                    return new ElevatedResult { Success = true, Message = $"{task.DwordWrites.Count} value(s) written." };
+                    return new ElevatedResult { Success = true, Message = L.F("{0} value(s) written.", task.DwordWrites.Count) };
 
                 case ElevatedOperations.CleanPaths:
                 {
@@ -94,7 +97,7 @@ public static class ElevatedTaskRunner
                     return new ElevatedResult
                     {
                         Success = true,
-                        Message = $"{deleted} file(s) removed, {skipped} skipped (in use or protected).",
+                        Message = L.F("{0} file(s) removed, {1} skipped (in use or protected).", deleted, skipped),
                         FreedBytes = freed,
                         DeletedFiles = deleted,
                         SkippedFiles = skipped,
@@ -103,14 +106,14 @@ public static class ElevatedTaskRunner
 
                 case ElevatedOperations.ProcessorMaxState:
                     PowerManager.SetProcessorMaxState(Guid.Parse(task.PowerScheme ?? string.Empty), task.AcValue, task.DcValue);
-                    return new ElevatedResult { Success = true, Message = "Maximum processor state set." };
+                    return new ElevatedResult { Success = true, Message = L.T("Maximum processor state set.") };
 
                 case ElevatedOperations.FrameCapture:
                     return FrameCaptureRunner.Run(task);
 
                 case ElevatedOperations.PowerSetting:
                     PowerSettings.WriteAc(Guid.Parse(task.PowerScheme ?? string.Empty), Guid.Parse(task.PowerSubgroup ?? string.Empty), Guid.Parse(task.PowerSettingId ?? string.Empty), task.AcValue);
-                    return new ElevatedResult { Success = true, Message = "Power setting written." };
+                    return new ElevatedResult { Success = true, Message = L.T("Power setting written.") };
 
                 case ElevatedOperations.ServiceControl:
                 {
@@ -135,7 +138,7 @@ public static class ElevatedTaskRunner
                         sc.WaitForStatus(System.ServiceProcess.ServiceControllerStatus.Stopped, TimeSpan.FromSeconds(20));
                     }
 
-                    return new ElevatedResult { Success = true, Message = $"{name}: {(task.ServiceStart ? "running" : "paused")}" };
+                    return new ElevatedResult { Success = true, Message = $"{name}: {(task.ServiceStart ? L.T("running") : L.T("paused"))}" };
                 }
 
                 case ElevatedOperations.CreateRestorePoint:

@@ -1,5 +1,6 @@
 using ConstiBoost.Core;
 using ConstiBoost.WinSys;
+using ConstiBoost.Localization;
 
 namespace ConstiBoost.Models;
 
@@ -52,9 +53,10 @@ public sealed class ProcessRow : ObservableObject
         }
     }
 
+    /// <summary>Shown in the app language; the stored value stays English ("Running", "Service", …).</summary>
     public string Status
     {
-        get => _status;
+        get => L.T(_status);
         set => SetProperty(ref _status, value);
     }
 
@@ -65,8 +67,8 @@ public sealed class ProcessRow : ObservableObject
 
     public string ProtectionText => Protection switch
     {
-        ProcessProtection.Critical => "Protected",
-        ProcessProtection.Caution => "Caution",
+        ProcessProtection.Critical => L.T("Protected"),
+        ProcessProtection.Caution => L.T("Caution"),
         _ => string.Empty,
     };
 

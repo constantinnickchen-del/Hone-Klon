@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using ConstiBoost.Models;
 using ConstiBoost.WinSys;
+using ConstiBoost.Localization;
 
 namespace ConstiBoost.Services;
 
@@ -161,7 +162,7 @@ public static class BackgroundAppsService
         }
 
         return closed > 0
-            ? (true, $"{group.DisplayName} closed.")
-            : (false, lastError ?? $"{group.DisplayName} could not be closed.");
+            ? (true, L.F("{0} closed.", group.DisplayName))
+            : (false, lastError ?? L.F("{0} could not be closed.", group.DisplayName));
     }
 }

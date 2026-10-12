@@ -10,6 +10,7 @@ using ConstiBoost.Fortnite;
 using ConstiBoost.Logging;
 using ConstiBoost.Models;
 using ConstiBoost.WinSys;
+using ConstiBoost.Localization;
 
 namespace ConstiBoost.Services;
 
@@ -112,7 +113,7 @@ public sealed class GamingModeService : ObservableObject
         }
         catch (Exception ex)
         {
-            messages.Add("Game Mode: " + Safe.Describe(ex));
+            messages.Add(L.T("Game Mode: ") + Safe.Describe(ex));
             ActionLog.Failed("Gaming Mode: Game Mode", null, "ON", Safe.Describe(ex));
         }
 
@@ -153,7 +154,7 @@ public sealed class GamingModeService : ObservableObject
         }
         catch (Exception ex)
         {
-            messages.Add("Power: " + Safe.Describe(ex));
+            messages.Add(L.T("Power: ") + Safe.Describe(ex));
             ActionLog.Failed("Gaming Mode: Power", null, ProfileName(options.Profile), Safe.Describe(ex));
         }
 
@@ -167,7 +168,7 @@ public sealed class GamingModeService : ObservableObject
             if (!r.Success)
             {
                 state.ProcessorMaxScheme = null;
-                messages.Add("CPU boost limit: " + (r.TechnicalDetails ?? r.Message));
+                messages.Add(L.T("CPU boost limit: ") + (r.TechnicalDetails ?? r.Message));
             }
         }
 
@@ -275,7 +276,7 @@ public sealed class GamingModeService : ObservableObject
         }
         catch (Exception ex)
         {
-            messages.Add("Game Mode: " + Safe.Describe(ex));
+            messages.Add(L.T("Game Mode: ") + Safe.Describe(ex));
         }
 
         try
@@ -296,7 +297,7 @@ public sealed class GamingModeService : ObservableObject
         }
         catch (Exception ex)
         {
-            messages.Add("Power: " + Safe.Describe(ex));
+            messages.Add(L.T("Power: ") + Safe.Describe(ex));
             ActionLog.Failed("Gaming Mode: restore power", null, null, Safe.Describe(ex));
         }
 
@@ -305,7 +306,7 @@ public sealed class GamingModeService : ObservableObject
             var r = await PowerTweakService.SetProcessorMaxStateAsync(Guid.Parse(state.ProcessorMaxScheme), ac, dc, "Gaming Mode: restore maximum processor state");
             if (!r.Success)
             {
-                messages.Add("CPU boost limit: " + (r.TechnicalDetails ?? r.Message));
+                messages.Add(L.T("CPU boost limit: ") + (r.TechnicalDetails ?? r.Message));
             }
         }
 

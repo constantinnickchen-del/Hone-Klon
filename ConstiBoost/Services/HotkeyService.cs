@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
 using ConstiBoost.Logging;
+using ConstiBoost.Localization;
 
 namespace ConstiBoost.Services;
 
@@ -27,7 +28,7 @@ public sealed class HotkeyService : IDisposable
 
     public static HotkeyService Instance { get; } = new();
 
-    public string Status { get; private set; } = "Off";
+    public string Status { get; private set; } = L.T("Off");
 
     public void Attach(Window window)
     {
@@ -42,7 +43,7 @@ public sealed class HotkeyService : IDisposable
         bool g = RegisterHotKey(handle, IdGaming, MOD_CONTROL | MOD_ALT | MOD_NOREPEAT, 0x47); // G
         bool o = RegisterHotKey(handle, IdOverlay, MOD_CONTROL | MOD_ALT | MOD_NOREPEAT, 0x4F); // O
         bool w = RegisterHotKey(handle, IdWindow, MOD_CONTROL | MOD_ALT | MOD_NOREPEAT, 0x43); // C
-        Status = g && o && w ? "Ctrl+Alt+G Gaming Mode · Ctrl+Alt+O Overlay · Ctrl+Alt+C ConstiBoost" : "Some hotkeys are used by another program";
+        Status = g && o && w ? L.T("Ctrl+Alt+G Gaming Mode · Ctrl+Alt+O Overlay · Ctrl+Alt+C ConstiBoost") : L.T("Some hotkeys are used by another program");
         if (!(g && o && w))
         {
             AppLog.Warn("Hotkeys partly unavailable (already registered by another app).");

@@ -1,4 +1,5 @@
 using ConstiBoost.Core;
+using ConstiBoost.Localization;
 
 namespace ConstiBoost.Models;
 
@@ -43,5 +44,5 @@ public sealed class StartupEntry : ObservableObject
 
     public bool CanToggle => !IsProtected;
 
-    public string StatusText => IsEnabled ? "Enabled" : "Disabled";
+    public string StatusText => IsEnabled ? L.T("Enabled") : L.T("Disabled");
 }

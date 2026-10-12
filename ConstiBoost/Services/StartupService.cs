@@ -11,6 +11,7 @@ using ConstiBoost.Logging;
 using ConstiBoost.Models;
 using ConstiBoost.WinSys;
 using Microsoft.Win32;
+using ConstiBoost.Localization;
 
 namespace ConstiBoost.Services;
 
@@ -55,11 +56,11 @@ public static class StartupService
     public static List<StartupEntry> GetEntries()
     {
         var list = new List<StartupEntry>();
-        ReadRunKey(list, "HKCU", RunKey, "Registry (current user)", ApprovedBase + "Run", false);
-        ReadRunKey(list, "HKLM", RunKey, "Registry (all users)", ApprovedBase + "Run", true);
-        ReadRunKey(list, "HKLM", RunKey32, "Registry (all users, 32-bit)", ApprovedBase + "Run32", true);
-        ReadFolder(list, Environment.GetFolderPath(Environment.SpecialFolder.Startup), "Startup folder (current user)", "HKCU", false);
-        ReadFolder(list, Environment.GetFolderPath(Environment.SpecialFolder.CommonStartup), "Startup folder (all users)", "HKLM", true);
+        ReadRunKey(list, "HKCU", RunKey, L.T("Registry (current user)"), ApprovedBase + "Run", false);
+        ReadRunKey(list, "HKLM", RunKey, L.T("Registry (all users)"), ApprovedBase + "Run", true);
+        ReadRunKey(list, "HKLM", RunKey32, L.T("Registry (all users, 32-bit)"), ApprovedBase + "Run32", true);
+        ReadFolder(list, Environment.GetFolderPath(Environment.SpecialFolder.Startup), L.T("Startup folder (current user)"), "HKCU", false);
+        ReadFolder(list, Environment.GetFolderPath(Environment.SpecialFolder.CommonStartup), L.T("Startup folder (all users)"), "HKLM", true);
         return list.OrderBy(e => e.IsProtected).ThenBy(e => e.Name, StringComparer.OrdinalIgnoreCase).ToList();
     }
 
@@ -120,7 +121,7 @@ public static class StartupService
 
     private static StartupEntry Create(string name, string command, string? target, string location, string hive, string approvedKey, string approvedValue, bool admin)
     {
-        string publisher = "Unknown publisher";
+        string publisher = L.T("Unknown publisher");
         if (target != null && File.Exists(target))
         {
             try
@@ -143,12 +144,12 @@ public static class StartupService
         bool isMicrosoftSystem = publisher.StartsWith("Microsoft", StringComparison.OrdinalIgnoreCase) && inWindows;
         bool isProtected = inWindows || isMicrosoftSystem || Protected.Any(p => haystack.Contains(p));
         string protectionReason = isProtected
-            ? (inWindows ? "Windows system component" : "System, driver or hardware utility – kept enabled for safety")
+            ? (inWindows ? L.T("Windows system component") : L.T("System, driver or hardware utility – kept enabled for safety"))
             : string.Empty;
 
-        string impact = HighImpact.Any(h => haystack.Contains(h)) ? "High (typical)"
-            : MediumImpact.Any(m => haystack.Contains(m)) ? "Medium (typical)"
-            : "Not measured";
+        string impact = HighImpact.Any(h => haystack.Contains(h)) ? L.T("High (typical)")
+            : MediumImpact.Any(m => haystack.Contains(m)) ? L.T("Medium (typical)")
+            : L.T("Not measured");
 
         return new StartupEntry
         {
@@ -205,7 +206,7 @@ public static class StartupService
     {
         if (entry.IsProtected)
         {
-            return OperationResult.Fail($"{entry.Name} is protected: {entry.ProtectionReason}");
+            return OperationResult.Fail(L.F("{0} is protected: {1}", entry.Name, entry.ProtectionReason));
         }
 
         string oldText = entry.IsEnabled ? "Enabled" : "Disabled";
@@ -240,7 +241,7 @@ public static class StartupService
                 if (!result.Success)
                 {
                     ActionLog.Failed(action, oldText, newText, result.Message);
-                    return OperationResult.Fail("This change couldn't be applied: " + result.Message);
+                    return OperationResult.Fail(L.T("This change couldn't be applied: ") + result.Message);
                 }
             }
 
@@ -248,17 +249,17 @@ public static class StartupService
             if (entry.IsEnabled != enabled)
             {
                 ActionLog.Failed(action, oldText, newText, "Value did not change after writing");
-                return OperationResult.Fail("Windows did not accept the change.");
+                return OperationResult.Fail(L.T("Windows did not accept the change."));
             }
 
             ActionLog.Success(action, oldText, newText);
-            return OperationResult.Ok($"{entry.Name}: {newText}");
+            return OperationResult.Ok($"{entry.Name}: {L.T(newText)}");
         }
         catch (Exception ex)
         {
             ActionLog.Failed(action, oldText, newText, Safe.Describe(ex));
             AppLog.Error("Startup toggle failed", ex);
-            return OperationResult.Fail("This change couldn't be applied: " + Safe.Describe(ex));
+            return OperationResult.Fail(L.T("This change couldn't be applied: ") + Safe.Describe(ex));
         }
     }
 

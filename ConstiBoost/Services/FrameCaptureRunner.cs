@@ -7,6 +7,7 @@ using System.Text.Json;
 using System.Threading;
 using ConstiBoost.Logging;
 using ConstiBoost.WinSys;
+using ConstiBoost.Localization;
 
 namespace ConstiBoost.Services;
 
@@ -37,7 +38,7 @@ public static class FrameCaptureRunner
     {
         if (string.IsNullOrEmpty(task.OutputFile) || string.IsNullOrEmpty(task.StopFile))
         {
-            return new ElevatedResult { Success = false, Message = "Invalid capture task." };
+            return new ElevatedResult { Success = false, Message = L.T("Invalid capture task.") };
         }
 
         var names = new Dictionary<int, string>();
@@ -86,12 +87,12 @@ public static class FrameCaptureRunner
             }
 
             capture.Stop();
-            return new ElevatedResult { Success = true, Message = "Capture finished." };
+            return new ElevatedResult { Success = true, Message = L.T("Capture finished.") };
         }
         catch (Exception ex)
         {
             AppLog.Error("Frame capture failed", ex);
-            return new ElevatedResult { Success = false, Message = "Frame capture failed: " + ex.Message };
+            return new ElevatedResult { Success = false, Message = L.T("Frame capture failed: ") + ex.Message };
         }
     }
 

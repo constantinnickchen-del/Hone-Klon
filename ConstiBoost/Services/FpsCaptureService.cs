@@ -10,6 +10,7 @@ using ConstiBoost.Core;
 using ConstiBoost.Logging;
 using ConstiBoost.Models;
 using ConstiBoost.WinSys;
+using ConstiBoost.Localization;
 
 namespace ConstiBoost.Services;
 
@@ -123,7 +124,7 @@ public sealed class FpsCaptureService
             {
                 if (_helper != null && !ReferenceEquals(_helper, Process.GetCurrentProcess()) && SafeExited(_helper))
                 {
-                    LastError = "The FPS capture helper stopped unexpectedly.";
+                    LastError = L.T("The FPS capture helper stopped unexpectedly.");
                 }
 
                 return;
@@ -232,7 +233,7 @@ public sealed class FpsCaptureService
                 lock (collected)
                 {
                     collected.Add(entry);
-                    progress.Report($"Measuring {targetName}… {collected.Count}/{seconds} s · {entry.Frames} FPS");
+                    progress.Report(L.F("Measuring {0}… {1}/{2} s · {3} FPS", targetName, collected.Count, seconds, entry.Frames));
                     if (collected.Count >= seconds)
                     {
                         tcs.TrySetResult(true);
@@ -241,7 +242,7 @@ public sealed class FpsCaptureService
             }
             else
             {
-                progress.Report($"Waiting for the game to render frames… ({(int)(DateTime.UtcNow - waitStart).TotalSeconds} s) – start or switch to the game now.");
+                progress.Report(L.F("Waiting for the game to render frames… ({0} s) – start or switch to the game now.", (int)(DateTime.UtcNow - waitStart).TotalSeconds));
                 if (DateTime.UtcNow - waitStart > TimeSpan.FromMinutes(5))
                 {
                     tcs.TrySetResult(false);
@@ -257,7 +258,7 @@ public sealed class FpsCaptureService
                 bool ok = await tcs.Task;
                 if (!ok)
                 {
-                    LastError = "No frames from the game were detected. Only DirectX games can be measured (OpenGL/Vulkan are not supported yet).";
+                    LastError = L.T("No frames from the game were detected. Only DirectX games can be measured (OpenGL/Vulkan are not supported yet).");
                     return null;
                 }
             }

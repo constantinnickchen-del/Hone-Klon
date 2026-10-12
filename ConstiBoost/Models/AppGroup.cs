@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using ConstiBoost.Core;
+using ConstiBoost.Localization;
 
 namespace ConstiBoost.Models;
 
@@ -25,6 +26,6 @@ public sealed class AppGroup : ObservableObject
     public string RamText => Formatting.Bytes(RamBytes);
 
     public string Hint => IsKnownBackgroundApp
-        ? "Background app – safe to close while gaming"
-        : "Open app – closes like clicking X (you may be asked to save)";
+        ? L.T("Background app – safe to close while gaming")
+        : L.T("Open app – closes like clicking X (you may be asked to save)");
 }

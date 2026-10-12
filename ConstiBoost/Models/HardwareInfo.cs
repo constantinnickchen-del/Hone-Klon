@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using ConstiBoost.Localization;
 
 namespace ConstiBoost.Models;
 
@@ -58,5 +59,5 @@ public sealed class DriveSummary
 
     public double UsedPercent => TotalBytes > 0 ? 100.0 * (TotalBytes - FreeBytes) / TotalBytes : 0;
 
-    public string Summary => $"{Core.Formatting.Bytes(FreeBytes)} free of {Core.Formatting.Bytes(TotalBytes)}";
+    public string Summary => L.F("{0} free of {1}", Core.Formatting.Bytes(FreeBytes), Core.Formatting.Bytes(TotalBytes));
 }

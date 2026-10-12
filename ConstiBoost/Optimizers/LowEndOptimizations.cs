@@ -5,6 +5,7 @@ using ConstiBoost.Core;
 using ConstiBoost.Logging;
 using ConstiBoost.Models;
 using ConstiBoost.WinSys;
+using ConstiBoost.Localization;
 
 namespace ConstiBoost.Optimizers;
 
@@ -24,13 +25,13 @@ public sealed class DesktopEffectsOptimization : Optimization
     };
 
     public override string Id => "desktopfx";
-    public override string Name => "Desktop effects (best performance)";
-    public override string Category => "Visual";
+    public override string Name => L.T("Desktop effects (best performance)");
+    public override string Category => L.T("Visual");
     public override string Icon => "";
 
-    public override string WhatItDoes => "Turns off menu, tooltip and list animations, cursor shadow, selection fade and live window contents while dragging – like 'Adjust for best performance' in System Properties, but font smoothing stays on.";
+    public override string WhatItDoes => L.T("Turns off menu, tooltip and list animations, cursor shadow, selection fade and live window contents while dragging – like 'Adjust for best performance' in System Properties, but font smoothing stays on.");
 
-    public override string Downsides => "Windows looks plainer and menus appear instantly. No functional change.";
+    public override string Downsides => L.T("Windows looks plainer and menus appear instantly. No functional change.");
 
     public override bool PreselectWhenNeeded(OptimizationContext context) => context.Profile.IsLowPowerIntegrated;
 
@@ -38,7 +39,7 @@ public sealed class DesktopEffectsOptimization : Optimization
     {
         var states = Effects.Select(e => (e.name, value: SystemParametersTweaks.GetBool(e.get))).ToList();
         int on = states.Count(s => s.value == true);
-        CurrentState = states.All(s => s.value is null) ? Formatting.Unavailable : $"{on} of {Effects.Length} effects on";
+        CurrentState = states.All(s => s.value is null) ? Formatting.Unavailable : L.F("{0} of {1} effects on", on, Effects.Length);
         RecommendedState = context.Profile.IsLowPowerIntegrated ? "All off" : "Your choice";
         Reason = "Less desktop GPU/CPU work on integrated graphics and a snappier feeling Windows.";
         NeedsChange = on > 0 && context.Profile.IsLowPowerIntegrated;
@@ -66,7 +67,7 @@ public sealed class DesktopEffectsOptimization : Optimization
         }
 
         ActionLog.Success(Name, CurrentState, "All off");
-        return Task.FromResult(OperationResult.Ok($"{changed} effect(s) turned off"));
+        return Task.FromResult(OperationResult.Ok(L.F("{0} effect(s) turned off", changed)));
     }
 }
 
@@ -86,18 +87,18 @@ public sealed class SuggestionsOptimization : Optimization
     };
 
     public override string Id => "suggestions";
-    public override string Name => "Windows tips & suggestions";
-    public override string Category => "Background";
+    public override string Name => L.T("Windows tips & suggestions");
+    public override string Category => L.T("Background");
     public override string Icon => "";
 
-    public override string WhatItDoes => "Turns off Windows tips, Start menu suggestions and the post-update welcome screens (the same switches as in Settings > Notifications / Personalization).";
+    public override string WhatItDoes => L.T("Turns off Windows tips, Start menu suggestions and the post-update welcome screens (the same switches as in Settings > Notifications / Personalization).");
 
-    public override string Downsides => "You no longer get Windows tips. Security notifications and updates are not affected.";
+    public override string Downsides => L.T("You no longer get Windows tips. Security notifications and updates are not affected.");
 
     protected override void RefreshCore(OptimizationContext context)
     {
         int on = Values.Count(v => (RegistryHelper.ReadDword("HKCU", Key, v) ?? 1) != 0);
-        CurrentState = $"{on} of {Values.Length} on";
+        CurrentState = L.F("{0} of {1} on", on, Values.Length);
         RecommendedState = "All off";
         Reason = "Fewer background content downloads and pop-ups – small effect, but less distraction while gaming.";
         NeedsChange = on > 0;
@@ -113,6 +114,6 @@ public sealed class SuggestionsOptimization : Optimization
         }
 
         ActionLog.Success(Name, old, "All off");
-        return Task.FromResult(OperationResult.Ok($"{old} → all off"));
+        return Task.FromResult(OperationResult.Ok(L.F("{0} → all off", old)));
     }
 }

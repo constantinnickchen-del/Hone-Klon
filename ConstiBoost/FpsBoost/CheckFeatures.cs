@@ -9,6 +9,7 @@ using ConstiBoost.Hardware;
 using ConstiBoost.Models;
 using ConstiBoost.Services;
 using ConstiBoost.WinSys;
+using ConstiBoost.Localization;
 
 namespace ConstiBoost.FpsBoost;
 
@@ -23,11 +24,11 @@ public sealed class FocusToggleFeature : FpsBoostFeature
         Func<AppSettings, bool> get, Action<AppSettings, bool> set, Func<string?>? availability = null)
     {
         Id = id;
-        Name = name;
+        Name = L.T(name);
         Icon = icon;
-        Impact = impact;
-        Description = description;
-        Downside = downside;
+        Impact = L.T(impact);
+        Description = L.T(description);
+        Downside = L.T(downside);
         _get = get;
         _set = set;
         _availability = availability;
@@ -36,7 +37,7 @@ public sealed class FocusToggleFeature : FpsBoostFeature
     public override string Id { get; }
     public override string Name { get; }
     public override string Icon { get; }
-    public override string Category => "Game Focus";
+    public override string Category => L.T("Game Focus");
     public override string Impact { get; }
     public override string Description { get; }
     public override string Downside { get; }
@@ -57,7 +58,7 @@ public sealed class FocusToggleFeature : FpsBoostFeature
             on ? "Applied automatically when you start 🎯 Focus in Games – restored when you stop it." : "Turn on to use it in every Game Focus.", false);
         Actions = new[]
         {
-            new BoostAction(on ? "Turn off" : "Turn on", new RelayCommand(() =>
+            new BoostAction(L.T(on ? "Turn off" : "Turn on"), new RelayCommand(() =>
             {
                 _set(SettingsService.Instance.Current, !on);
                 SettingsService.Instance.Save();
@@ -89,12 +90,12 @@ public sealed class OverlayDetectorFeature : FpsBoostFeature
     private List<(int Pid, string Name)> _found = new();
 
     public override string Id => "overlays";
-    public override string Name => "Overlay & recorder detector";
+    public override string Name => L.T("Overlay & recorder detector");
     public override string Icon => "🎥";
-    public override string Category => "Network & Background";
-    public override string Impact => "MEDIUM";
-    public override string Description => "Finds running overlays, recorders and animated wallpapers that cost FPS or cause stutter in every game (Discord overlay, OBS, Overwolf, Medal, Afterburner/RTSS, Wallpaper Engine …).";
-    public override string Downside => "Closing apps only like clicking X – nothing is force-killed.";
+    public override string Category => L.T("Network & Background");
+    public override string Impact => L.T("MEDIUM");
+    public override string Description => L.T("Finds running overlays, recorders and animated wallpapers that cost FPS or cause stutter in every game (Discord overlay, OBS, Overwolf, Medal, Afterburner/RTSS, Wallpaper Engine …).");
+    public override string Downside => L.T("Closing apps only like clicking X – nothing is force-killed.");
     public override bool ChangesSettings => false;
 
     protected override void CheckCore()
@@ -107,7 +108,7 @@ public sealed class OverlayDetectorFeature : FpsBoostFeature
             if (procs.Length > 0)
             {
                 _found.AddRange(procs.Select(p => (p.Id, name)));
-                tips.Add($"• {name}: {tip}");
+                tips.Add($"• {name}: {L.T(tip)}");
             }
 
             foreach (var p in procs)
@@ -117,12 +118,12 @@ public sealed class OverlayDetectorFeature : FpsBoostFeature
         }
 
         Set(tips.Count == 0 ? CheckStatus.Good : CheckStatus.Warning,
-            tips.Count == 0 ? "Nothing found" : $"{tips.Count} found",
+            tips.Count == 0 ? "Nothing found" : L.F("{0} found", tips.Count),
             tips.Count == 0 ? "No known overlay or recorder is running." : string.Join("\n", tips), false);
         Actions = new List<BoostAction>
         {
-            new("Check again", new AsyncRelayCommand(() => Task.Run(Check))),
-        }.Concat(tips.Count == 0 ? Array.Empty<BoostAction>() : new[] { new BoostAction("Close all found", new AsyncRelayCommand(CloseAllAsync)) }).ToList();
+            new(L.T("Check again"), new AsyncRelayCommand(() => Task.Run(Check))),
+        }.Concat(tips.Count == 0 ? Array.Empty<BoostAction>() : new[] { new BoostAction(L.T("Close all found"), new AsyncRelayCommand(CloseAllAsync)) }).ToList();
     }
 
     private async Task CloseAllAsync()
@@ -142,7 +143,7 @@ public sealed class OverlayDetectorFeature : FpsBoostFeature
             }
         }
 
-        ResultText = $"✓ Closed {closed} process(es). Apps without a window (tray only) have to be closed from their tray icon.";
+        ResultText = L.F("✓ Closed {0} process(es). Apps without a window (tray only) have to be closed from their tray icon.", closed);
         await Task.Run(Check);
     }
 }
@@ -164,11 +165,11 @@ public sealed class CpuHogFeature : FpsBoostFeature
     };
 
     public override string Id => "cpu-hogs";
-    public override string Name => "Background CPU hog finder";
+    public override string Name => L.T("Background CPU hog finder");
     public override string Icon => "🐷";
-    public override string Category => "Network & Background";
-    public override string Impact => "MEDIUM";
-    public override string Description => "Measures for 2 seconds which programs use the most CPU right now and explains each (Defender scan, Windows Update, indexing, sync…). Start it while the game is running to see who competes with your game.";
+    public override string Category => L.T("Network & Background");
+    public override string Impact => L.T("MEDIUM");
+    public override string Description => L.T("Measures for 2 seconds which programs use the most CPU right now and explains each (Defender scan, Windows Update, indexing, sync…). Start it while the game is running to see who competes with your game.");
     public override bool ChangesSettings => false;
 
     protected override void CheckCore()
@@ -181,12 +182,12 @@ public sealed class CpuHogFeature : FpsBoostFeature
             .Select(kv => (kv.Value.Name, Pct: (kv.Value.Cpu - first[kv.Key].Cpu).TotalMilliseconds / 2000.0 / cores * 100))
             .Where(u => u.Pct >= 2 && u.Name != "Idle" && u.Name != "System" && !u.Name.Equals("ConstiBoost", StringComparison.OrdinalIgnoreCase))
             .GroupBy(u => u.Name).Select(g => (Name: g.Key, Pct: g.Sum(x => x.Pct))).OrderByDescending(u => u.Pct).Take(6).ToList();
-        var lines = usage.Select(u => $"• {u.Name}: {u.Pct:0} % CPU" + (Explanations.TryGetValue(u.Name, out string? e) ? " – " + e : string.Empty)).ToList();
+        var lines = usage.Select(u => $"• {u.Name}: {u.Pct:0} % CPU" + (Explanations.TryGetValue(u.Name, out string? e) ? " – " + L.T(e) : string.Empty)).ToList();
         bool heavy = usage.Any(u => Explanations.ContainsKey(u.Name) && u.Pct >= 5);
         Set(heavy ? CheckStatus.Warning : CheckStatus.Good,
-            usage.Count == 0 ? "Quiet" : $"Top: {usage[0].Name} {usage[0].Pct:0} %",
+            usage.Count == 0 ? "Quiet" : L.F("Top: {0} {1:0} %", usage[0].Name, usage[0].Pct),
             usage.Count == 0 ? "No program uses noticeable CPU right now." : string.Join("\n", lines), false);
-        Actions = new[] { new BoostAction("Measure again (2 s)", new AsyncRelayCommand(() => Task.Run(Check))) };
+        Actions = new[] { new BoostAction(L.T("Measure again (2 s)"), new AsyncRelayCommand(() => Task.Run(Check))) };
     }
 
     private static Dictionary<int, (string Name, TimeSpan Cpu)> Snapshot()
@@ -217,11 +218,11 @@ public sealed class AmdAdrenalinFeature : FpsBoostFeature
     private const string DriverPage = "https://www.amd.com/en/support/download/drivers.html";
 
     public override string Id => "amd";
-    public override string Name => "AMD Adrenalin checklist";
+    public override string Name => L.T("AMD Adrenalin checklist");
     public override string Icon => "🔴";
-    public override string Category => "Drivers & Hardware";
-    public override string Impact => "HIGH";
-    public override string Description => "Current AMD drivers are faster and browsers only accelerate WebGL on drivers they trust. In AMD Software (Gaming → Graphics) these settings give the most FPS: Radeon Chill OFF · Wait for Vertical Refresh 'Always off' · Texture Filtering Quality 'Performance' · Tessellation 'AMD optimized' · Radeon Anti-Lag ON (input lag) · Radeon Super Resolution for fullscreen games. ConstiBoost does not change driver settings – they belong to AMD Software.";
+    public override string Category => L.T("Drivers & Hardware");
+    public override string Impact => L.T("HIGH");
+    public override string Description => L.T("Current AMD drivers are faster and browsers only accelerate WebGL on drivers they trust. In AMD Software (Gaming → Graphics) these settings give the most FPS: Radeon Chill OFF · Wait for Vertical Refresh 'Always off' · Texture Filtering Quality 'Performance' · Tessellation 'AMD optimized' · Radeon Anti-Lag ON (input lag) · Radeon Super Resolution for fullscreen games. ConstiBoost does not change driver settings – they belong to AMD Software.");
     public override bool ChangesSettings => false;
 
     private static string? AdrenalinPath()
@@ -247,13 +248,13 @@ public sealed class AmdAdrenalinFeature : FpsBoostFeature
         string? path = AdrenalinPath();
         var notes = new List<string>();
         bool old = gpu.DriverDate is DateTime d && d < DateTime.Now.AddMonths(-12);
-        notes.Add(gpu.DriverDate is DateTime date ? $"Driver {gpu.DriverVersion} from {date:MMMM yyyy}" + (old ? " – older than 1 year, update recommended." : " – recent.") : $"Driver {gpu.DriverVersion}");
-        notes.Add(path != null ? "AMD Software (Adrenalin) is installed." : "AMD Software (Adrenalin) not found – install it from amd.com (it includes the driver).");
+        notes.Add(gpu.DriverDate is DateTime date ? L.F("Driver {0} from {1:MMMM yyyy}", gpu.DriverVersion, date) + L.T(old ? " – older than 1 year, update recommended." : " – recent.") : L.F("Driver {0}", gpu.DriverVersion));
+        notes.Add(L.T(path != null ? "AMD Software (Adrenalin) is installed." : "AMD Software (Adrenalin) not found – install it from amd.com (it includes the driver)."));
         Set(old || path is null ? CheckStatus.Warning : CheckStatus.Good, old ? "Driver outdated" : path is null ? "AMD Software missing" : "Driver OK", string.Join("\n", notes), false);
-        var actions = new List<BoostAction> { new("Open AMD driver download", new RelayCommand(() => Open(DriverPage))) };
+        var actions = new List<BoostAction> { new(L.T("Open AMD driver download"), new RelayCommand(() => Open(DriverPage))) };
         if (path != null)
         {
-            actions.Insert(0, new BoostAction("Open AMD Software", new RelayCommand(() => Open(path))));
+            actions.Insert(0, new BoostAction(L.T("Open AMD Software"), new RelayCommand(() => Open(path))));
         }
 
         Actions = actions;
@@ -267,11 +268,11 @@ public sealed class AmdAdrenalinFeature : FpsBoostFeature
 public sealed class DualChannelFeature : FpsBoostFeature
 {
     public override string Id => "dual-channel";
-    public override string Name => "RAM dual-channel check";
+    public override string Name => L.T("RAM dual-channel check");
     public override string Icon => "🧩";
-    public override string Category => "Drivers & Hardware";
-    public override string Impact => "HIGH";
-    public override string Description => "Integrated Radeon graphics use your RAM as video memory. With only ONE memory module the GPU gets half the bandwidth – a second matching module typically gives +30-50 % FPS in games. No setting can replace this.";
+    public override string Category => L.T("Drivers & Hardware");
+    public override string Impact => L.T("HIGH");
+    public override string Description => L.T("Integrated Radeon graphics use your RAM as video memory. With only ONE memory module the GPU gets half the bandwidth – a second matching module typically gives +30-50 % FPS in games. No setting can replace this.");
     public override bool ChangesSettings => false;
 
     protected override void CheckCore()
@@ -287,12 +288,12 @@ public sealed class DualChannelFeature : FpsBoostFeature
         string modules = string.Join(" + ", layout.Modules.Select(x => $"{x.CapacityBytes / 1024 / 1024 / 1024} GB"));
         if (layout.Modules.Count >= 2)
         {
-            Set(CheckStatus.Good, $"Dual-channel ({modules})", "Optimal – both memory channels are used.", false);
+            Set(CheckStatus.Good, L.F("Dual-channel ({0})", modules), "Optimal – both memory channels are used.", false);
             return;
         }
 
         string slot = layout.FreeSlots is > 0 ? "A free slot was detected – you can add a module." : layout.Slots is 1 ? "Windows reports only one slot: the second module may be soldered or not upgradeable – check the laptop manual." : "Check the laptop manual for a free slot.";
-        Set(CheckStatus.Warning, $"Single-channel ({modules})",
-            $"{slot}\nRecommended: 1 × {m.CapacityBytes / 1024 / 1024 / 1024} GB {m.Type} SO-DIMM {(m.SpeedMts is int s ? s + " MT/s" : string.Empty)} (same size and speed as the existing one).", false);
+        Set(CheckStatus.Warning, L.F("Single-channel ({0})", modules),
+            L.T(slot) + "\n" + L.F("Recommended: 1 × {0} GB {1} SO-DIMM {2} (same size and speed as the existing one).", m.CapacityBytes / 1024 / 1024 / 1024, m.Type, m.SpeedMts is int s ? s + " MT/s" : string.Empty), false);
     }
 }

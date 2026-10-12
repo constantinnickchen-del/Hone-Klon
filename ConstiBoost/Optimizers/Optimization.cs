@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using ConstiBoost.Backup;
 using ConstiBoost.Core;
 using ConstiBoost.Hardware;
+using ConstiBoost.Localization;
 using ConstiBoost.Logging;
 using ConstiBoost.Models;
 using ConstiBoost.WinSys;
@@ -47,11 +48,12 @@ public abstract class Optimization : ObservableObject
     /// <summary>Whether this optimization is pre-selected in one-click optimize when a change is needed.</summary>
     public virtual bool PreselectWhenNeeded(OptimizationContext context) => true;
 
-    public string CurrentState { get => _currentState; protected set => SetProperty(ref _currentState, value); }
-    public string RecommendedState { get => _recommendedState; protected set => SetProperty(ref _recommendedState, value); }
-    public string Reason { get => _reason; protected set => SetProperty(ref _reason, value); }
+    // Fixed English texts are translated when they are set (interpolated texts use L.F at the source).
+    public string CurrentState { get => _currentState; protected set => SetProperty(ref _currentState, L.T(value)); }
+    public string RecommendedState { get => _recommendedState; protected set => SetProperty(ref _recommendedState, L.T(value)); }
+    public string Reason { get => _reason; protected set => SetProperty(ref _reason, L.T(value)); }
     public bool IsAvailable { get => _isAvailable; protected set => SetProperty(ref _isAvailable, value); }
-    public string UnavailableReason { get => _unavailableReason; protected set => SetProperty(ref _unavailableReason, value); }
+    public string UnavailableReason { get => _unavailableReason; protected set => SetProperty(ref _unavailableReason, L.T(value)); }
 
     public bool NeedsChange
     {
@@ -70,9 +72,9 @@ public abstract class Optimization : ObservableObject
     public string? ResultText { get => _resultText; private set => SetProperty(ref _resultText, value); }
     public bool? ResultSuccess { get => _resultSuccess; private set => SetProperty(ref _resultSuccess, value); }
 
-    public string ImpactText => Impact.ToString().ToUpperInvariant();
-    public string ReversibleText => IsReversible ? "Reversible (backup)" : "Not reversible (deletes cache/temp files only)";
-    public string StatusText => !IsAvailable ? "Unavailable" : IsUserChoice ? "Your choice" : NeedsChange ? "Can be improved" : "Optimal";
+    public string ImpactText => L.T(Impact.ToString().ToUpperInvariant());
+    public string ReversibleText => IsReversible ? L.T("Reversible (backup)") : L.T("Not reversible (deletes cache/temp files only)");
+    public string StatusText => L.T(!IsAvailable ? "Unavailable" : IsUserChoice ? "Your choice" : NeedsChange ? "Can be improved" : "Optimal");
 
     /// <summary>Reads the current state. Runs on a background thread.</summary>
     public void Refresh(OptimizationContext context)
@@ -87,7 +89,7 @@ public abstract class Optimization : ObservableObject
         {
             IsAvailable = false;
             NeedsChange = false;
-            UnavailableReason = "This optimization is unavailable on your system. " + Safe.Describe(ex);
+            UnavailableReason = L.T("This optimization is unavailable on your system.") + " " + Safe.Describe(ex);
             AppLog.Warn($"Refresh of {Id} failed: {ex.Message}");
         }
 
@@ -116,7 +118,7 @@ public abstract class Optimization : ObservableObject
         }
 
         ResultSuccess = result.Success;
-        ResultText = result.Success ? result.Message : result.Message + (result.TechnicalDetails is null ? string.Empty : $" ({result.TechnicalDetails})");
+        ResultText = result.Success ? L.T(result.Message) : L.T(result.Message) + (result.TechnicalDetails is null ? string.Empty : $" ({result.TechnicalDetails})");
         Refresh(context);
         return result;
     }
@@ -135,7 +137,7 @@ public abstract class Optimization : ObservableObject
         }
 
         ActionLog.Success(actionName ?? Name, oldText, newText);
-        return OperationResult.Ok($"{oldText} → {newText}");
+        return OperationResult.Ok($"{L.T(oldText)} → {L.T(newText)}");
     }
 
     protected static string OnOff(bool value) => value ? "ON" : "OFF";

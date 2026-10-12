@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using ConstiBoost.Backup;
 using ConstiBoost.Core;
+using ConstiBoost.Localization;
 
 namespace ConstiBoost.Models;
 
@@ -21,7 +22,7 @@ public sealed class ThermalFinding : ObservableObject
     public string Current { get; init; } = string.Empty;
     public string Recommended { get; init; } = string.Empty;
     public ImpactLevel Impact { get; init; }
-    public string ImpactNote { get; init; } = "May reduce CPU load and therefore may reduce temperature.";
+    public string ImpactNote { get; init; } = L.T("May reduce CPU load and therefore may reduce temperature.");
     public string? Tradeoff { get; init; }
     public bool IsReversible { get; init; }
 
@@ -29,8 +30,8 @@ public sealed class ThermalFinding : ObservableObject
     public Func<BackupSession, Task<OperationResult>>? Apply { get; init; }
 
     public bool CanApply => Apply != null;
-    public string ImpactText => Impact.ToString().ToUpperInvariant();
-    public string KindText => CanApply ? (IsReversible ? "Can be applied · reversible" : "Can be applied") : "Advice only";
+    public string ImpactText => L.T(Impact.ToString().ToUpperInvariant());
+    public string KindText => L.T(CanApply ? (IsReversible ? "Can be applied · reversible" : "Can be applied") : "Advice only");
 
     public bool IsSelected { get => _isSelected; set => SetProperty(ref _isSelected, value && CanApply); }
     public string? ResultText { get => _resultText; set => SetProperty(ref _resultText, value); }

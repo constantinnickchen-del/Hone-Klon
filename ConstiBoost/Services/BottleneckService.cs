@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using ConstiBoost.Games;
 using ConstiBoost.Hardware;
+using ConstiBoost.Localization;
 using ConstiBoost.Logging;
 using ConstiBoost.WinSys;
 
@@ -24,7 +25,13 @@ public enum BottleneckKind
     OldDriver,
 }
 
-public sealed record BottleneckFinding(BottleneckKind Kind, string Title, string Explanation, IReadOnlyList<string> Fixes);
+public sealed record BottleneckFinding(BottleneckKind Kind, string Title, string Explanation, IReadOnlyList<string> Fixes)
+{
+    // Fixed English texts are translated here; texts with values use L.F where they are built.
+    public string Title { get; init; } = L.T(Title);
+    public string Explanation { get; init; } = L.T(Explanation);
+    public IReadOnlyList<string> Fixes { get; init; } = Fixes.Select(L.T).ToList();
+}
 
 public sealed record BottleneckReport(
     double? GpuAverage,
@@ -45,12 +52,12 @@ public sealed record BottleneckReport(
         {
             var parts = new List<string>
             {
-                GpuAverage is double g ? $"GPU {g:0} %" : "GPU: sensor unavailable",
-                $"CPU {CpuAverage:0} % (busiest thread {BusiestCoreAverage:0} %)",
+                GpuAverage is double g ? $"GPU {g:0} %" : L.T("GPU: sensor unavailable"),
+                L.F("CPU {0:0} % (busiest thread {1:0} %)", CpuAverage, BusiestCoreAverage),
             };
             if (TemperatureMax is double t)
             {
-                parts.Add($"max {t:0} °C");
+                parts.Add(L.F("max {0:0} °C", t));
             }
 
             if (CpuMhzAverage is double mhz)
@@ -65,22 +72,22 @@ public sealed record BottleneckReport(
 
             if (RefreshRate is int hz)
             {
-                parts.Add($"display {hz} Hz");
+                parts.Add(L.F("display {0} Hz", hz));
             }
 
             if (OnBattery)
             {
-                parts.Add("on battery");
+                parts.Add(L.T("on battery"));
             }
 
             if (GameGpu is double gg)
             {
-                parts.Add($"game GPU {gg:0} %");
+                parts.Add(L.F("game GPU {0:0} %", gg));
             }
 
             if (GameCpuCores is double cc)
             {
-                parts.Add($"game CPU {cc * 100:0} % of one thread");
+                parts.Add(L.F("game CPU {0:0} % of one thread", cc * 100));
             }
 
             return string.Join(" · ", parts);
@@ -173,7 +180,7 @@ public static class BottleneckService
                 for (int i = 0; i < seconds; i++)
                 {
                     token.ThrowIfCancellationRequested();
-                    progress.Report($"Analyzing… {i + 1}/{seconds} s – keep playing the game in the meantime.");
+                    progress.Report(L.F("Analyzing… {0}/{1} s – keep playing the game in the meantime.", i + 1, seconds));
                     await Task.Delay(1000, token);
                     var values = cores.Sample();
                     if (values.Length > 0)
@@ -264,7 +271,7 @@ public static class BottleneckService
         if (fps is double f && refresh is int hz && Math.Abs(f - hz) <= Math.Max(3, hz * 0.05))
         {
             list.Add(new BottleneckFinding(BottleneckKind.FrameCap, "FPS are capped at your refresh rate",
-                $"The game delivers ~{f:0} FPS = your display's {hz} Hz. The GPU does not need to work harder – this is normal and not a problem (VSync / frame limit).",
+                L.F("The game delivers ~{0:0} FPS = your display's {1} Hz. The GPU does not need to work harder – this is normal and not a problem (VSync / frame limit).", f, hz),
                 new[]
                 {
                     "Nothing to fix: more FPS than Hz are not visible on this display.",
@@ -276,8 +283,8 @@ public static class BottleneckService
         if (gpu is double g && g < 75 && busiest >= 85)
         {
             list.Add(new BottleneckFinding(BottleneckKind.CpuSingleThread, "CPU limit (one thread is maxed out)",
-                $"One CPU thread runs at ~{busiest:0} % while the GPU only reaches ~{g:0} %. The game (or the browser's JavaScript) cannot prepare frames faster, so the GPU waits. " +
-                "Total CPU usage looks low because the other cores are idle – games mostly scale with one fast core.",
+                L.F("One CPU thread runs at ~{0:0} % while the GPU only reaches ~{1:0} %. The game (or the browser's JavaScript) cannot prepare frames faster, so the GPU waits. " +
+                "Total CPU usage looks low because the other cores are idle – games mostly scale with one fast core.", busiest, g),
                 new[]
                 {
                     "Start Game Focus with the 'Max FPS' profile (Best performance power mode = higher boost clocks).",
@@ -290,7 +297,7 @@ public static class BottleneckService
         else if (gpu is double g2 && g2 >= 88)
         {
             list.Add(new BottleneckFinding(BottleneckKind.Gpu, "GPU limit (GPU is fully used)",
-                $"The GPU works at ~{g2:0} % – it is the limit, and that is the ideal state. More FPS only come from fewer pixels or lower graphics quality.",
+                L.F("The GPU works at ~{0:0} % – it is the limit, and that is the ideal state. More FPS only come from fewer pixels or lower graphics quality.", g2),
                 new[]
                 {
                     "Lower the resolution / render scale (biggest effect on integrated graphics).",
@@ -315,7 +322,7 @@ public static class BottleneckService
         if (tMax is double t && t >= 90)
         {
             list.Add(new BottleneckFinding(BottleneckKind.Thermal, "Possible thermal throttling",
-                $"The temperature reached {t:0} °C. Above ~90-95 °C the Ryzen CPU lowers its clock to protect itself (this protection is never disabled by ConstiBoost).",
+                L.F("The temperature reached {0:0} °C. Above ~90-95 °C the Ryzen CPU lowers its clock to protect itself (this protection is never disabled by ConstiBoost).", t),
                 new[]
                 {
                     "Put the laptop on a hard, flat surface or use a cooling pad; keep the vents free.",
@@ -362,9 +369,9 @@ public static class BottleneckService
 
         if (game.IsBrowser && gameGpu is double gg && gg < 12 && (gameCpuCores ?? 0) > 0.5)
         {
-            string gpuProc = gpuProcessCores is double gp ? $" The browser's GPU process alone uses {gp * 100:0} % of a CPU thread." : string.Empty;
+            string gpuProc = gpuProcessCores is double gp ? " " + L.F("The browser's GPU process alone uses {0:0} % of a CPU thread.", gp * 100) : string.Empty;
             list.Insert(0, new BottleneckFinding(BottleneckKind.SoftwareRendering, "⚠ The web game is rendered by the CPU, not the graphics chip",
-                $"The browser uses only ~{gg:0} % of the GPU but ~{gameCpuCores * 100:0} % of a CPU thread.{gpuProc} This is the typical sign of software rendering (WebGL without hardware acceleration) – it causes single-digit FPS. Fixing this brings by far the biggest gain.",
+                L.F("The browser uses only ~{0:0} % of the GPU but ~{1:0} % of a CPU thread.{2} This is the typical sign of software rendering (WebGL without hardware acceleration) – it causes single-digit FPS. Fixing this brings by far the biggest gain.", gg, gameCpuCores * 100, gpuProc),
                 new[]
                 {
                     "Browser settings → System → 'Use graphics acceleration when available' ON, then restart the browser.",
@@ -377,7 +384,7 @@ public static class BottleneckService
         else if (game.IsBrowser && gameCpuCores is double cores && cores >= 0.85 && gameGpu is double g2 && g2 < 70)
         {
             list.Insert(0, new BottleneckFinding(BottleneckKind.CpuSingleThread, "The web game is limited by its JavaScript/WebAssembly thread",
-                $"The browser uses ~{cores * 100:0} % of a CPU thread and the GPU only ~{g2:0} %. Web ports of PC games run their game logic on ONE browser thread – that thread is the limit, not the graphics. Fewer pixels help only a little here.",
+                L.F("The browser uses ~{0:0} % of a CPU thread and the GPU only ~{1:0} %. Web ports of PC games run their game logic on ONE browser thread – that thread is the limit, not the graphics. Fewer pixels help only a little here.", cores * 100, g2),
                 new[]
                 {
                     "Charger in + Game Focus 'Max FPS' (highest CPU boost clock).",
@@ -391,7 +398,7 @@ public static class BottleneckService
         if (driver is DateTime date && date < DateTime.Now.AddMonths(-18))
         {
             list.Add(new BottleneckFinding(BottleneckKind.OldDriver, "Old graphics driver",
-                $"Your graphics driver is from {date:MMMM yyyy}. Old drivers are slower in games and browsers often block WebGL acceleration on them.",
+                L.F("Your graphics driver is from {0:MMMM yyyy}. Old drivers are slower in games and browsers often block WebGL acceleration on them.", date),
                 new[] { "Install the current AMD Software: Adrenalin Edition (amd.com → Drivers → Ryzen 7 5700U / Radeon Graphics). A restore point is created by the installer." }));
         }
     }

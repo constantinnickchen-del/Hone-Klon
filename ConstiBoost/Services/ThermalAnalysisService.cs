@@ -7,6 +7,7 @@ using ConstiBoost.Backup;
 using ConstiBoost.Core;
 using ConstiBoost.Hardware;
 using ConstiBoost.Hardware.Sensors;
+using ConstiBoost.Localization;
 using ConstiBoost.Logging;
 using ConstiBoost.Models;
 using ConstiBoost.Optimizers;
@@ -18,7 +19,7 @@ public sealed class ThermalScanResult
 {
     public DateTime Time { get; init; } = DateTime.Now;
     public ThermalMeasurement Measurement { get; init; } = new();
-    public string TemperatureSource { get; init; } = "Sensor unavailable";
+    public string TemperatureSource { get; init; } = L.T("Sensor unavailable");
     public bool HasDirectSensor { get; init; }
     public double? CpuLoadMax { get; init; }
     public double? GpuLoadAverage { get; init; }
@@ -31,7 +32,7 @@ public sealed class ThermalScanResult
     public List<ProcessUsage> TopRam { get; init; } = new();
     public List<ProcessUsage> TopGpu { get; init; } = new();
     public List<ThermalCause> Causes { get; init; } = new();
-    public string MainCause { get; init; } = "Unknown";
+    public string MainCause { get; init; } = L.T("Unknown");
     public List<ThermalFinding> Findings { get; init; } = new();
     public List<string> Recommendations { get; init; } = new();
     public int Score { get; init; }
@@ -39,7 +40,7 @@ public sealed class ThermalScanResult
     public string ScoreSummary { get; init; } = string.Empty;
     public string BackgroundLevel { get; init; } = "–";
     public double BackgroundCpu { get; init; }
-    public string PowerText { get; init; } = Formatting.Unavailable;
+    public string PowerText { get; init; } = L.T(Formatting.Unavailable);
     public bool PowerAggressive { get; init; }
     public string? RunningGame { get; init; }
     public ImpactLevel Potential { get; init; }
@@ -66,16 +67,16 @@ public static class ThermalAnalysisService
         return await Task.Run(async () =>
         {
             var processSampler = new ProcessSampler();
-            progress.Report("Reading processes…");
+            progress.Report(L.T("Reading processes…"));
             processSampler.Sample(); // baseline for per-process CPU
 
-            var measurement = await MeasureAsync(ScanSeconds, new Progress<(int s, int total)>(p => progress.Report($"Measuring temperature and load… {p.s}/{p.total} s")), token, collectGpu: true);
+            var measurement = await MeasureAsync(ScanSeconds, new Progress<(int s, int total)>(p => progress.Report(L.F("Measuring temperature and load… {0}/{1} s", p.s, p.total))), token, collectGpu: true);
 
-            progress.Report("Analyzing processes…");
+            progress.Report(L.T("Analyzing processes…"));
             var samples = processSampler.Sample();
             var usages = Group(samples);
 
-            progress.Report("Checking power mode, startup and overlays…");
+            progress.Report(L.T("Checking power mode, startup and overlays…"));
             var sensors = SensorHub.Instance.Read();
             var memory = SystemInfo.GetMemoryStatus();
             long ramTotal = memory.HasValue ? (long)memory.Value.total : 0;
@@ -83,8 +84,8 @@ public static class ThermalAnalysisService
             var scheme = PowerManager.GetActiveSchemeId();
             var overlay = scheme == PowerManager.Balanced ? PowerManager.GetOverlay() : null;
             bool aggressive = scheme == PowerManager.HighPerformance || scheme == PowerManager.UltimatePerformance || overlay == PowerManager.OverlayBestPerformance;
-            string powerText = scheme is null ? Formatting.Unavailable
-                : PowerManager.GetFriendlyName(scheme.Value) + (overlay is null ? string.Empty : " · Power mode: " + PowerManager.OverlayName(overlay));
+            string powerText = scheme is null ? L.T(Formatting.Unavailable)
+                : PowerManager.GetFriendlyName(scheme.Value) + (overlay is null ? string.Empty : " · " + L.F("Power mode: {0}", L.T(PowerManager.OverlayName(overlay))));
             string? game = usages.FirstOrDefault(u => u.IsGame)?.Name ?? ThermalMonitorService.Instance.RunningGame;
 
             double bgCpu = usages.Where(u => u.IsBackground && !u.IsSystem).Sum(u => u.Cpu);
@@ -106,7 +107,7 @@ public static class ThermalAnalysisService
             {
                 Time = DateTime.Now,
                 Measurement = measurement,
-                TemperatureSource = sensors.BestTemperatureSource,
+                TemperatureSource = L.T(sensors.BestTemperatureSource),
                 HasDirectSensor = sensors.HasDirectCpuSensor,
                 CpuLoadMax = measurement.AverageCpuLoad,
                 GpuLoadAverage = measurement.AverageGpuLoad,
@@ -119,14 +120,14 @@ public static class ThermalAnalysisService
                 TopRam = usages.OrderByDescending(u => u.Ram).Take(8).ToList(),
                 TopGpu = usages.Where(u => u.Gpu is > 0.5).OrderByDescending(u => u.Gpu).Take(8).ToList(),
                 Causes = causes,
-                MainCause = mainCause,
+                MainCause = L.T(mainCause),
                 Findings = findings,
                 Recommendations = BuildRecommendations(measurement, usages, bgCpu, aggressive, game),
                 Score = score,
                 ScoreIsPartial = partial,
-                ScoreSummary = summary,
+                ScoreSummary = L.T(summary),
                 BackgroundCpu = bgCpu,
-                BackgroundLevel = bgCpu < 3 ? "Low" : bgCpu < 10 ? "Medium" : "High",
+                BackgroundLevel = L.T(bgCpu < 3 ? "Low" : bgCpu < 10 ? "Medium" : "High"),
                 PowerText = powerText,
                 PowerAggressive = aggressive,
                 RunningGame = game,
@@ -201,7 +202,7 @@ public static class ThermalAnalysisService
             AverageGpuLoad = gpuLoads.Count > 0 ? gpuLoads.Average() : null,
             RamPercent = memory?.loadPercent,
             BackgroundProcesses = CountBackgroundProcesses(),
-            Source = temps.Count > 0 ? source : "Thermal sensor unavailable",
+            Source = temps.Count > 0 ? source : L.T("Thermal sensor unavailable"),
         };
     }
 
@@ -268,8 +269,8 @@ public static class ThermalAnalysisService
             var g = usages.FirstOrDefault(u => u.IsGame);
             causes.Add(new ThermalCause
             {
-                Title = "Gaming workload detected.",
-                Description = "High temperatures during gaming can be expected because the CPU/GPU are under load. This alone does not mean the temperature is dangerous – laptop CPUs are designed to run warm under load and protect themselves.",
+                Title = L.T("Gaming workload detected."),
+                Description = L.T("High temperatures during gaming can be expected because the CPU/GPU are under load. This alone does not mean the temperature is dangerous – laptop CPUs are designed to run warm under load and protect themselves."),
                 Severity = CheckStatus.Warning,
                 Details = g is null ? new List<string> { game } : new List<string> { $"{g.Name}: CPU {g.CpuText} · RAM {g.RamText} · GPU {g.GpuText}" },
             });
@@ -281,12 +282,12 @@ public static class ThermalAnalysisService
         {
             causes.Add(new ThermalCause
             {
-                Title = "High CPU load detected.",
-                Description = $"The CPU averaged {load:0} % load during the scan. Sustained load is the most common reason for high laptop temperatures.",
+                Title = L.T("High CPU load detected."),
+                Description = L.F("The CPU averaged {0:0} % load during the scan. Sustained load is the most common reason for high laptop temperatures.", load),
                 Severity = CheckStatus.Bad,
                 Details = usages.Where(u => u.Cpu >= 5).OrderByDescending(u => u.Cpu).Take(6).Select(u => $"{u.Name}: CPU {u.CpuText} · RAM {u.RamText} ({u.Kind})").ToList(),
             });
-            primary ??= heavy.Count > 0 ? $"High CPU load ({heavy[0].Name})" : "High CPU load";
+            primary ??= heavy.Count > 0 ? L.F("High CPU load ({0})", heavy[0].Name) : "High CPU load";
         }
 
         var background = usages.Where(u => !u.IsGame && !u.IsSystem && (u.IsBackground || BackgroundAppsService.KnownBackgroundApps.Contains(u.Name)) && u.Cpu >= 1).OrderByDescending(u => u.Cpu).ToList();
@@ -294,10 +295,10 @@ public static class ThermalAnalysisService
         {
             causes.Add(new ThermalCause
             {
-                Title = "Background activity detected.",
-                Description = $"Background programs used about {bgCpu:0} % CPU in total during the scan.",
+                Title = L.T("Background activity detected."),
+                Description = L.F("Background programs used about {0:0} % CPU in total during the scan.", bgCpu),
                 Severity = CheckStatus.Warning,
-                Details = background.Take(6).Select(b => $"{b.Name}: CPU {b.CpuText} · RAM {b.RamText} · Recommendation: close if not needed").ToList(),
+                Details = background.Take(6).Select(b => L.F("{0}: CPU {1} · RAM {2} · Recommendation: close if not needed", b.Name, b.CpuText, b.RamText)).ToList(),
             });
             primary ??= "Background process";
         }
@@ -306,8 +307,8 @@ public static class ThermalAnalysisService
         {
             causes.Add(new ThermalCause
             {
-                Title = "High-performance power mode may increase heat.",
-                Description = "'Best performance' lets the CPU boost higher and longer. That gives the most performance, but also produces more heat. 'Balanced' usually runs cooler with a small performance cost.",
+                Title = L.T("High-performance power mode may increase heat."),
+                Description = L.T("'Best performance' lets the CPU boost higher and longer. That gives the most performance, but also produces more heat. 'Balanced' usually runs cooler with a small performance cost."),
                 Severity = CheckStatus.Warning,
             });
             primary ??= "Power mode";
@@ -317,18 +318,18 @@ public static class ThermalAnalysisService
         {
             causes.Add(new ThermalCause
             {
-                Title = "Temperature is high despite low CPU load.",
-                Description = "Software optimization may have limited impact here. Possible reasons (ConstiBoost cannot verify these):",
+                Title = L.T("Temperature is high despite low CPU load."),
+                Description = L.T("Software optimization may have limited impact here. Possible reasons (ConstiBoost cannot verify these):"),
                 Severity = CheckStatus.Warning,
                 Details = new List<string>
                 {
-                    "Ventilation – laptop on a soft surface or vents covered",
-                    "Dust may reduce cooling performance. Consider checking the vents.",
-                    "Blocked air intake (bottom of the laptop)",
-                    "A possible fan issue (fan not audible under load)",
-                    "High room temperature",
-                    "A short background process that ran before the scan",
-                    "Aging thermal paste (only after several years; a service technician can check it)",
+                    L.T("Ventilation – laptop on a soft surface or vents covered"),
+                    L.T("Dust may reduce cooling performance. Consider checking the vents."),
+                    L.T("Blocked air intake (bottom of the laptop)"),
+                    L.T("A possible fan issue (fan not audible under load)"),
+                    L.T("High room temperature"),
+                    L.T("A short background process that ran before the scan"),
+                    L.T("Aging thermal paste (only after several years; a service technician can check it)"),
                 },
             });
             primary ??= "Cooling conditions (unverified)";
@@ -353,10 +354,10 @@ public static class ThermalAnalysisService
             findings.Add(new ThermalFinding
             {
                 Priority = 1,
-                Category = "High CPU load",
-                Problem = $"{u.Name} is using {u.Cpu:0} % CPU",
+                Category = L.T("High CPU load"),
+                Problem = L.F("{0} is using {1:0} % CPU", u.Name, u.Cpu),
                 Current = $"CPU {u.CpuText} · RAM {u.RamText}",
-                Recommended = known ? "Close it while you don't need it" : "Close it if you don't need it right now (you will be asked to save)",
+                Recommended = L.T(known ? "Close it while you don't need it" : "Close it if you don't need it right now (you will be asked to save)"),
                 Impact = u.Cpu >= 20 ? ImpactLevel.High : ImpactLevel.Medium,
                 Apply = group is null ? null : _ => CloseAsync(group),
                 IsSelected = known && !BackgroundAppsService.KeepPriority.Contains(u.Name),
@@ -373,10 +374,10 @@ public static class ThermalAnalysisService
             findings.Add(new ThermalFinding
             {
                 Priority = 2,
-                Category = u.Name.Contains("launcher", StringComparison.OrdinalIgnoreCase) || u.Name.Equals("steam", StringComparison.OrdinalIgnoreCase) ? "Running launcher" : "Background process",
-                Problem = $"{u.Name} is running in the background",
+                Category = L.T(u.Name.Contains("launcher", StringComparison.OrdinalIgnoreCase) || u.Name.Equals("steam", StringComparison.OrdinalIgnoreCase) ? "Running launcher" : "Background process"),
+                Problem = L.F("{0} is running in the background", u.Name),
                 Current = $"CPU {u.CpuText} · RAM {u.RamText}",
-                Recommended = voice ? "Close it if you don't need voice/video chat right now" : "Close it while gaming or when not needed",
+                Recommended = L.T(voice ? "Close it if you don't need voice/video chat right now" : "Close it while gaming or when not needed"),
                 Impact = u.Cpu >= 5 ? ImpactLevel.Medium : ImpactLevel.Low,
                 Apply = group is null ? null : _ => CloseAsync(group),
                 IsSelected = !voice && !launcherNeeded,
@@ -391,10 +392,10 @@ public static class ThermalAnalysisService
             findings.Add(new ThermalFinding
             {
                 Priority = 2,
-                Category = "Browser tabs/processes",
-                Problem = $"Browser uses {browserCpu:0} % CPU ({browserProcs} processes)",
+                Category = L.T("Browser tabs/processes"),
+                Problem = L.F("Browser uses {0:0} % CPU ({1} processes)", browserCpu, browserProcs),
                 Current = $"CPU {browserCpu:0.0} % · RAM {Formatting.Bytes(browserRam)}",
-                Recommended = "Close unnecessary tabs (especially video, streams and web games)",
+                Recommended = L.T("Close unnecessary tabs (especially video, streams and web games)"),
                 Impact = browserCpu >= 10 ? ImpactLevel.Medium : ImpactLevel.Low,
             });
         }
@@ -405,13 +406,13 @@ public static class ThermalAnalysisService
             findings.Add(new ThermalFinding
             {
                 Priority = 3,
-                Category = "Power mode",
-                Problem = "High-performance power mode may increase heat",
-                Current = scheme == PowerManager.Balanced ? "Power mode: Best performance" : PowerManager.GetFriendlyName(scheme.Value),
-                Recommended = "Balanced power mode",
+                Category = L.T("Power mode"),
+                Problem = L.T("High-performance power mode may increase heat"),
+                Current = scheme == PowerManager.Balanced ? L.T("Power mode: Best performance") : PowerManager.GetFriendlyName(scheme.Value),
+                Recommended = L.T("Balanced power mode"),
                 Impact = ImpactLevel.Medium,
-                ImpactNote = "Lower sustained boost clocks usually mean less heat and fan noise.",
-                Tradeoff = "Can reduce FPS slightly in CPU-heavy games. For gaming use Cool Gaming Mode → BALANCED instead.",
+                ImpactNote = L.T("Lower sustained boost clocks usually mean less heat and fan noise."),
+                Tradeoff = L.T("Can reduce FPS slightly in CPU-heavy games. For gaming use Cool Gaming Mode → BALANCED instead."),
                 IsReversible = true,
                 Apply = backup => Task.Run(() => SetBalanced(backup, scheme.Value, overlay)),
                 IsSelected = !gaming,
@@ -425,12 +426,12 @@ public static class ThermalAnalysisService
             findings.Add(new ThermalFinding
             {
                 Priority = 4,
-                Category = "Startup programs",
-                Problem = $"{startupCandidates.Count} non-essential app(s) start with Windows",
+                Category = L.T("Startup programs"),
+                Problem = L.F("{0} non-essential app(s) start with Windows", startupCandidates.Count),
                 Current = string.Join(", ", startupCandidates.Select(s => s.Name).Take(5)) + (startupCandidates.Count > 5 ? "…" : string.Empty),
-                Recommended = "Disable autostart (apps still work when opened manually)",
+                Recommended = L.T("Disable autostart (apps still work when opened manually)"),
                 Impact = ImpactLevel.Low,
-                ImpactNote = "Less background load after every boot – may reduce idle CPU load and temperature.",
+                ImpactNote = L.T("Less background load after every boot – may reduce idle CPU load and temperature."),
                 IsReversible = true,
                 Apply = async backup =>
                 {
@@ -443,7 +444,7 @@ public static class ThermalAnalysisService
                         }
                     }
 
-                    return ok == startupCandidates.Count ? OperationResult.Ok($"{ok} startup app(s) disabled") : OperationResult.Fail($"{ok} of {startupCandidates.Count} disabled");
+                    return ok == startupCandidates.Count ? OperationResult.Ok(L.F("{0} startup app(s) disabled", ok)) : OperationResult.Fail(L.F("{0} of {1} disabled", ok, startupCandidates.Count));
                 },
                 IsSelected = true,
             });
@@ -456,10 +457,10 @@ public static class ThermalAnalysisService
             findings.Add(new ThermalFinding
             {
                 Priority = 5,
-                Category = "Overlay",
-                Problem = $"Overlay running: {u.Name}",
+                Category = L.T("Overlay"),
+                Problem = L.F("Overlay running: {0}", u.Name),
                 Current = $"CPU {u.CpuText} · RAM {u.RamText}",
-                Recommended = "Close it if you don't use it",
+                Recommended = L.T("Close it if you don't use it"),
                 Impact = u.Cpu >= 3 ? ImpactLevel.Medium : ImpactLevel.Low,
                 Apply = group is null ? null : _ => CloseAsync(group, allowKill: true),
                 IsSelected = !MonitoringOverlays.Contains(u.Name),
@@ -487,12 +488,12 @@ public static class ThermalAnalysisService
             findings.Add(new ThermalFinding
             {
                 Priority = 6,
-                Category = "Cooling",
-                Problem = "Check cooling conditions",
-                Current = $"{m.AverageTemperature:0} °C average during the scan",
-                Recommended = "Hard, flat surface · vents free · no bed/blanket · consider room temperature · clean vents carefully if needed",
+                Category = L.T("Cooling"),
+                Problem = L.T("Check cooling conditions"),
+                Current = L.F("{0:0} °C average during the scan", m.AverageTemperature),
+                Recommended = L.T("Hard, flat surface · vents free · no bed/blanket · consider room temperature · clean vents carefully if needed"),
                 Impact = (m.AverageCpuLoad ?? 100) < 25 ? ImpactLevel.High : ImpactLevel.Medium,
-                ImpactNote = "Better airflow lets the fan remove heat more effectively. Software cannot do this part.",
+                ImpactNote = L.T("Better airflow lets the fan remove heat more effectively. Software cannot do this part."),
             });
         }
 
@@ -516,12 +517,12 @@ public static class ThermalAnalysisService
     private static ThermalFinding FromOptimization(Optimization opt, int priority, string category, ImpactLevel impact, bool select, OptimizationContext context, string? note) => new()
     {
         Priority = priority,
-        Category = category,
+        Category = L.T(category),
         Problem = opt.Name,
         Current = opt.CurrentState,
         Recommended = opt.RecommendedState,
         Impact = impact,
-        ImpactNote = note ?? "May reduce background load and therefore may reduce temperature.",
+        ImpactNote = L.T(note ?? "May reduce background load and therefore may reduce temperature."),
         Tradeoff = opt.Downsides,
         IsReversible = opt.IsReversible,
         Apply = backup => opt.ApplyAsync(backup, context),
@@ -562,7 +563,7 @@ public static class ThermalAnalysisService
                 }
             }
 
-            return closed > 0 ? OperationResult.Ok($"{group.DisplayName} closed") : OperationResult.Fail($"{group.DisplayName} could not be closed");
+            return closed > 0 ? OperationResult.Ok(L.F("{0} closed", group.DisplayName)) : OperationResult.Fail(L.F("{0} could not be closed", group.DisplayName));
         }
 
         var (ok, message) = await BackgroundAppsService.CloseGroupAsync(group);
@@ -584,7 +585,7 @@ public static class ThermalAnalysisService
             ActionLog.Success("Thermal: power plan", PowerManager.GetFriendlyName(scheme), "Balanced");
         }
 
-        return OperationResult.Ok("Balanced power mode active");
+        return OperationResult.Ok(L.T("Balanced power mode active"));
     }
 
     /// <summary>
@@ -617,38 +618,38 @@ public static class ThermalAnalysisService
         var list = new List<string>();
         if (m.AverageCpuLoad is double load)
         {
-            list.Add($"Your CPU is currently using {load:0} % load.");
+            list.Add(L.F("Your CPU is currently using {0:0} % load.", load));
         }
 
         foreach (var u in usages.Where(u => !u.IsSystem && u.Cpu >= 3).OrderByDescending(u => u.Cpu).Take(3))
         {
-            list.Add($"{u.Name} is using {u.Cpu:0} % CPU.");
+            list.Add(L.F("{0} is using {1:0} % CPU.", u.Name, u.Cpu));
         }
 
         if (bgCpu >= 3)
         {
-            list.Add("Closing unnecessary background applications may reduce CPU workload.");
+            list.Add(L.T("Closing unnecessary background applications may reduce CPU workload."));
         }
 
         if (game != null)
         {
-            list.Add("A game is running – higher temperatures are expected under gaming load. An FPS cap (e.g. at your display's refresh rate) is one of the most effective ways to reduce gaming heat.");
+            list.Add(L.T("A game is running – higher temperatures are expected under gaming load. An FPS cap (e.g. at your display's refresh rate) is one of the most effective ways to reduce gaming heat."));
         }
 
         if (aggressive)
         {
-            list.Add("'Best performance' power mode produces more heat. 'Balanced' usually runs cooler with a small performance cost.");
+            list.Add(L.T("'Best performance' power mode produces more heat. 'Balanced' usually runs cooler with a small performance cost."));
         }
 
         if (m.AverageTemperature >= 75 && (m.AverageCpuLoad ?? 100) < 25)
         {
-            list.Add("Temperature is high while CPU load is low.");
-            list.Add("Software optimization may have limited impact. Check ventilation and cooling.");
+            list.Add(L.T("Temperature is high while CPU load is low."));
+            list.Add(L.T("Software optimization may have limited impact. Check ventilation and cooling."));
         }
 
         if (m.AverageTemperature is null)
         {
-            list.Add("No temperature sensor is readable. For exact CPU temperatures start HWiNFO (Shared Memory enabled) or LibreHardwareMonitor in the background – ConstiBoost reads their values read-only.");
+            list.Add(L.T("No temperature sensor is readable. For exact CPU temperatures start HWiNFO (Shared Memory enabled) or LibreHardwareMonitor in the background – ConstiBoost reads their values read-only."));
         }
 
         return list;

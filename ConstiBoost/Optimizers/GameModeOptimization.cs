@@ -3,22 +3,23 @@ using ConstiBoost.Backup;
 using ConstiBoost.Core;
 using ConstiBoost.Models;
 using ConstiBoost.Services;
+using ConstiBoost.Localization;
 
 namespace ConstiBoost.Optimizers;
 
 public sealed class GameModeOptimization : Optimization
 {
     public override string Id => "gamemode";
-    public override string Name => "Game Mode";
-    public override string Category => "Gaming";
+    public override string Name => L.T("Game Mode");
+    public override string Category => L.T("Gaming");
     public override string Icon => "";
     public override ImpactLevel Impact => ImpactLevel.Medium;
 
     public override string WhatItDoes =>
-        "Windows Game Mode prioritizes the game you are playing: it prevents Windows Update from installing drivers or showing restart notifications while you play and gives the game more consistent CPU time.";
+        L.T("Windows Game Mode prioritizes the game you are playing: it prevents Windows Update from installing drivers or showing restart notifications while you play and gives the game more consistent CPU time.");
 
     public override string Downsides =>
-        "Practically none. Background tasks (e.g. streaming or recording software) may get slightly less CPU time while a game runs.";
+        L.T("Practically none. Background tasks (e.g. streaming or recording software) may get slightly less CPU time while a game runs.");
 
     protected override void RefreshCore(OptimizationContext context)
     {

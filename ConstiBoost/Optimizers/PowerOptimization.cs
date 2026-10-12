@@ -6,6 +6,7 @@ using ConstiBoost.Core;
 using ConstiBoost.Logging;
 using ConstiBoost.Models;
 using ConstiBoost.WinSys;
+using ConstiBoost.Localization;
 
 namespace ConstiBoost.Optimizers;
 
@@ -20,16 +21,16 @@ public sealed class PowerOptimization : Optimization
     private bool _highPerfExists;
 
     public override string Id => "power";
-    public override string Name => "Power profile";
-    public override string Category => "Power";
+    public override string Name => L.T("Power profile");
+    public override string Category => L.T("Power");
     public override string Icon => "";
     public override ImpactLevel Impact => ImpactLevel.High;
 
     public override string WhatItDoes =>
-        "Sets Windows to its performance power mode so CPU and integrated GPU can hold higher clocks instead of saving energy. Uses only built-in Windows power settings.";
+        L.T("Sets Windows to its performance power mode so CPU and integrated GPU can hold higher clocks instead of saving energy. Uses only built-in Windows power settings.");
 
     public override string Downsides =>
-        "Higher power draw, more heat and fan noise, shorter battery life on laptops. Best used while plugged in.";
+        L.T("Higher power draw, more heat and fan noise, shorter battery life on laptops. Best used while plugged in.");
 
     protected override void RefreshCore(OptimizationContext context)
     {
@@ -48,7 +49,7 @@ public sealed class PowerOptimization : Optimization
 
         string planName = PowerManager.GetFriendlyName(_scheme.Value);
         bool onBattery = context.Hardware.HasBattery && SystemInfo.GetPowerStatus().onAc == false;
-        string batteryNote = onBattery ? " You are on battery right now – plug in for the full effect." : string.Empty;
+        string batteryNote = onBattery ? " " + L.T("You are on battery right now – plug in for the full effect.") : string.Empty;
 
         if (_scheme == PowerManager.HighPerformance || _scheme == PowerManager.UltimatePerformance)
         {
@@ -59,16 +60,16 @@ public sealed class PowerOptimization : Optimization
         }
         else if (_overlay != null && (_scheme == PowerManager.Balanced || _scheme == PowerManager.PowerSaver))
         {
-            CurrentState = _scheme == PowerManager.Balanced ? $"Balanced · Power mode: {PowerManager.OverlayName(_overlay)}" : planName;
+            CurrentState = _scheme == PowerManager.Balanced ? L.F("Balanced · Power mode: {0}", L.T(PowerManager.OverlayName(_overlay))) : planName;
             RecommendedState = "Balanced · Power mode: Best performance";
-            Reason = "The 'Best performance' power mode lets the CPU and Radeon/Intel graphics boost longer. This is the Windows-intended way on modern laptops." + batteryNote;
+            Reason = L.T("The 'Best performance' power mode lets the CPU and Radeon/Intel graphics boost longer. This is the Windows-intended way on modern laptops.") + batteryNote;
             NeedsChange = _scheme != PowerManager.Balanced || _overlay != PowerManager.OverlayBestPerformance;
         }
         else if (_highPerfExists)
         {
             CurrentState = planName;
             RecommendedState = "High performance";
-            Reason = "The built-in High performance plan keeps clocks higher during games." + batteryNote;
+            Reason = L.T("The built-in High performance plan keeps clocks higher during games.") + batteryNote;
             NeedsChange = true;
         }
         else

@@ -10,6 +10,7 @@ using ConstiBoost.Logging;
 using ConstiBoost.Models;
 using ConstiBoost.Services;
 using ConstiBoost.WinSys;
+using ConstiBoost.Localization;
 
 namespace ConstiBoost.FpsBoost;
 
@@ -25,11 +26,11 @@ public sealed class PowerSettingFeature : FpsBoostFeature
         PowerSettingDef def, uint target, Func<uint, bool> isOptimal, Func<uint, string> describe)
     {
         Id = id;
-        Name = name;
+        Name = L.T(name);
         Icon = icon;
-        Impact = impact;
-        Description = description;
-        Downside = downside;
+        Impact = L.T(impact);
+        Description = L.T(description);
+        Downside = L.T(downside);
         _def = def;
         _target = target;
         _isOptimal = isOptimal;
@@ -39,7 +40,7 @@ public sealed class PowerSettingFeature : FpsBoostFeature
     public override string Id { get; }
     public override string Name { get; }
     public override string Icon { get; }
-    public override string Category => "Power & CPU";
+    public override string Category => L.T("Power & CPU");
     public override string Impact { get; }
     public override string Description { get; }
     public override string Downside { get; }
@@ -50,14 +51,14 @@ public sealed class PowerSettingFeature : FpsBoostFeature
         uint? value = scheme is null ? null : PowerSettings.ReadAc(_def, scheme);
         if (value is null)
         {
-            Unavailable("This optimization is unavailable on your system (this power setting does not exist on this PC / driver).");
+            Unavailable(L.T("This optimization is unavailable on your system (this power setting does not exist on this PC / driver)."));
             return;
         }
 
         bool optimal = _isOptimal(value.Value);
         Set(optimal ? CheckStatus.Good : CheckStatus.Warning,
-            $"Plugged in: {_describe(value.Value)}",
-            optimal ? "Already optimal." : $"Recommended: {_describe(_target)}",
+            L.F("Plugged in: {0}", L.T(_describe(value.Value))),
+            optimal ? "Already optimal." : L.F("Recommended: {0}", L.T(_describe(_target))),
             !optimal);
     }
 
@@ -77,12 +78,12 @@ public sealed class WindowedOptimizationsFeature : FpsBoostFeature
     private const string Flag = "SwapEffectUpgradeEnable=1;";
 
     public override string Id => "windowed-opt";
-    public override string Name => "Optimizations for windowed games";
+    public override string Name => L.T("Optimizations for windowed games");
     public override string Icon => "🪟";
-    public override string Category => "Graphics & Display";
-    public override string Impact => "MEDIUM";
-    public override string Description => "Windows 11 switches older DirectX 10/11 games in windowed / borderless mode to the modern flip presentation model: lower input lag and often a few more FPS – the same switch as Settings → Display → Graphics → 'Optimizations for windowed games'.";
-    public override string Downside => "Very rarely an old game shows issues in windowed mode – Undo restores it.";
+    public override string Category => L.T("Graphics & Display");
+    public override string Impact => L.T("MEDIUM");
+    public override string Description => L.T("Windows 11 switches older DirectX 10/11 games in windowed / borderless mode to the modern flip presentation model: lower input lag and often a few more FPS – the same switch as Settings → Display → Graphics → 'Optimizations for windowed games'.");
+    public override string Downside => L.T("Very rarely an old game shows issues in windowed mode – Undo restores it.");
 
     protected override void CheckCore()
     {
@@ -118,12 +119,12 @@ public sealed class BrowserGpuPreferenceFeature : FpsBoostFeature
     private const string Key = @"Software\Microsoft\DirectX\UserGpuPreferences";
 
     public override string Id => "browser-gpu";
-    public override string Name => "Browsers on the high-performance GPU";
+    public override string Name => L.T("Browsers on the high-performance GPU");
     public override string Icon => "🌐";
-    public override string Category => "Graphics & Display";
-    public override string Impact => "HIGH";
-    public override string Description => "Sets Windows' graphics preference 'High performance' for all installed browsers, so WebGL games never run on the weaker GPU. Matters on laptops with two graphics chips.";
-    public override string Downside => "Slightly more power use while the browser is open (dual-GPU laptops only).";
+    public override string Category => L.T("Graphics & Display");
+    public override string Impact => L.T("HIGH");
+    public override string Description => L.T("Sets Windows' graphics preference 'High performance' for all installed browsers, so WebGL games never run on the weaker GPU. Matters on laptops with two graphics chips.");
+    public override string Downside => L.T("Slightly more power use while the browser is open (dual-GPU laptops only).");
 
     private static List<string> Browsers() => BrowserGamesScanner.Scan().Select(b => b.MainExecutable).OfType<string>().ToList();
 
@@ -146,7 +147,7 @@ public sealed class BrowserGpuPreferenceFeature : FpsBoostFeature
         }
 
         Set(missing.Count == 0 ? CheckStatus.Good : CheckStatus.Warning,
-            missing.Count == 0 ? "All browsers: High performance" : $"{missing.Count} browser(s) not set",
+            missing.Count == 0 ? "All browsers: High performance" : L.F("{0} browser(s) not set", missing.Count),
             missing.Count == 0 ? "Already optimal." : string.Join(", ", missing.Select(Path.GetFileName)),
             missing.Count > 0);
     }
@@ -164,7 +165,7 @@ public sealed class BrowserGpuPreferenceFeature : FpsBoostFeature
             count++;
         }
 
-        return Task.FromResult(OperationResult.Ok($"{count} browser(s) set to High performance – restart the browser."));
+        return Task.FromResult(OperationResult.Ok(L.F("{0} browser(s) set to High performance – restart the browser.", count)));
     }
 }
 
@@ -172,12 +173,12 @@ public sealed class BrowserGpuPreferenceFeature : FpsBoostFeature
 public sealed class RefreshRateFeature : FpsBoostFeature
 {
     public override string Id => "refresh";
-    public override string Name => "Highest display refresh rate";
+    public override string Name => L.T("Highest display refresh rate");
     public override string Icon => "🖥️";
-    public override string Category => "Graphics & Display";
-    public override string Impact => "MEDIUM";
-    public override string Description => "Some laptops run the screen below its maximum (e.g. 48 Hz or 60 Hz on a 120/144 Hz panel, or a power-saving mode). The refresh rate caps the FPS you can SEE and VSync-locked games.";
-    public override string Downside => "Higher refresh rates use a little more power. Windows asks to keep the mode – without confirmation it reverts after 15 s.";
+    public override string Category => L.T("Graphics & Display");
+    public override string Impact => L.T("MEDIUM");
+    public override string Description => L.T("Some laptops run the screen below its maximum (e.g. 48 Hz or 60 Hz on a 120/144 Hz panel, or a power-saving mode). The refresh rate caps the FPS you can SEE and VSync-locked games.");
+    public override string Downside => L.T("Higher refresh rates use a little more power. Windows asks to keep the mode – without confirmation it reverts after 15 s.");
 
     private DisplayMode? _best;
 
@@ -193,27 +194,27 @@ public sealed class RefreshRateFeature : FpsBoostFeature
         _best = DisplayModes.All().Where(m => m.Width == current.Width && m.Height == current.Height).OrderByDescending(m => m.RefreshRate).FirstOrDefault();
         bool better = _best != null && _best.RefreshRate > current.RefreshRate;
         Set(better ? CheckStatus.Warning : CheckStatus.Good, $"{current.RefreshRate} Hz",
-            better ? $"Your display supports {_best!.RefreshRate} Hz at {current.Width}×{current.Height}." : "Already the highest refresh rate this display offers.", better);
+            better ? L.F("Your display supports {0} Hz at {1}×{2}.", _best!.RefreshRate, current.Width, current.Height) : "Already the highest refresh rate this display offers.", better);
     }
 
     protected override async Task<OperationResult> ApplyCoreAsync(BackupSession backup)
     {
         if (_best is null)
         {
-            return OperationResult.Unavailable("No better mode.");
+            return OperationResult.Unavailable(L.T("No better mode."));
         }
 
         backup.CaptureDisplayMode();
         var previous = DisplayModes.Current()!;
         DisplayModes.Apply(_best, true);
-        if (!await DisplayKeepPrompt.AskAsync($"Keep {_best.RefreshRate} Hz?"))
+        if (!await DisplayKeepPrompt.AskAsync(L.F("Keep {0} Hz?", _best.RefreshRate)))
         {
             DisplayModes.Apply(previous, true);
-            return OperationResult.Fail("Reverted to " + previous.RefreshRate + " Hz.");
+            return OperationResult.Fail(L.F("Reverted to {0} Hz.", previous.RefreshRate));
         }
 
         ActionLog.Success("FPS Boost: refresh rate", previous.ToString(), _best.ToString());
-        return OperationResult.Ok($"Display now runs at {_best.RefreshRate} Hz.");
+        return OperationResult.Ok(L.F("Display now runs at {0} Hz.", _best.RefreshRate));
     }
 }
 
@@ -223,12 +224,12 @@ public sealed class GamingResolutionFeature : FpsBoostFeature
     private DisplayMode? _target;
 
     public override string Id => "gaming-res";
-    public override string Name => "Gaming resolution (temporary)";
+    public override string Name => L.T("Gaming resolution (temporary)");
     public override string Icon => "🔻";
-    public override string Category => "Graphics & Display";
-    public override string Impact => "HIGH";
-    public override string Description => "Lowers the Windows resolution while you play, e.g. 1920×1080 → 1600×900 (−31 % pixels) or 1280×720 (−56 %). Every fullscreen browser game and game in borderless mode renders fewer pixels – the strongest FPS lever on integrated graphics when the GPU is the limit. Not saved permanently: a restart, sign-out or Undo returns to normal.";
-    public override string Downside => "The picture is slightly less sharp and desktop icons can move. Does not help when the CPU is the limit (see 🔍 ANALYZE in Games).";
+    public override string Category => L.T("Graphics & Display");
+    public override string Impact => L.T("HIGH");
+    public override string Description => L.T("Lowers the Windows resolution while you play, e.g. 1920×1080 → 1600×900 (−31 % pixels) or 1280×720 (−56 %). Every fullscreen browser game and game in borderless mode renders fewer pixels – the strongest FPS lever on integrated graphics when the GPU is the limit. Not saved permanently: a restart, sign-out or Undo returns to normal.");
+    public override string Downside => L.T("The picture is slightly less sharp and desktop icons can move. Does not help when the CPU is the limit (see 🔍 ANALYZE in Games).");
     public override bool InApplyAll => false;
 
     protected override void CheckCore()
@@ -247,7 +248,7 @@ public sealed class GamingResolutionFeature : FpsBoostFeature
             .GroupBy(m => (m.Width, m.Height)).Select(g => g.OrderByDescending(m => m.RefreshRate).First()).OrderByDescending(m => m.Width).ToList();
         _target = candidates.FirstOrDefault(m => m.Width * m.Height <= nativePixels * 0.75) ?? candidates.FirstOrDefault();
         bool lowered = current.Width * current.Height < nativePixels;
-        Actions = candidates.Take(3).Select(m => new BoostAction($"Use {m.Width}×{m.Height} (−{100 - m.Width * m.Height * 100 / nativePixels} % pixels)",
+        Actions = candidates.Take(3).Select(m => new BoostAction(L.F("Use {0}×{1} (−{2} % pixels)", m.Width, m.Height, 100 - m.Width * m.Height * 100 / nativePixels),
             new AsyncRelayCommand(async () => { _target = m; CanImprove = true; await ApplyAsync(); }))).ToList();
         if (candidates.Count == 0)
         {
@@ -256,8 +257,8 @@ public sealed class GamingResolutionFeature : FpsBoostFeature
         }
 
         Set(lowered ? CheckStatus.Good : CheckStatus.Warning,
-            lowered ? $"Active: {current.Width}×{current.Height}" : $"Native {current.Width}×{current.Height}",
-            lowered ? "Gaming resolution is active – press UNDO (or restart) to return to the native resolution." : $"Suggested for gaming: {_target!.Width}×{_target.Height}.",
+            lowered ? L.F("Active: {0}×{1}", current.Width, current.Height) : L.F("Native {0}×{1}", current.Width, current.Height),
+            lowered ? "Gaming resolution is active – press UNDO (or restart) to return to the native resolution." : L.F("Suggested for gaming: {0}×{1}.", _target!.Width, _target.Height),
             !lowered);
     }
 
@@ -265,20 +266,20 @@ public sealed class GamingResolutionFeature : FpsBoostFeature
     {
         if (_target is null)
         {
-            return OperationResult.Unavailable("No smaller resolution.");
+            return OperationResult.Unavailable(L.T("No smaller resolution."));
         }
 
         backup.CaptureDisplayMode();
         var previous = DisplayModes.Current()!;
         DisplayModes.Apply(_target, false);
-        if (!await DisplayKeepPrompt.AskAsync($"Keep {_target.Width}×{_target.Height} for gaming?"))
+        if (!await DisplayKeepPrompt.AskAsync(L.F("Keep {0}×{1} for gaming?", _target.Width, _target.Height)))
         {
             DisplayModes.ResetToSaved();
-            return OperationResult.Fail("Reverted to " + previous.Width + "×" + previous.Height + ".");
+            return OperationResult.Fail(L.F("Reverted to {0}×{1}.", previous.Width, previous.Height));
         }
 
         ActionLog.Success("FPS Boost: gaming resolution (temporary)", previous.ToString(), _target.ToString());
-        return OperationResult.Ok($"{_target.Width}×{_target.Height} active until Undo / restart.");
+        return OperationResult.Ok(L.F("{0}×{1} active until Undo / restart.", _target.Width, _target.Height));
     }
 
     protected override Task OnUndoneAsync()
@@ -295,12 +296,12 @@ public sealed class DeliveryOptimizationFeature : FpsBoostFeature
     private const string Value = "DODownloadMode";
 
     public override string Id => "delivery-opt";
-    public override string Name => "Stop update sharing with other PCs";
+    public override string Name => L.T("Stop update sharing with other PCs");
     public override string Icon => "📡";
-    public override string Category => "Network & Background";
-    public override string Impact => "LOW";
-    public override string Description => "Windows can upload update files to other PCs on the internet in the background (Delivery Optimization). This uses upload bandwidth and causes lag spikes in online and web games. After the change Windows downloads updates directly from Microsoft – Windows Update keeps working normally.";
-    public override string Downside => "Updates are no longer shared between your own PCs on the local network. Needs one UAC prompt.";
+    public override string Category => L.T("Network & Background");
+    public override string Impact => L.T("LOW");
+    public override string Description => L.T("Windows can upload update files to other PCs on the internet in the background (Delivery Optimization). This uses upload bandwidth and causes lag spikes in online and web games. After the change Windows downloads updates directly from Microsoft – Windows Update keeps working normally.");
+    public override string Downside => L.T("Updates are no longer shared between your own PCs on the local network. Needs one UAC prompt.");
     public override bool InApplyAll => false;
 
     protected override void CheckCore()
@@ -308,7 +309,7 @@ public sealed class DeliveryOptimizationFeature : FpsBoostFeature
         int? mode = RegistryHelper.ReadDword("HKLM", Key, Value);
         bool off = mode is 0 or 99 or 100;
         Set(off ? CheckStatus.Good : CheckStatus.Warning,
-            mode is null ? "Windows default (sharing allowed)" : $"Mode {mode}",
+            mode is null ? "Windows default (sharing allowed)" : L.F("Mode {0}", mode),
             off ? "Already optimal – no peer-to-peer uploads." : "Recommended: HTTP only (direct download from Microsoft, no uploading).",
             !off);
     }

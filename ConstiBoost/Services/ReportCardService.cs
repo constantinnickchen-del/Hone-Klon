@@ -7,6 +7,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using ConstiBoost.Hardware;
+using ConstiBoost.Localization;
 using ConstiBoost.Logging;
 using ConstiBoost.Models;
 
@@ -47,33 +48,33 @@ public static class ReportCardService
 
             var left = new StackPanel();
             left.Children.Add(Text("⚡ ConstiBoost PRO", 26, accent, FontWeights.Bold));
-            left.Children.Add(Text("MY PC REPORT", 16, Brushes.Gray, FontWeights.SemiBold, 4));
+            left.Children.Add(Text(L.T("MY PC REPORT"), 16, Brushes.Gray, FontWeights.SemiBold, 4));
             left.Children.Add(Text($"{hw.Manufacturer} {hw.Model}", 30, Brushes.White, FontWeights.Bold, 28));
             left.Children.Add(Text(CpuDatabase.ShortName(hw.CpuName), 22, Brushes.Gainsboro, FontWeights.Normal, 14));
             left.Children.Add(Text(GpuDatabase.Classify(hw)?.Name ?? hw.PrimaryGpuName, 22, Brushes.Gainsboro, FontWeights.Normal, 4));
-            left.Children.Add(Text($"{Math.Round((hw.TotalRamBytes ?? 0) / 1073741824d)} GB RAM · {hw.RamModules?.ToString() ?? "?"} module(s) · {hw.WindowsName}", 20, Brushes.Gainsboro, FontWeights.Normal, 4));
+            left.Children.Add(Text(L.F("{0} GB RAM · {1} module(s) · {2}", Math.Round((hw.TotalRamBytes ?? 0) / 1073741824d), hw.RamModules?.ToString() ?? "?", hw.WindowsName), 20, Brushes.Gainsboro, FontWeights.Normal, 4));
             if (insight != null)
             {
-                left.Children.Add(Text("BIGGEST BOTTLENECK", 14, Brushes.Gray, FontWeights.SemiBold, 30));
+                left.Children.Add(Text(L.T("BIGGEST BOTTLENECK"), 14, Brushes.Gray, FontWeights.SemiBold, 30));
                 left.Children.Add(Text($"{insight.Title} ({insight.Current})", 20, Brushes.Orange, FontWeights.SemiBold, 4));
             }
 
             if (upgrade != null)
             {
-                left.Children.Add(Text("BEST NEXT STEP", 14, Brushes.Gray, FontWeights.SemiBold, 18));
+                left.Children.Add(Text(L.T("BEST NEXT STEP"), 14, Brushes.Gray, FontWeights.SemiBold, 18));
                 left.Children.Add(Text(upgrade.Title, 20, Brushes.LightGreen, FontWeights.SemiBold, 4));
             }
 
             grid.Children.Add(left);
 
             var right = new StackPanel { VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Center };
-            right.Children.Add(Text("GAMING READINESS", 16, Brushes.Gray, FontWeights.SemiBold, 0, HorizontalAlignment.Center));
+            right.Children.Add(Text(L.T("GAMING READINESS"), 16, Brushes.Gray, FontWeights.SemiBold, 0, HorizontalAlignment.Center));
             right.Children.Add(Text($"{scan.Score}", 150, accent, FontWeights.Black, 0, HorizontalAlignment.Center));
             right.Children.Add(Text("/ 100", 26, Brushes.Gray, FontWeights.SemiBold, -20, HorizontalAlignment.Center));
             if (bestFps != null)
             {
                 right.Children.Add(Text($"{bestFps.GameName}: {bestFps.AverageFps:0} FPS", 26, Brushes.White, FontWeights.Bold, 30, HorizontalAlignment.Center));
-                right.Children.Add(Text($"measured · 1 % low {bestFps.Low1:0} · {bestFps.Setting}", 16, Brushes.Gray, FontWeights.Normal, 4, HorizontalAlignment.Center));
+                right.Children.Add(Text(L.F("measured · 1 % low {0:0} · {1}", bestFps.Low1, L.T(bestFps.Setting)), 16, Brushes.Gray, FontWeights.Normal, 4, HorizontalAlignment.Center));
             }
 
             Grid.SetColumn(right, 1);

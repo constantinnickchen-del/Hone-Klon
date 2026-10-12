@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 using ConstiBoost.Backup;
 using ConstiBoost.Core;
+using ConstiBoost.Localization;
 using ConstiBoost.Logging;
 using ConstiBoost.Models;
 
@@ -76,7 +77,7 @@ public static class FpsBoostStore
 public abstract class FpsBoostFeature : ObservableObject
 {
     private CheckStatus _status = CheckStatus.Unavailable;
-    private string _stateText = "Checking…";
+    private string _stateText = L.T("Checking…");
     private string _detail = string.Empty;
     private bool _canImprove;
     private bool _isBusy;
@@ -93,7 +94,7 @@ public abstract class FpsBoostFeature : ObservableObject
     public abstract string Impact { get; }
 
     public abstract string Description { get; }
-    public virtual string Downside => "None.";
+    public virtual string Downside => L.T("None.");
 
     /// <summary>Whether this feature changes a setting (Apply / Undo) or is a check/guide.</summary>
     public virtual bool ChangesSettings => true;
@@ -149,7 +150,7 @@ public abstract class FpsBoostFeature : ObservableObject
         }
         catch (Exception ex)
         {
-            Unavailable("This optimization is unavailable on your system. " + Safe.Describe(ex));
+            Unavailable(L.T("This optimization is unavailable on your system.") + " " + Safe.Describe(ex));
             AppLog.Warn($"FPS Boost check {Id} failed: {ex.Message}");
         }
 
@@ -161,13 +162,13 @@ public abstract class FpsBoostFeature : ObservableObject
     protected abstract void CheckCore();
 
     protected virtual Task<OperationResult> ApplyCoreAsync(BackupSession backup) =>
-        Task.FromResult(OperationResult.Unavailable("Nothing to apply."));
+        Task.FromResult(OperationResult.Unavailable(L.T("Nothing to apply.")));
 
     public async Task<OperationResult> ApplyAsync()
     {
         if (!CanImprove || IsBusy)
         {
-            return OperationResult.Ok("Already optimal.");
+            return OperationResult.Ok(L.T("Already optimal."));
         }
 
         IsBusy = true;
@@ -193,7 +194,7 @@ public abstract class FpsBoostFeature : ObservableObject
             IsBusy = false;
         }
 
-        ResultText = result.Success ? "✓ " + result.Message : "✗ " + result.Message + (result.TechnicalDetails is null ? string.Empty : $" ({result.TechnicalDetails})");
+        ResultText = result.Success ? "✓ " + L.T(result.Message) : "✗ " + L.T(result.Message) + (result.TechnicalDetails is null ? string.Empty : $" ({result.TechnicalDetails})");
         await Task.Run(Check);
         return result;
     }
@@ -203,7 +204,7 @@ public abstract class FpsBoostFeature : ObservableObject
         string? folder = FpsBoostStore.Get(Id);
         if (folder is null || IsBusy)
         {
-            return OperationResult.Ok("Nothing to undo.");
+            return OperationResult.Ok(L.T("Nothing to undo."));
         }
 
         IsBusy = true;
@@ -215,16 +216,16 @@ public abstract class FpsBoostFeature : ObservableObject
             if (report.Failed == 0)
             {
                 FpsBoostStore.Set(Id, null);
-                ResultText = "↩ Restored the previous state.";
+                ResultText = L.T("↩ Restored the previous state.");
             }
             else
             {
-                ResultText = "Restore finished with notes: " + string.Join("; ", report.Messages);
+                ResultText = L.T("Restore finished with notes: ") + string.Join("; ", report.Messages);
             }
         }
         catch (Exception ex)
         {
-            ResultText = "Undo failed: " + Safe.Describe(ex);
+            ResultText = L.T("Undo failed: ") + Safe.Describe(ex);
         }
         finally
         {
@@ -240,13 +241,13 @@ public abstract class FpsBoostFeature : ObservableObject
     protected void Set(CheckStatus status, string state, string detail, bool canImprove)
     {
         Status = status;
-        StateText = state;
-        Detail = detail;
+        StateText = L.T(state);
+        Detail = L.T(detail);
         CanImprove = canImprove;
     }
 
     protected void Unavailable(string reason) => Set(CheckStatus.Unavailable, "Unavailable", reason, false);
 
     protected void ShowResult(OperationResult r) =>
-        ResultText = r.Success ? "✓ " + r.Message : "✗ " + r.Message + (r.TechnicalDetails is null ? string.Empty : $" ({r.TechnicalDetails})");
+        ResultText = r.Success ? "✓ " + L.T(r.Message) : "✗ " + L.T(r.Message) + (r.TechnicalDetails is null ? string.Empty : $" ({r.TechnicalDetails})");
 }

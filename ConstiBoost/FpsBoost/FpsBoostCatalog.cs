@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using ConstiBoost.Localization;
 using ConstiBoost.WinSys;
 
 namespace ConstiBoost.FpsBoost;
@@ -26,11 +27,11 @@ public static class FpsBoostCatalog
             new PowerSettingFeature("epp", "CPU energy preference: performance", "⚡", "MEDIUM",
                 "Tells the CPU to prefer speed over saving energy when plugged in (energy performance preference). The CPU ramps up its clock faster – fewer short FPS drops.",
                 "Slightly higher idle temperature and power use when plugged in. Battery values stay unchanged.",
-                PowerSettings.EnergyPreference, 10, v => v <= 25, v => v <= 25 ? $"{v} % (performance)" : v >= 75 ? $"{v} % (power saving)" : $"{v} % (balanced)"),
+                PowerSettings.EnergyPreference, 10, v => v <= 25, v => v <= 25 ? L.F("{0} % (performance)", v) : v >= 75 ? L.F("{0} % (power saving)", v) : L.F("{0} % (balanced)", v)),
             new PowerSettingFeature("core-parking", "No CPU core parking (plugged in)", "🅿️", "LOW",
                 "Keeps all CPU cores awake instead of 'parking' them. Avoids small wake-up delays that can show up as micro-stutter.",
                 "A little more idle power use when plugged in. The effect is small on modern Ryzen CPUs – honest note.",
-                PowerSettings.CoreParkingMin, 100, v => v >= 100, v => $"min {v} % cores active"),
+                PowerSettings.CoreParkingMin, 100, v => v >= 100, v => L.F("min {0} % cores active", v)),
             new PowerSettingFeature("cooling-policy", "Cooling policy: Active (fan first)", "🌀", "MEDIUM",
                 "'Active' means Windows increases the fan speed BEFORE it slows down the CPU. 'Passive' throttles the CPU first – that costs FPS when the laptop gets warm (your PC reaches ~83 °C).",
                 "The fan can get louder sooner. This never disables any protection.",

@@ -31,7 +31,7 @@ public sealed class TempFilesOptimization : Optimization
         (_bytes, int files) = CleanerService.Measure(Path.GetTempPath(), 24);
         CurrentState = L.F("{0} ({1} files)", Formatting.Bytes(_bytes), files);
         RecommendedState = "Cleaned";
-        Reason = "Frees disk space. Helps most when the system drive is nearly full.";
+        Reason = L.T("Frees disk space. Helps most when the system drive is nearly full.");
         NeedsChange = _bytes > 50L * 1024 * 1024;
     }
 
@@ -64,10 +64,10 @@ public sealed class ShaderCacheOptimization : Optimization
     {
         _bytes = CleanerService.ShaderCachePaths().Sum(p => CleanerService.Measure(p, 0).bytes);
         CurrentState = Formatting.Bytes(_bytes);
-        RecommendedState = _bytes > 1024L * 1024 * 1024 ? "Cleaned" : "Keep (cache is small)";
+        RecommendedState = _bytes > 1024L * 1024 * 1024 ? "Cleaned" : L.T("Keep (cache is small)");
         Reason = _bytes > 1024L * 1024 * 1024
-            ? "Cache is larger than 1 GB – rebuilding can fix stutter from outdated entries."
-            : "A small cache is healthy; deleting it would only cause extra compile stutter.";
+            ? L.T("Cache is larger than 1 GB – rebuilding can fix stutter from outdated entries.")
+            : L.T("A small cache is healthy; deleting it would only cause extra compile stutter.");
         NeedsChange = _bytes > 1024L * 1024 * 1024;
     }
 

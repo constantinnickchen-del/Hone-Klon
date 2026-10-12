@@ -3,6 +3,8 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 using ConstiBoost.Logging;
 
+using ConstiBoost.Localization;
+
 namespace ConstiBoost.Core;
 
 public sealed class RelayCommand : ICommand
@@ -86,7 +88,7 @@ public sealed class AsyncRelayCommand : ICommand
         catch (Exception ex)
         {
             AppLog.Error("Async command failed", ex);
-            Services.NotificationService.Instance.Show("This action couldn't be completed. Details were written to the log.", Models.NotificationKind.Error);
+            Services.NotificationService.Instance.Show(L.T("This action couldn't be completed. Details were written to the log."), Models.NotificationKind.Error);
         }
         finally
         {

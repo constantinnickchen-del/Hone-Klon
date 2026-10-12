@@ -8,6 +8,8 @@ using ConstiBoost.Core;
 using ConstiBoost.Logging;
 using ConstiBoost.WinSys;
 
+using ConstiBoost.Localization;
+
 namespace ConstiBoost.Games;
 
 /// <summary>Reads the command lines of the browser's own processes (to tell GPU process / renderers apart).</summary>
@@ -207,7 +209,7 @@ public static class BrowserLaunchService
     {
         if (!IsSupported(game) || game.MainExecutable is null || !File.Exists(game.MainExecutable))
         {
-            return OperationResult.Unavailable("This optimization is unavailable for this browser (Performance Launch needs Chrome, Edge, Brave or Opera).");
+            return OperationResult.Unavailable(L.T("This optimization is unavailable for this browser (Performance Launch needs Chrome, Edge, Brave or Opera)."));
         }
 
         if (!TryNormalizeUrl(options.Url, out string url))
@@ -224,7 +226,7 @@ public static class BrowserLaunchService
                 // to the default browser as the normal user instead (start flags cannot be passed this way).
                 using var shell = Process.Start(new ProcessStartInfo("explorer.exe", $"\"{url}\"") { UseShellExecute = false });
                 ActionLog.Success($"Performance Launch: {game.Name}", null, $"{url} · normal profile via Explorer (ConstiBoost runs as administrator)");
-                return OperationResult.Ok("Opened in your default browser (normal profile). ConstiBoost runs as administrator, so the GPU start flags were skipped – start ConstiBoost normally (without 'Run as administrator') to use them.");
+                return OperationResult.Ok(L.T("Opened in your default browser (normal profile). ConstiBoost runs as administrator, so the GPU start flags were skipped – start ConstiBoost normally (without 'Run as administrator') to use them."));
             }
 
             var args = BuildArguments(game, options with { Url = url }, freshStart);
@@ -235,12 +237,12 @@ public static class BrowserLaunchService
             ActionLog.Success($"Performance Launch: {game.Name}", null,
                 $"{url} · normal profile · {(freshStart ? "GPU start flags active" : "browser was running – flags not applied")}");
             return freshStart
-                ? OperationResult.Ok("Started in your normal browser (extensions/ad blocker and logins active) with GPU flags. Your previous tabs were restored.")
-                : OperationResult.Ok("Opened in your running browser. GPU start flags only apply after a browser restart.");
+                ? OperationResult.Ok(L.T("Started in your normal browser (extensions/ad blocker and logins active) with GPU flags. Your previous tabs were restored."))
+                : OperationResult.Ok(L.T("Opened in your running browser. GPU start flags only apply after a browser restart."));
         }
         catch (Exception ex)
         {
-            return OperationResult.Fail("Could not start the browser: " + Safe.Describe(ex));
+            return OperationResult.Fail(L.T("Could not start the browser: ") + Safe.Describe(ex));
         }
     }
 

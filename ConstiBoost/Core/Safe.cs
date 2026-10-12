@@ -2,6 +2,8 @@ using System;
 using System.Threading.Tasks;
 using ConstiBoost.Logging;
 
+using ConstiBoost.Localization;
+
 namespace ConstiBoost.Core;
 
 /// <summary>Helpers that wrap system calls so a missing permission or API never crashes the app.</summary>
@@ -64,9 +66,9 @@ public static class Safe
     {
         UnauthorizedAccessException => "Access denied",
         System.Security.SecurityException => "Access denied",
-        System.IO.IOException io => "File or resource in use: " + io.Message,
+        System.IO.IOException io => L.T("File or resource in use: ") + io.Message,
         System.ComponentModel.Win32Exception w when w.NativeErrorCode == 5 => "Access denied",
-        System.ComponentModel.Win32Exception w when w.NativeErrorCode == 1223 => "Administrator permission was declined",
+        System.ComponentModel.Win32Exception w when w.NativeErrorCode == 1223 => L.T("Administrator permission was declined"),
         _ => ex.Message,
     };
 }

@@ -3,6 +3,8 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using ConstiBoost.Models;
 
+using ConstiBoost.Localization;
+
 namespace ConstiBoost.Hardware;
 
 /// <summary>
@@ -38,23 +40,23 @@ public sealed class DeviceProfile
         string description;
         if (aspire3 && ryzenMatch && amdIgpu && !dedicated)
         {
-            title = "Acer Aspire 3 · Ryzen 5000 · Radeon Graphics";
-            description = "We detected a low-power integrated-GPU system. The LOW-END GAMING PROFILE is recommended: stable FPS, less background load, lower temperatures, no unnecessary Windows effects.";
+            title = L.T("Acer Aspire 3 · Ryzen 5000 · Radeon Graphics");
+            description = L.T("We detected a low-power integrated-GPU system. The LOW-END GAMING PROFILE is recommended: stable FPS, less background load, lower temperatures, no unnecessary Windows effects.");
         }
         else if (lowPower)
         {
-            title = "Integrated graphics system";
-            description = "We detected a low-power integrated-GPU system. The LOW-END GAMING PROFILE is recommended: stable FPS, less background load, lower temperatures, no unnecessary Windows effects.";
+            title = L.T("Integrated graphics system");
+            description = L.T("We detected a low-power integrated-GPU system. The LOW-END GAMING PROFILE is recommended: stable FPS, less background load, lower temperatures, no unnecessary Windows effects.");
         }
         else if (dedicated)
         {
-            title = "Dedicated graphics system";
-            description = "A dedicated GPU was detected. Balanced recommendations are used; visual effects stay untouched unless you choose otherwise.";
+            title = L.T("Dedicated graphics system");
+            description = L.T("A dedicated GPU was detected. Balanced recommendations are used; visual effects stay untouched unless you choose otherwise.");
         }
         else
         {
             title = "Standard system";
-            description = "Hardware could not be fully classified. Only general, safe recommendations are shown.";
+            description = L.T("Hardware could not be fully classified. Only general, safe recommendations are shown.");
         }
 
         return new DeviceProfile

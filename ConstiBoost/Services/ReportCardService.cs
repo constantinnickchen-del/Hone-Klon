@@ -23,7 +23,7 @@ public static class ReportCardService
             var scan = ScanService.Instance.Last;
             if (scan is null)
             {
-                NotificationService.Instance.Show("Run a scan first (Dashboard → RESCAN).", NotificationKind.Warning);
+                NotificationService.Instance.Show(L.T("Run a scan first (Dashboard → RESCAN)."), NotificationKind.Warning);
                 return;
             }
 
@@ -112,7 +112,7 @@ public static class ReportCardService
         catch (Exception ex)
         {
             AppLog.Error("Report card failed", ex);
-            NotificationService.Instance.Show("The report couldn't be created. Details were written to the log.", NotificationKind.Error);
+            NotificationService.Instance.Show(L.T("The report couldn't be created. Details were written to the log."), NotificationKind.Error);
         }
     }
 

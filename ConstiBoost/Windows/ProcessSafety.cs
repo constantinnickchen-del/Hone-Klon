@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 
+using ConstiBoost.Localization;
+
 namespace ConstiBoost.WinSys;
 
 public enum ProcessProtection
@@ -68,20 +70,20 @@ public static class ProcessSafety
         {
             if (IsOwnProcess(process.Id))
             {
-                reason = "This is ConstiBoost itself.";
+                reason = L.T("This is ConstiBoost itself.");
                 return false;
             }
 
             if (process.SessionId == 0)
             {
-                reason = "System service process (session 0).";
+                reason = L.T("System service process (session 0).");
                 return false;
             }
 
             string? path = TryGetPath(process);
             if (Classify(process.ProcessName, path) == ProcessProtection.Critical)
             {
-                reason = "Protected Windows/security process.";
+                reason = L.T("Protected Windows/security process.");
                 return false;
             }
 

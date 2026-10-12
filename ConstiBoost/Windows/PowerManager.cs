@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
 
+using ConstiBoost.Localization;
+
 namespace ConstiBoost.WinSys;
 
 public sealed record PowerScheme(Guid Id, string Name);
@@ -201,7 +203,7 @@ public static class PowerManager
         if (overlay == OverlayBestPerformance) return "Best performance";
         if (overlay == OverlayBetterPerformance) return "Better performance";
         if (overlay == OverlayBalanced) return "Balanced";
-        if (overlay == OverlayBestEfficiency) return "Best power efficiency";
+        if (overlay == OverlayBestEfficiency) return L.T("Best power efficiency");
         return "Custom";
     }
 }

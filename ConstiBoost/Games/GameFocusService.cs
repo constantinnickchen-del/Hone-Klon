@@ -13,6 +13,8 @@ using ConstiBoost.Models;
 using ConstiBoost.Services;
 using ConstiBoost.WinSys;
 
+using ConstiBoost.Localization;
+
 namespace ConstiBoost.Games;
 
 public sealed record FocusOptions(
@@ -232,7 +234,7 @@ public sealed class GameFocusService : ObservableObject
             }
             else
             {
-                messages.Add("Search indexing could not be restarted (it starts again with Windows): " + r.Message);
+                messages.Add(L.T("Search indexing could not be restarted (it starts again with Windows): ") + r.Message);
             }
         }
 

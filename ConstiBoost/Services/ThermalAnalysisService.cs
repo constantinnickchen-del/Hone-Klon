@@ -274,7 +274,7 @@ public static class ThermalAnalysisService
                 Severity = CheckStatus.Warning,
                 Details = g is null ? new List<string> { game } : new List<string> { $"{g.Name}: CPU {g.CpuText} · RAM {g.RamText} · GPU {g.GpuText}" },
             });
-            primary = "High gaming load";
+            primary = L.T("High gaming load");
         }
 
         var heavy = usages.Where(u => !u.IsGame && !u.IsSystem && u.Cpu >= 10).OrderByDescending(u => u.Cpu).ToList();
@@ -332,10 +332,10 @@ public static class ThermalAnalysisService
                     L.T("Aging thermal paste (only after several years; a service technician can check it)"),
                 },
             });
-            primary ??= "Cooling conditions (unverified)";
+            primary ??= L.T("Cooling conditions (unverified)");
         }
 
-        mainCause = primary ?? (temp is null ? "Unknown (no temperature sensor)" : temp < 75 ? "No thermal issue detected" : "Unknown");
+        mainCause = primary ?? (temp is null ? L.T("Unknown (no temperature sensor)") : temp < 75 ? L.T("No thermal issue detected") : "Unknown");
         return causes;
     }
 
@@ -472,7 +472,7 @@ public static class ThermalAnalysisService
         if (recording.IsAvailable && recording.NeedsChange)
         {
             findings.Add(FromOptimization(recording, 5, "Xbox Game Bar", ImpactLevel.Medium, true, context,
-                "Continuous background recording encodes video all the time – turning it off may reduce GPU/CPU load."));
+                L.T("Continuous background recording encodes video all the time – turning it off may reduce GPU/CPU load.")));
         }
 
         var dvr = new GameDvrOptimization();
@@ -505,8 +505,8 @@ public static class ThermalAnalysisService
                 opt.Refresh(context);
                 if (opt.IsAvailable && opt.NeedsChange)
                 {
-                    findings.Add(FromOptimization(opt, 7, "Optional Windows setting", ImpactLevel.Low, false, context,
-                        "Tiny effect – less desktop GPU work on integrated graphics."));
+                    findings.Add(FromOptimization(opt, 7, L.T("Optional Windows setting"), ImpactLevel.Low, false, context,
+                        L.T("Tiny effect – less desktop GPU work on integrated graphics.")));
                 }
             }
         }
@@ -599,17 +599,17 @@ public static class ThermalAnalysisService
         if (m.AverageTemperature is not double t)
         {
             int partialScore = (int)Math.Round(0.7 * bgScore + 0.3 * powerScore);
-            return (partialScore, true, "Thermal sensor unavailable – this score only reflects background load and power settings.");
+            return (partialScore, true, L.T("Thermal sensor unavailable – this score only reflects background load and power settings."));
         }
 
         double tempScore = Math.Clamp((98 - t) / (98 - 60) * 100, 0, 100);
         double loadContext = t >= 75 && load < 25 ? 30 : t >= 75 && load >= 50 ? 85 : 100;
         int score = (int)Math.Round(0.45 * tempScore + 0.2 * loadContext + 0.25 * bgScore + 0.1 * powerScore);
 
-        string summary = t >= 75 && load >= 50 ? "Temperature is elevated, but current CPU load is also high."
-            : t >= 75 && load < 25 ? "Temperature is high while CPU load is low. Software optimization may have limited impact. Check ventilation and cooling."
-            : t >= 75 ? "Temperature is elevated at moderate CPU load."
-            : "Temperature is within the normal range for the current load.";
+        string summary = t >= 75 && load >= 50 ? L.T("Temperature is elevated, but current CPU load is also high.")
+            : t >= 75 && load < 25 ? L.T("Temperature is high while CPU load is low. Software optimization may have limited impact. Check ventilation and cooling.")
+            : t >= 75 ? L.T("Temperature is elevated at moderate CPU load.")
+            : L.T("Temperature is within the normal range for the current load.");
         return (score, false, summary);
     }
 

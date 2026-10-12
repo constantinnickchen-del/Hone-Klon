@@ -1,3 +1,4 @@
+using ConstiBoost.Localization;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -34,7 +35,7 @@ public static class BrowserGamesScanner
             yield return new GameInfo
             {
                 Id = "browser:" + id,
-                Name = $"Browser games · {name}",
+                Name = L.F("Browser games · {0}", name),
                 Source = GameSource.Browser,
                 Publisher = name,
                 InstallPath = Path.GetDirectoryName(exe)!,

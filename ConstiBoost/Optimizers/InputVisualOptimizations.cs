@@ -28,7 +28,7 @@ public sealed class AnimationsOptimization : Optimization
         if (minimize is null || client is null)
         {
             IsAvailable = false;
-            UnavailableReason = "This optimization is unavailable on your system. Animation settings could not be read.";
+            UnavailableReason = L.T("This optimization is unavailable on your system. Animation settings could not be read.");
             NeedsChange = false;
             CurrentState = Formatting.Unavailable;
             return;
@@ -38,8 +38,8 @@ public sealed class AnimationsOptimization : Optimization
         CurrentState = OnOff(on);
         RecommendedState = context.Profile.IsLowPowerIntegrated ? "OFF" : "Your choice";
         Reason = context.Profile.IsLowPowerIntegrated
-            ? "Fewer desktop effects = snappier Alt+Tab and less iGPU work on the desktop."
-            : "Mostly cosmetic on dedicated GPUs.";
+            ? L.T("Fewer desktop effects = snappier Alt+Tab and less iGPU work on the desktop.")
+            : L.T("Mostly cosmetic on dedicated GPUs.");
         NeedsChange = on && context.Profile.IsLowPowerIntegrated;
     }
 
@@ -74,7 +74,7 @@ public sealed class MouseAccelerationOptimization : Optimization
         if (values is null)
         {
             IsAvailable = false;
-            UnavailableReason = "This optimization is unavailable on your system. Mouse settings could not be read.";
+            UnavailableReason = L.T("This optimization is unavailable on your system. Mouse settings could not be read.");
             NeedsChange = false;
             CurrentState = Formatting.Unavailable;
             return;
@@ -83,7 +83,7 @@ public sealed class MouseAccelerationOptimization : Optimization
         bool on = values[2] != 0;
         CurrentState = OnOff(on);
         RecommendedState = "OFF (optional)";
-        Reason = "Consistent aim in shooters like Fortnite. Fortnite uses raw input in-game, so this mainly affects menus and the desktop.";
+        Reason = L.T("Consistent aim in shooters like Fortnite. Fortnite uses raw input in-game, so this mainly affects menus and the desktop.");
         NeedsChange = on;
     }
 

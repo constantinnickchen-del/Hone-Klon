@@ -3,6 +3,8 @@ using System.Diagnostics;
 using ConstiBoost.Core;
 using ConstiBoost.Logging;
 
+using ConstiBoost.Localization;
+
 namespace ConstiBoost.Fortnite;
 
 public sealed record FortniteProcessInfo(int Pid, ProcessPriorityClass? Priority, long WorkingSet, DateTime? StartTime);
@@ -58,7 +60,7 @@ public static class FortnitePriorityService
         var running = GetRunning();
         if (running is null)
         {
-            return OperationResult.Fail("Fortnite is not running. Start a match first.");
+            return OperationResult.Fail(L.T("Fortnite is not running. Start a match first."));
         }
 
         try
@@ -67,20 +69,20 @@ public static class FortnitePriorityService
             var before = process.PriorityClass;
             if (before != ProcessPriorityClass.Normal)
             {
-                return OperationResult.Fail($"Priority is already {before}. ConstiBoost only changes it from Normal.");
+                return OperationResult.Fail(L.F("Priority is already {0}. ConstiBoost only changes it from Normal.", before));
             }
 
             process.PriorityClass = ProcessPriorityClass.AboveNormal;
             _original = before;
             _changedPid = running.Pid;
             ActionLog.Success("Fortnite process priority", before.ToString(), "AboveNormal");
-            return OperationResult.Ok("Fortnite priority set to Above normal (resets when Fortnite closes).");
+            return OperationResult.Ok(L.T("Fortnite priority set to Above normal (resets when Fortnite closes)."));
         }
         catch (Exception ex)
         {
             string reason = Safe.Describe(ex);
             ActionLog.Failed("Fortnite process priority", "Normal", "AboveNormal", reason);
-            return OperationResult.Fail("Priority couldn't be changed – Fortnite's anti-cheat protects the process. This is normal and safe.", reason);
+            return OperationResult.Fail(L.T("Priority couldn't be changed – Fortnite's anti-cheat protects the process. This is normal and safe."), reason);
         }
     }
 
@@ -91,7 +93,7 @@ public static class FortnitePriorityService
         {
             _changedPid = null;
             _original = null;
-            return OperationResult.Ok("Nothing to reset – Fortnite's priority is back to its default.");
+            return OperationResult.Ok(L.T("Nothing to reset – Fortnite's priority is back to its default."));
         }
 
         try
@@ -102,12 +104,12 @@ public static class FortnitePriorityService
             ActionLog.Success("Fortnite process priority", "AboveNormal", target.ToString());
             _changedPid = null;
             _original = null;
-            return OperationResult.Ok("Fortnite priority reset to Normal.");
+            return OperationResult.Ok(L.T("Fortnite priority reset to Normal."));
         }
         catch (Exception ex)
         {
             ActionLog.Failed("Fortnite process priority", "AboveNormal", "Normal", Safe.Describe(ex));
-            return OperationResult.Fail("Priority couldn't be reset: " + Safe.Describe(ex));
+            return OperationResult.Fail(L.T("Priority couldn't be reset: ") + Safe.Describe(ex));
         }
     }
 }

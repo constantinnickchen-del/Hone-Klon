@@ -41,7 +41,7 @@ public sealed class PowerOptimization : Optimization
         if (_scheme is null)
         {
             IsAvailable = false;
-            UnavailableReason = "This optimization is unavailable on your system. The active power plan could not be read.";
+            UnavailableReason = L.T("This optimization is unavailable on your system. The active power plan could not be read.");
             CurrentState = Formatting.Unavailable;
             NeedsChange = false;
             return;
@@ -55,13 +55,13 @@ public sealed class PowerOptimization : Optimization
         {
             CurrentState = planName;
             RecommendedState = planName;
-            Reason = "Already using a performance power plan.";
+            Reason = L.T("Already using a performance power plan.");
             NeedsChange = false;
         }
         else if (_overlay != null && (_scheme == PowerManager.Balanced || _scheme == PowerManager.PowerSaver))
         {
             CurrentState = _scheme == PowerManager.Balanced ? L.F("Balanced · Power mode: {0}", L.T(PowerManager.OverlayName(_overlay))) : planName;
-            RecommendedState = "Balanced · Power mode: Best performance";
+            RecommendedState = L.T("Balanced · Power mode: Best performance");
             Reason = L.T("The 'Best performance' power mode lets the CPU and Radeon/Intel graphics boost longer. This is the Windows-intended way on modern laptops.") + batteryNote;
             NeedsChange = _scheme != PowerManager.Balanced || _overlay != PowerManager.OverlayBestPerformance;
         }
@@ -76,7 +76,7 @@ public sealed class PowerOptimization : Optimization
         {
             CurrentState = planName;
             RecommendedState = planName;
-            Reason = "No additional built-in performance mode is available on this system.";
+            Reason = L.T("No additional built-in performance mode is available on this system.");
             NeedsChange = false;
         }
     }
@@ -97,7 +97,7 @@ public sealed class PowerOptimization : Optimization
             if (PowerManager.GetOverlay() != PowerManager.OverlayBestPerformance)
             {
                 ActionLog.Failed(Name, old, RecommendedState, "Windows did not accept the power mode");
-                return Task.FromResult(OperationResult.Fail("This optimization couldn't be applied.", "Windows did not accept the power mode."));
+                return Task.FromResult(OperationResult.Fail(L.T("This optimization couldn't be applied."), L.T("Windows did not accept the power mode.")));
             }
         }
         else if (_highPerfExists)

@@ -26,7 +26,7 @@ public sealed class GameModeOptimization : Optimization
         bool on = GameFeatures.GameModeEnabled;
         CurrentState = OnOff(on);
         RecommendedState = "ON";
-        Reason = "Windows can treat games preferentially and avoids update interruptions during gaming.";
+        Reason = L.T("Windows can treat games preferentially and avoids update interruptions during gaming.");
         NeedsChange = !on;
     }
 

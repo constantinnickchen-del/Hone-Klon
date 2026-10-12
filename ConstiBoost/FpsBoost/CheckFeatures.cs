@@ -54,8 +54,8 @@ public sealed class FocusToggleFeature : FpsBoostFeature
         }
 
         bool on = _get(SettingsService.Instance.Current);
-        Set(on ? CheckStatus.Good : CheckStatus.Warning, on ? "ON during Game Focus" : "OFF",
-            on ? "Applied automatically when you start 🎯 Focus in Games – restored when you stop it." : "Turn on to use it in every Game Focus.", false);
+        Set(on ? CheckStatus.Good : CheckStatus.Warning, on ? L.T("ON during Game Focus") : "OFF",
+            on ? L.T("Applied automatically when you start 🎯 Focus in Games – restored when you stop it.") : L.T("Turn on to use it in every Game Focus."), false);
         Actions = new[]
         {
             new BoostAction(L.T(on ? "Turn off" : "Turn on"), new RelayCommand(() =>
@@ -73,18 +73,18 @@ public sealed class OverlayDetectorFeature : FpsBoostFeature
 {
     private static readonly (string Process, string Name, string Tip)[] Known =
     {
-        ("Discord", "Discord", "Discord → Settings → Game Overlay OFF (and 'Hardware acceleration' OFF in Advanced if the game stutters)."),
-        ("obs64", "OBS Studio", "Close OBS when you are not recording – its capture costs GPU time."),
-        ("Overwolf", "Overwolf", "Overwolf apps hook into games – close it while playing."),
-        ("Medal", "Medal.tv", "Medal records in the background – close it or turn off its clip recording."),
-        ("MSIAfterburner", "MSI Afterburner", "Close it if you only use it for the overlay."),
-        ("RTSS", "RivaTuner Statistics Server", "Its overlay/limiter can lower FPS – close it if you do not need it."),
-        ("GameBar", "Xbox Game Bar", "Win+G overlay – closes itself, but background recording can be turned off in Optimizer."),
-        ("Outplayed", "Outplayed", "Background clip recorder – close it while playing."),
-        ("NVIDIA Share", "NVIDIA overlay", "GeForce Experience → In-game overlay OFF."),
-        ("Spotify", "Spotify", "Fine for music, but its animated UI costs a bit – minimize it."),
-        ("Wallpaper64", "Wallpaper Engine", "Animated wallpapers use the GPU – pause it while gaming."),
-        ("lively", "Lively Wallpaper", "Animated wallpapers use the GPU – pause it while gaming."),
+        ("Discord", "Discord", L.T("Discord → Settings → Game Overlay OFF (and 'Hardware acceleration' OFF in Advanced if the game stutters).")),
+        ("obs64", "OBS Studio", L.T("Close OBS when you are not recording – its capture costs GPU time.")),
+        ("Overwolf", "Overwolf", L.T("Overwolf apps hook into games – close it while playing.")),
+        ("Medal", "Medal.tv", L.T("Medal records in the background – close it or turn off its clip recording.")),
+        ("MSIAfterburner", "MSI Afterburner", L.T("Close it if you only use it for the overlay.")),
+        ("RTSS", "RivaTuner Statistics Server", L.T("Its overlay/limiter can lower FPS – close it if you do not need it.")),
+        ("GameBar", "Xbox Game Bar", L.T("Win+G overlay – closes itself, but background recording can be turned off in Optimizer.")),
+        ("Outplayed", "Outplayed", L.T("Background clip recorder – close it while playing.")),
+        ("NVIDIA Share", "NVIDIA overlay", L.T("GeForce Experience → In-game overlay OFF.")),
+        ("Spotify", "Spotify", L.T("Fine for music, but its animated UI costs a bit – minimize it.")),
+        ("Wallpaper64", "Wallpaper Engine", L.T("Animated wallpapers use the GPU – pause it while gaming.")),
+        ("lively", "Lively Wallpaper", L.T("Animated wallpapers use the GPU – pause it while gaming.")),
     };
 
     private List<(int Pid, string Name)> _found = new();
@@ -119,7 +119,7 @@ public sealed class OverlayDetectorFeature : FpsBoostFeature
 
         Set(tips.Count == 0 ? CheckStatus.Good : CheckStatus.Warning,
             tips.Count == 0 ? "Nothing found" : L.F("{0} found", tips.Count),
-            tips.Count == 0 ? "No known overlay or recorder is running." : string.Join("\n", tips), false);
+            tips.Count == 0 ? L.T("No known overlay or recorder is running.") : string.Join("\n", tips), false);
         Actions = new List<BoostAction>
         {
             new(L.T("Check again"), new AsyncRelayCommand(() => Task.Run(Check))),
@@ -129,7 +129,7 @@ public sealed class OverlayDetectorFeature : FpsBoostFeature
     private async Task CloseAllAsync()
     {
         var names = _found.Select(f => f.Name).Distinct().ToList();
-        if (!DialogService.Confirm("Close overlays & recorders?", "These apps are closed normally (like clicking X):", names, "CLOSE"))
+        if (!DialogService.Confirm(L.T("Close overlays & recorders?"), L.T("These apps are closed normally (like clicking X):"), names, "CLOSE"))
         {
             return;
         }
@@ -186,7 +186,7 @@ public sealed class CpuHogFeature : FpsBoostFeature
         bool heavy = usage.Any(u => Explanations.ContainsKey(u.Name) && u.Pct >= 5);
         Set(heavy ? CheckStatus.Warning : CheckStatus.Good,
             usage.Count == 0 ? "Quiet" : L.F("Top: {0} {1:0} %", usage[0].Name, usage[0].Pct),
-            usage.Count == 0 ? "No program uses noticeable CPU right now." : string.Join("\n", lines), false);
+            usage.Count == 0 ? L.T("No program uses noticeable CPU right now.") : string.Join("\n", lines), false);
         Actions = new[] { new BoostAction(L.T("Measure again (2 s)"), new AsyncRelayCommand(() => Task.Run(Check))) };
     }
 
@@ -240,7 +240,7 @@ public sealed class AmdAdrenalinFeature : FpsBoostFeature
         var gpu = ScanService.Instance.Last?.Hardware.Gpus.FirstOrDefault(g => g.Name.Contains("AMD", StringComparison.OrdinalIgnoreCase) || g.Name.Contains("Radeon", StringComparison.OrdinalIgnoreCase));
         if (gpu is null)
         {
-            Unavailable("No AMD graphics detected – this checklist is for AMD Radeon graphics.");
+            Unavailable(L.T("No AMD graphics detected – this checklist is for AMD Radeon graphics."));
             Actions = Array.Empty<BoostAction>();
             return;
         }
@@ -250,7 +250,7 @@ public sealed class AmdAdrenalinFeature : FpsBoostFeature
         bool old = gpu.DriverDate is DateTime d && d < DateTime.Now.AddMonths(-12);
         notes.Add(gpu.DriverDate is DateTime date ? L.F("Driver {0} from {1:MMMM yyyy}", gpu.DriverVersion, date) + L.T(old ? " – older than 1 year, update recommended." : " – recent.") : L.F("Driver {0}", gpu.DriverVersion));
         notes.Add(L.T(path != null ? "AMD Software (Adrenalin) is installed." : "AMD Software (Adrenalin) not found – install it from amd.com (it includes the driver)."));
-        Set(old || path is null ? CheckStatus.Warning : CheckStatus.Good, old ? "Driver outdated" : path is null ? "AMD Software missing" : "Driver OK", string.Join("\n", notes), false);
+        Set(old || path is null ? CheckStatus.Warning : CheckStatus.Good, old ? "Driver outdated" : path is null ? L.T("AMD Software missing") : "Driver OK", string.Join("\n", notes), false);
         var actions = new List<BoostAction> { new(L.T("Open AMD driver download"), new RelayCommand(() => Open(DriverPage))) };
         if (path != null)
         {
@@ -280,7 +280,7 @@ public sealed class DualChannelFeature : FpsBoostFeature
         var layout = MemoryInfo.Read();
         if (layout.Modules.Count == 0)
         {
-            Unavailable("Memory modules could not be read on this PC.");
+            Unavailable(L.T("Memory modules could not be read on this PC."));
             return;
         }
 
@@ -292,7 +292,7 @@ public sealed class DualChannelFeature : FpsBoostFeature
             return;
         }
 
-        string slot = layout.FreeSlots is > 0 ? "A free slot was detected – you can add a module." : layout.Slots is 1 ? "Windows reports only one slot: the second module may be soldered or not upgradeable – check the laptop manual." : "Check the laptop manual for a free slot.";
+        string slot = layout.FreeSlots is > 0 ? L.T("A free slot was detected – you can add a module.") : layout.Slots is 1 ? L.T("Windows reports only one slot: the second module may be soldered or not upgradeable – check the laptop manual.") : L.T("Check the laptop manual for a free slot.");
         Set(CheckStatus.Warning, L.F("Single-channel ({0})", modules),
             L.T(slot) + "\n" + L.F("Recommended: 1 × {0} GB {1} SO-DIMM {2} (same size and speed as the existing one).", m.CapacityBytes / 1024 / 1024 / 1024, m.Type, m.SpeedMts is int s ? s + " MT/s" : string.Empty), false);
     }

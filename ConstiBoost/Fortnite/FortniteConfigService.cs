@@ -9,6 +9,8 @@ using ConstiBoost.Core;
 using ConstiBoost.Logging;
 using ConstiBoost.Models;
 
+using ConstiBoost.Localization;
+
 namespace ConstiBoost.Fortnite;
 
 public sealed class FortniteConfigSnapshot
@@ -148,12 +150,12 @@ public static class FortniteConfigService
         string path = ConfigPath;
         if (!File.Exists(path))
         {
-            return OperationResult.Unavailable("Fortnite's settings file was not found.");
+            return OperationResult.Unavailable(L.T("Fortnite's settings file was not found."));
         }
 
         if (IsFortniteRunning())
         {
-            return OperationResult.Fail("Please close Fortnite first – it overwrites its settings file when it exits.");
+            return OperationResult.Fail(L.T("Please close Fortnite first – it overwrites its settings file when it exits."));
         }
 
         try
@@ -185,7 +187,7 @@ public static class FortniteConfigService
         catch (Exception ex)
         {
             ActionLog.Failed(action, null, null, Safe.Describe(ex));
-            return OperationResult.Fail("The change couldn't be applied.", Safe.Describe(ex));
+            return OperationResult.Fail(L.T("The change couldn't be applied."), Safe.Describe(ex));
         }
     }
 
@@ -195,12 +197,12 @@ public static class FortniteConfigService
         string path = ConfigPath;
         if (!File.Exists(path))
         {
-            return (OperationResult.Unavailable("Fortnite's settings file was not found."), null);
+            return (OperationResult.Unavailable(L.T("Fortnite's settings file was not found.")), null);
         }
 
         if (IsFortniteRunning())
         {
-            return (OperationResult.Fail("Fortnite is running – it overwrites its settings on exit. Set the frame rate limit in-game instead."), null);
+            return (OperationResult.Fail(L.T("Fortnite is running – it overwrites its settings on exit. Set the frame rate limit in-game instead.")), null);
         }
 
         try
@@ -210,7 +212,7 @@ public static class FortniteConfigService
             string? old = ini.Get("FrameRateLimit");
             if (old is null)
             {
-                return (OperationResult.Unavailable("FrameRateLimit is not in your settings file. Set it in-game (Video > Frame Rate Limit)."), null);
+                return (OperationResult.Unavailable(L.T("FrameRateLimit is not in your settings file. Set it in-game (Video > Frame Rate Limit).")), null);
             }
 
             ini.Set("FrameRateLimit", value);
@@ -221,7 +223,7 @@ public static class FortniteConfigService
         catch (Exception ex)
         {
             ActionLog.Failed("Fortnite: FrameRateLimit", null, value, Safe.Describe(ex));
-            return (OperationResult.Fail("The frame rate limit couldn't be changed.", Safe.Describe(ex)), null);
+            return (OperationResult.Fail(L.T("The frame rate limit couldn't be changed."), Safe.Describe(ex)), null);
         }
     }
 
@@ -231,12 +233,12 @@ public static class FortniteConfigService
         string path = ConfigPath;
         if (!File.Exists(path))
         {
-            return (OperationResult.Unavailable("Fortnite's settings file was not found. Start Fortnite once, then try again."), missing);
+            return (OperationResult.Unavailable(L.T("Fortnite's settings file was not found. Start Fortnite once, then try again.")), missing);
         }
 
         if (IsFortniteRunning())
         {
-            return (OperationResult.Fail("Please close Fortnite first – it overwrites its settings file when it exits."), missing);
+            return (OperationResult.Fail(L.T("Please close Fortnite first – it overwrites its settings file when it exits.")), missing);
         }
 
         try
@@ -302,7 +304,7 @@ public static class FortniteConfigService
         {
             ActionLog.Failed($"Fortnite preset {preset.Name}", null, null, Safe.Describe(ex));
             AppLog.Error("Fortnite preset failed", ex);
-            return (OperationResult.Fail("The preset couldn't be applied.", Safe.Describe(ex)), missing);
+            return (OperationResult.Fail(L.T("The preset couldn't be applied."), Safe.Describe(ex)), missing);
         }
     }
 }

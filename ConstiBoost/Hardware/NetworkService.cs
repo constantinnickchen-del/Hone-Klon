@@ -10,6 +10,8 @@ using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 
+using ConstiBoost.Localization;
+
 namespace ConstiBoost.Hardware;
 
 public sealed class AdapterInfo
@@ -199,11 +201,11 @@ public static class NetworkService
         }
         catch (OperationCanceledException)
         {
-            return (down, up, "Speed test cancelled or timed out.");
+            return (down, up, L.T("Speed test cancelled or timed out."));
         }
         catch (Exception ex)
         {
-            return (down, up, "Speed test failed: " + ex.Message);
+            return (down, up, L.T("Speed test failed: ") + ex.Message);
         }
     }
 

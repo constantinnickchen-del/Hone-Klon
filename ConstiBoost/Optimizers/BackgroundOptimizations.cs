@@ -30,7 +30,7 @@ public sealed class StartupAppsOptimization : Optimization
         int enabled = StartupService.GetEntries().Count(e => e.IsEnabled && !e.IsProtected);
         CurrentState = L.F("{0} startup app(s) enabled", enabled);
         RecommendedState = _candidates.Count == 0 ? "No change needed" : L.T("Disable: ") + string.Join(", ", _candidates.Select(c => c.Name).Take(6)) + (_candidates.Count > 6 ? "…" : string.Empty);
-        Reason = "Every autostart app uses RAM and CPU in the background – and makes boot slower.";
+        Reason = L.T("Every autostart app uses RAM and CPU in the background – and makes boot slower.");
         NeedsChange = _candidates.Count > 0;
     }
 
@@ -80,7 +80,7 @@ public sealed class CloseBackgroundAppsOptimization : Optimization
         _running = BackgroundAppsService.GetCandidates().Where(g => g.IsKnownBackgroundApp).ToList();
         CurrentState = _running.Count == 0 ? L.T("None running") : string.Join(", ", _running.Select(r => r.DisplayName).Take(5)) + (_running.Count > 5 ? "…" : string.Empty);
         RecommendedState = _running.Count == 0 ? "Nothing to close" : L.F("Close {0} app(s) before gaming", _running.Count);
-        Reason = "Frees RAM and CPU for the game. Most helpful on 8 GB RAM systems.";
+        Reason = L.T("Frees RAM and CPU for the game. Most helpful on 8 GB RAM systems.");
         NeedsChange = _running.Count > 0;
     }
 

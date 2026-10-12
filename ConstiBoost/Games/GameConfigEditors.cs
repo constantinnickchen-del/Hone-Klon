@@ -9,6 +9,8 @@ using ConstiBoost.Core;
 using ConstiBoost.Fortnite;
 using ConstiBoost.Logging;
 
+using ConstiBoost.Localization;
+
 namespace ConstiBoost.Games;
 
 public sealed record ConfigValue(string Label, string Value);
@@ -54,21 +56,21 @@ public sealed class MinecraftOptionsEditor : IGameConfigEditor
 
     public MinecraftOptionsEditor(string path) => _path = path;
 
-    public string Title => "Minecraft video settings";
+    public string Title => L.T("Minecraft video settings");
     public string FileInfo => _path;
     public bool IsAvailable => File.Exists(_path);
 
     public IReadOnlyList<ConfigPreset> Presets { get; } = new List<ConfigPreset>
     {
-        new("LOW-END", "Render distance 8, simulation 6, Fast graphics, minimal particles, no clouds/shadows/mipmaps, VSync off"),
-        new("BALANCED", "Render distance 12, simulation 8, Fast graphics, fast clouds, smooth lighting on"),
-        new("QUALITY", "Render distance 16, simulation 10, Fancy graphics, all particles, entity shadows"),
+        new("LOW-END", L.T("Render distance 8, simulation 6, Fast graphics, minimal particles, no clouds/shadows/mipmaps, VSync off")),
+        new("BALANCED", L.T("Render distance 12, simulation 8, Fast graphics, fast clouds, smooth lighting on")),
+        new("QUALITY", L.T("Render distance 16, simulation 10, Fancy graphics, all particles, entity shadows")),
     };
 
     private static readonly (string key, string label)[] Shown =
     {
-        ("renderDistance", "Render distance"), ("simulationDistance", "Simulation distance"), ("graphicsMode", "Graphics (0 Fast, 1 Fancy, 2 Fabulous)"),
-        ("fancyGraphics", "Fancy graphics"), ("maxFps", "Max FPS (260 = unlimited)"), ("enableVsync", "VSync"), ("particles", "Particles (0 all, 2 minimal)"),
+        ("renderDistance", "Render distance"), ("simulationDistance", "Simulation distance"), ("graphicsMode", L.T("Graphics (0 Fast, 1 Fancy, 2 Fabulous)")),
+        ("fancyGraphics", "Fancy graphics"), ("maxFps", L.T("Max FPS (260 = unlimited)")), ("enableVsync", "VSync"), ("particles", L.T("Particles (0 all, 2 minimal)")),
         ("ao", "Smooth lighting"), ("entityShadows", "Entity shadows"), ("renderClouds", "Clouds"), ("mipmapLevels", "Mipmap levels"), ("biomeBlendRadius", "Biome blend"),
     };
 
@@ -166,7 +168,7 @@ public sealed class MinecraftOptionsEditor : IGameConfigEditor
         catch (Exception ex)
         {
             ActionLog.Failed("Minecraft settings", null, presetName, Safe.Describe(ex));
-            return OperationResult.Fail("The Minecraft settings couldn't be changed.", Safe.Describe(ex));
+            return OperationResult.Fail(L.T("The Minecraft settings couldn't be changed."), Safe.Describe(ex));
         }
     }
 }
@@ -192,15 +194,15 @@ public sealed class UnrealConfigEditor : IGameConfigEditor
 
     private UnrealConfigEditor(List<string> files) => _files = files;
 
-    public string Title => "Unreal Engine graphics settings";
+    public string Title => L.T("Unreal Engine graphics settings");
     public string FileInfo => string.Join("\n", _files);
     public bool IsAvailable => _files.Count > 0;
 
     public IReadOnlyList<ConfigPreset> Presets { get; } = new List<ConfigPreset>
     {
-        new("LOW-END", "All scalability groups Low, VSync off"),
-        new("BALANCED", "All scalability groups Medium, shadows Low, VSync off"),
-        new("QUALITY", "All scalability groups High, VSync off"),
+        new("LOW-END", L.T("All scalability groups Low, VSync off")),
+        new("BALANCED", L.T("All scalability groups Medium, shadows Low, VSync off")),
+        new("QUALITY", L.T("All scalability groups High, VSync off")),
     };
 
     public static UnrealConfigEditor? Find(GameInfo game)
@@ -317,7 +319,7 @@ public sealed class UnrealConfigEditor : IGameConfigEditor
         catch (Exception ex)
         {
             ActionLog.Failed("Unreal settings", null, presetName, Safe.Describe(ex));
-            return OperationResult.Fail("The settings couldn't be changed.", Safe.Describe(ex));
+            return OperationResult.Fail(L.T("The settings couldn't be changed."), Safe.Describe(ex));
         }
     }
 }

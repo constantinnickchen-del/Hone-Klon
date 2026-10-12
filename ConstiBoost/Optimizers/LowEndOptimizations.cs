@@ -41,12 +41,12 @@ public sealed class DesktopEffectsOptimization : Optimization
         int on = states.Count(s => s.value == true);
         CurrentState = states.All(s => s.value is null) ? Formatting.Unavailable : L.F("{0} of {1} effects on", on, Effects.Length);
         RecommendedState = context.Profile.IsLowPowerIntegrated ? "All off" : "Your choice";
-        Reason = "Less desktop GPU/CPU work on integrated graphics and a snappier feeling Windows.";
+        Reason = L.T("Less desktop GPU/CPU work on integrated graphics and a snappier feeling Windows.");
         NeedsChange = on > 0 && context.Profile.IsLowPowerIntegrated;
         if (states.All(s => s.value is null))
         {
             IsAvailable = false;
-            UnavailableReason = "This optimization is unavailable on your system. Effect settings could not be read.";
+            UnavailableReason = L.T("This optimization is unavailable on your system. Effect settings could not be read.");
         }
     }
 
@@ -100,7 +100,7 @@ public sealed class SuggestionsOptimization : Optimization
         int on = Values.Count(v => (RegistryHelper.ReadDword("HKCU", Key, v) ?? 1) != 0);
         CurrentState = L.F("{0} of {1} on", on, Values.Length);
         RecommendedState = "All off";
-        Reason = "Fewer background content downloads and pop-ups – small effect, but less distraction while gaming.";
+        Reason = L.T("Fewer background content downloads and pop-ups – small effect, but less distraction while gaming.");
         NeedsChange = on > 0;
     }
 

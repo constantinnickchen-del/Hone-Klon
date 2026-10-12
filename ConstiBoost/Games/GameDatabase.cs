@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 
+using ConstiBoost.Localization;
+
 namespace ConstiBoost.Games;
 
 public sealed record GamePreset(string Name, double Factor);
@@ -23,29 +25,29 @@ public static class GameDatabase
     public static readonly IReadOnlyList<GameProfile> Profiles = new List<GameProfile>
     {
         new("fortnite", "Fortnite", 55, 80, 220, new GamePreset[] { new("Performance Mode · Low", 1.0), new("DirectX 11 · Low", 0.62), new("DirectX 11 · Medium", 0.47), new("DirectX 12 · High", 0.32), new("DirectX 12 · Epic (Lumen)", 0.18) },
-            "Performance Mode is by far the best choice on integrated graphics. Cap FPS at your refresh rate for stable frame times and less heat."),
-        new("valorant", "VALORANT", 90, 140, 320, Standard, "VALORANT is CPU-heavy – close background apps; 'Limit FPS' helps temperatures a lot."),
-        new("cs2", "Counter-Strike 2", 45, 70, 260, Standard, "Use FSR (Performance) on integrated graphics and 'Low' shader detail."),
-        new("lol", "League of Legends", 90, 140, 260, Standard, "Very light game – an FPS cap of 60–144 keeps the laptop much cooler."),
-        new("minecraft", "Minecraft: Java Edition", 60, 110, 240, Standard, "Lower render distance (8–12 chunks); Sodium/OptiFine help Java Edition a lot. Give Java 2–4 GB RAM in the launcher – more does not help."),
-        new("minecraftbedrock", "Minecraft (Bedrock)", 70, 120, 260, Standard, "Bedrock runs much smoother than Java on integrated graphics. Lower render distance and turn off 'Fancy graphics' and 'Beautiful skies'."),
-        new("roblox", "Roblox", 60, 100, 240, Standard, "Use graphics level 1–4 manually instead of 'Automatic'."),
-        new("rocketleague", "Rocket League", 60, 90, 250, Standard, "Use 'Performance' render quality and lower 3D resolution slightly."),
-        new("gta5", "Grand Theft Auto V", 38, 52, 140, Standard, "Lower 'Grass' and 'Population density' first – they are CPU/GPU heavy."),
-        new("apex", "Apex Legends", 28, 42, 180, Standard, "Use adaptive resolution FPS target and 'Low' texture streaming budget."),
-        new("overwatch", "Overwatch 2", 48, 72, 220, Standard, "Use 'Render scale' 75 % and FSR on integrated graphics."),
-        new("warzone", "Call of Duty", 18, 28, 140, Standard, "Very demanding on integrated graphics – use FSR and the lowest preset."),
-        new("genshin", "Genshin Impact", 38, 52, 60, Standard, "Genshin caps at 60 FPS – 'Low' preset with render resolution 0.8 is a good start."),
-        new("pubg", "PUBG: BATTLEGROUNDS", 25, 40, 160, Standard, "Lower 'View distance' and use 'Very Low' textures."),
-        new("dota2", "Dota 2", 60, 90, 220, Standard, "Use 'Fastest' preset with FSR."),
-        new("fallguys", "Fall Guys", 40, 60, 200, Standard, "Set resolution scale below 100 % on integrated graphics."),
-        new("r6", "Rainbow Six Siege", 55, 80, 240, Standard, "Use render scaling 50–75 % with TAA on integrated graphics."),
-        new("eafc", "EA SPORTS FC", 38, 55, 160, Standard, "Lower 'Rendering quality' and 'Grass' first."),
-        new("sims4", "The Sims 4", 45, 70, 140, Standard, "Use 'Laptop mode' in graphics settings."),
-        new("eldenring", "Elden Ring", 18, 26, 60, Standard, "Very demanding – 720p and the lowest preset are realistic on integrated graphics."),
-        new("cyberpunk", "Cyberpunk 2077", 15, 22, 120, Standard, "Use the 'Steam Deck' preset and FSR Performance."),
-        new("amongus", "Among Us", 120, 200, 300, Standard, "Very light – cap FPS to keep the laptop cool."),
-        new("brawlhalla", "Brawlhalla", 120, 200, 300, Standard, "Very light – cap FPS to keep the laptop cool."),
+            L.T("Performance Mode is by far the best choice on integrated graphics. Cap FPS at your refresh rate for stable frame times and less heat.")),
+        new("valorant", "VALORANT", 90, 140, 320, Standard, L.T("VALORANT is CPU-heavy – close background apps; 'Limit FPS' helps temperatures a lot.")),
+        new("cs2", "Counter-Strike 2", 45, 70, 260, Standard, L.T("Use FSR (Performance) on integrated graphics and 'Low' shader detail.")),
+        new("lol", "League of Legends", 90, 140, 260, Standard, L.T("Very light game – an FPS cap of 60–144 keeps the laptop much cooler.")),
+        new("minecraft", "Minecraft: Java Edition", 60, 110, 240, Standard, L.T("Lower render distance (8–12 chunks); Sodium/OptiFine help Java Edition a lot. Give Java 2–4 GB RAM in the launcher – more does not help.")),
+        new("minecraftbedrock", "Minecraft (Bedrock)", 70, 120, 260, Standard, L.T("Bedrock runs much smoother than Java on integrated graphics. Lower render distance and turn off 'Fancy graphics' and 'Beautiful skies'.")),
+        new("roblox", "Roblox", 60, 100, 240, Standard, L.T("Use graphics level 1–4 manually instead of 'Automatic'.")),
+        new("rocketleague", "Rocket League", 60, 90, 250, Standard, L.T("Use 'Performance' render quality and lower 3D resolution slightly.")),
+        new("gta5", "Grand Theft Auto V", 38, 52, 140, Standard, L.T("Lower 'Grass' and 'Population density' first – they are CPU/GPU heavy.")),
+        new("apex", "Apex Legends", 28, 42, 180, Standard, L.T("Use adaptive resolution FPS target and 'Low' texture streaming budget.")),
+        new("overwatch", "Overwatch 2", 48, 72, 220, Standard, L.T("Use 'Render scale' 75 % and FSR on integrated graphics.")),
+        new("warzone", "Call of Duty", 18, 28, 140, Standard, L.T("Very demanding on integrated graphics – use FSR and the lowest preset.")),
+        new("genshin", "Genshin Impact", 38, 52, 60, Standard, L.T("Genshin caps at 60 FPS – 'Low' preset with render resolution 0.8 is a good start.")),
+        new("pubg", "PUBG: BATTLEGROUNDS", 25, 40, 160, Standard, L.T("Lower 'View distance' and use 'Very Low' textures.")),
+        new("dota2", "Dota 2", 60, 90, 220, Standard, L.T("Use 'Fastest' preset with FSR.")),
+        new("fallguys", "Fall Guys", 40, 60, 200, Standard, L.T("Set resolution scale below 100 % on integrated graphics.")),
+        new("r6", "Rainbow Six Siege", 55, 80, 240, Standard, L.T("Use render scaling 50–75 % with TAA on integrated graphics.")),
+        new("eafc", "EA SPORTS FC", 38, 55, 160, Standard, L.T("Lower 'Rendering quality' and 'Grass' first.")),
+        new("sims4", "The Sims 4", 45, 70, 140, Standard, L.T("Use 'Laptop mode' in graphics settings.")),
+        new("eldenring", "Elden Ring", 18, 26, 60, Standard, L.T("Very demanding – 720p and the lowest preset are realistic on integrated graphics.")),
+        new("cyberpunk", "Cyberpunk 2077", 15, 22, 120, Standard, L.T("Use the 'Steam Deck' preset and FSR Performance.")),
+        new("amongus", "Among Us", 120, 200, 300, Standard, L.T("Very light – cap FPS to keep the laptop cool.")),
+        new("brawlhalla", "Brawlhalla", 120, 200, 300, Standard, L.T("Very light – cap FPS to keep the laptop cool.")),
     };
 
     private static readonly (Regex pattern, string key)[] Matchers =

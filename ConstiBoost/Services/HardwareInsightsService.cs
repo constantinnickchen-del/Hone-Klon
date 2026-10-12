@@ -50,17 +50,17 @@ public static class HardwareInsightsService
         if (layout.Modules.Count == 1 && layout.FreeSlots is > 0)
         {
             string size = first != null ? $"{first.CapacityBytes / 1024 / 1024 / 1024} GB" : L.T("same size");
-            tips.Add(new UpgradeTip("Add a second RAM module (dual-channel)",
+            tips.Add(new UpgradeTip(L.T("Add a second RAM module (dual-channel)"),
                 $"1× {size} {spec}" + (first is { PartNumber.Length: > 0 } ? L.F(" – ideally the same model as installed ({0} {1})", first.Manufacturer, first.PartNumber) : string.Empty),
                 L.F("{0} free slot detected and only one module installed. Dual-channel doubles memory bandwidth.", layout.FreeSlots),
-                igpu ? "Typically the biggest FPS gain for integrated graphics (often 20–40 % more FPS in GPU-limited games, according to common test results). Also more RAM for the game." : "Smoother frame times and more RAM.",
+                igpu ? L.T("Typically the biggest FPS gain for integrated graphics (often 20–40 % more FPS in GPU-limited games, according to common test results). Also more RAM for the game.") : L.T("Smoother frame times and more RAM."),
                 igpu ? ImpactLevel.High : ImpactLevel.Medium));
         }
         else if (layout.Modules.Count == 1 && layout.FreeSlots == 0)
         {
-            tips.Add(new UpgradeTip("RAM is single-channel, but no free slot was detected",
-                "Check your laptop's manual – some models have soldered memory plus one slot that Windows reports differently.",
-                "Only one memory module is reported.", "If a slot exists, a second module is the best upgrade for integrated graphics.", ImpactLevel.Medium));
+            tips.Add(new UpgradeTip(L.T("RAM is single-channel, but no free slot was detected"),
+                L.T("Check your laptop's manual – some models have soldered memory plus one slot that Windows reports differently."),
+                L.T("Only one memory module is reported."), L.T("If a slot exists, a second module is the best upgrade for integrated graphics."), ImpactLevel.Medium));
         }
 
         if (totalGb is > 0 and < 12 && layout.FreeSlots is > 0 && layout.Modules.Count != 1)
@@ -75,19 +75,19 @@ public static class HardwareInsightsService
             if (media.FirstOrDefault(m => m.Letter.Equals(d, StringComparison.OrdinalIgnoreCase)) is { MediaType: "HDD" })
             {
                 tips.Add(new UpgradeTip(L.F("SSD for your games (drive {0} is a hard disk)", d), "A SATA or NVMe SSD (check which your laptop supports)",
-                    "Games installed on a hard disk.", "Much faster loading and fewer texture-streaming stutters – no FPS change in already-loaded scenes.", ImpactLevel.High));
+                    L.T("Games installed on a hard disk."), L.T("Much faster loading and fewer texture-streaming stutters – no FPS change in already-loaded scenes."), ImpactLevel.High));
             }
         }
 
         if (hw.HasBattery)
         {
-            tips.Add(new UpgradeTip("Laptop cooling pad (cheap, optional)", "A simple cooling pad or a stand that lifts the back",
-                "Laptops pull air from the bottom – more airflow = lower temperatures.", "Lower temperatures can keep boost clocks higher for longer. Effect depends on the laptop.", ImpactLevel.Low));
+            tips.Add(new UpgradeTip(L.T("Laptop cooling pad (cheap, optional)"), L.T("A simple cooling pad or a stand that lifts the back"),
+                L.T("Laptops pull air from the bottom – more airflow = lower temperatures."), L.T("Lower temperatures can keep boost clocks higher for longer. Effect depends on the laptop."), ImpactLevel.Low));
         }
 
         if (tips.Count == 0)
         {
-            tips.Add(new UpgradeTip("No obvious cheap upgrade", "Your memory and storage are already well configured.", "Dual-channel memory and SSD detected.", "Further gains would need a faster CPU/GPU.", ImpactLevel.Low));
+            tips.Add(new UpgradeTip(L.T("No obvious cheap upgrade"), L.T("Your memory and storage are already well configured."), L.T("Dual-channel memory and SSD detected."), L.T("Further gains would need a faster CPU/GPU."), ImpactLevel.Low));
         }
 
         return tips;
@@ -105,8 +105,8 @@ public static class HardwareInsightsService
         {
             list.Add(modules == 1
                 ? new HardwareInsight("Single-channel memory", igpu ? CheckStatus.Bad : CheckStatus.Warning, "1 memory module detected",
-                    "Integrated graphics use system RAM as video memory. With only one module the memory bandwidth is halved, which can significantly reduce FPS on integrated graphics.",
-                    "If your laptop has a free RAM slot, a second module with the same size and speed enables dual-channel – often the biggest FPS upgrade for iGPU laptops. Check your model's manual first (some models have soldered RAM plus one slot).",
+                    L.T("Integrated graphics use system RAM as video memory. With only one module the memory bandwidth is halved, which can significantly reduce FPS on integrated graphics."),
+                    L.T("If your laptop has a free RAM slot, a second module with the same size and speed enables dual-channel – often the biggest FPS upgrade for iGPU laptops. Check your model's manual first (some models have soldered RAM plus one slot)."),
                     igpu ? ImpactLevel.High : ImpactLevel.Medium)
                 : new HardwareInsight("Dual-channel memory", CheckStatus.Good, L.F("{0} memory modules", modules), "Memory bandwidth is fully used – ideal for integrated graphics.", "Nothing to do.", ImpactLevel.Low));
         }
@@ -116,18 +116,18 @@ public static class HardwareInsightsService
         {
             double gb = ram / 1024d / 1024 / 1024;
             list.Add(gb < 7
-                ? new HardwareInsight("Little RAM", CheckStatus.Bad, $"{gb:0.#} GB", "Games, Windows and the iGPU share this memory. Below 8 GB modern games stutter when memory runs out.", "Close browsers and launchers before gaming (Game Focus does this) – an upgrade to 16 GB helps a lot.", ImpactLevel.High)
+                ? new HardwareInsight("Little RAM", CheckStatus.Bad, $"{gb:0.#} GB", L.T("Games, Windows and the iGPU share this memory. Below 8 GB modern games stutter when memory runs out."), L.T("Close browsers and launchers before gaming (Game Focus does this) – an upgrade to 16 GB helps a lot."), ImpactLevel.High)
                 : gb < 12
-                    ? new HardwareInsight("8 GB RAM", igpu ? CheckStatus.Warning : CheckStatus.Good, $"{gb:0.#} GB", igpu ? "Part of the 8 GB is reserved for the integrated GPU, so free memory gets tight in modern games." : "Enough for most games.", "Close background apps while gaming; 16 GB is the comfortable size.", ImpactLevel.Medium)
-                    : new HardwareInsight("Enough RAM", CheckStatus.Good, $"{gb:0.#} GB", "Plenty of memory for games and the integrated GPU.", "Nothing to do.", ImpactLevel.Low));
+                    ? new HardwareInsight("8 GB RAM", igpu ? CheckStatus.Warning : CheckStatus.Good, $"{gb:0.#} GB", igpu ? L.T("Part of the 8 GB is reserved for the integrated GPU, so free memory gets tight in modern games.") : L.T("Enough for most games."), L.T("Close background apps while gaming; 16 GB is the comfortable size."), ImpactLevel.Medium)
+                    : new HardwareInsight("Enough RAM", CheckStatus.Good, $"{gb:0.#} GB", L.T("Plenty of memory for games and the integrated GPU."), L.T("Nothing to do."), ImpactLevel.Low));
         }
 
         // 3. Memory speed
         if (hw.RamSpeedMhz is int speed && igpu)
         {
             list.Add(speed < 2666
-                ? new HardwareInsight("Slow memory", CheckStatus.Warning, $"{speed} MT/s", "Memory speed directly affects integrated graphics performance.", "When upgrading RAM choose the fastest speed your laptop supports (DDR4-3200 for Ryzen 5000 laptops).", ImpactLevel.Medium)
-                : new HardwareInsight("Memory speed", CheckStatus.Good, $"{speed} MT/s", "Good speed for integrated graphics.", "Nothing to do.", ImpactLevel.Low));
+                ? new HardwareInsight("Slow memory", CheckStatus.Warning, $"{speed} MT/s", L.T("Memory speed directly affects integrated graphics performance."), L.T("When upgrading RAM choose the fastest speed your laptop supports (DDR4-3200 for Ryzen 5000 laptops)."), ImpactLevel.Medium)
+                : new HardwareInsight("Memory speed", CheckStatus.Good, $"{speed} MT/s", L.T("Good speed for integrated graphics."), L.T("Nothing to do."), ImpactLevel.Low));
         }
 
         // 4. Reserved video memory (UMA frame buffer)
@@ -135,8 +135,8 @@ public static class HardwareInsightsService
         {
             double mb = vram / 1024d / 1024;
             list.Add(new HardwareInsight("Reserved video memory (UMA)", mb <= 512 ? CheckStatus.Warning : CheckStatus.Good, L.F("{0:0} MB dedicated", mb),
-                "Windows gives the iGPU more shared memory automatically when needed, but some games refuse higher textures with a small dedicated value.",
-                mb <= 512 ? "Some BIOS versions offer 'UMA Frame Buffer Size' – 1–2 GB can help in VRAM-hungry games. Only change it if your BIOS offers this option; ConstiBoost never changes BIOS settings." : "Nothing to do.",
+                L.T("Windows gives the iGPU more shared memory automatically when needed, but some games refuse higher textures with a small dedicated value."),
+                mb <= 512 ? L.T("Some BIOS versions offer 'UMA Frame Buffer Size' – 1–2 GB can help in VRAM-hungry games. Only change it if your BIOS offers this option; ConstiBoost never changes BIOS settings.") : L.T("Nothing to do."),
                 ImpactLevel.Low));
         }
 
@@ -146,16 +146,16 @@ public static class HardwareInsightsService
             int days = (int)(DateTime.Now - date).TotalDays;
             string where = gpu.Vendor switch
             {
-                "AMD" => "AMD Software: Adrenalin Edition from amd.com/support (for Ryzen laptops the AMD driver usually has newer game optimizations than the laptop maker's driver)",
-                "NVIDIA" => "NVIDIA App / GeForce drivers from nvidia.com",
-                "Intel" => "Intel Driver & Support Assistant",
+                "AMD" => L.T("AMD Software: Adrenalin Edition from amd.com/support (for Ryzen laptops the AMD driver usually has newer game optimizations than the laptop maker's driver)"),
+                "NVIDIA" => L.T("NVIDIA App / GeForce drivers from nvidia.com"),
+                "Intel" => L.T("Intel Driver & Support Assistant"),
                 _ => "the GPU vendor's website",
             };
             list.Add(days > 365
                 ? new HardwareInsight("Old graphics driver", CheckStatus.Bad, L.F("{0:dd.MM.yyyy} ({1} months)", date, days / 30), "Old drivers miss game-specific optimizations and fixes – especially for new games like Fortnite seasons.", L.F("Update via {0}.", L.T(where)), ImpactLevel.High)
                 : days > 180
                     ? new HardwareInsight("Graphics driver could be newer", CheckStatus.Warning, $"{date:dd.MM.yyyy}", "Newer drivers often improve performance in current games.", L.F("Check {0}.", L.T(where)), ImpactLevel.Medium)
-                    : new HardwareInsight("Graphics driver up to date", CheckStatus.Good, $"{date:dd.MM.yyyy}", "Recent driver.", "Nothing to do.", ImpactLevel.Low));
+                    : new HardwareInsight(L.T("Graphics driver up to date"), CheckStatus.Good, $"{date:dd.MM.yyyy}", "Recent driver.", L.T("Nothing to do."), ImpactLevel.Low));
         }
 
         // 6. Storage type of game drives
@@ -178,7 +178,7 @@ public static class HardwareInsightsService
         // 7. Display
         if (gpu?.RefreshRate is int hz)
         {
-            list.Add(new HardwareInsight("Display refresh rate", CheckStatus.Good, $"{hz} Hz · {gpu.HorizontalResolution}×{gpu.VerticalResolution}",
+            list.Add(new HardwareInsight(L.T("Display refresh rate"), CheckStatus.Good, $"{hz} Hz · {gpu.HorizontalResolution}×{gpu.VerticalResolution}",
                 L.F("Your screen shows at most {0} images per second. More FPS than that lower input lag slightly but you will not see them.", hz),
                 L.F("Cap FPS at {0} (or {1} for competitive play) – stable frame times, less heat, longer battery life.", hz, hz * 2), ImpactLevel.Medium));
         }
@@ -189,14 +189,14 @@ public static class HardwareInsightsService
             bool? ac = SystemInfo.GetPowerStatus().onAc;
             list.Add(ac == false
                 ? new HardwareInsight("Running on battery", CheckStatus.Warning, L.F("Battery {0} %", hw.BatteryPercent?.ToString() ?? "?"), "Laptops limit CPU/GPU power on battery – often a large FPS loss.", "Plug in the charger for gaming.", ImpactLevel.High)
-                : new HardwareInsight("Plugged in", CheckStatus.Good, "AC power", "Full power available.", "Nothing to do.", ImpactLevel.Low));
+                : new HardwareInsight("Plugged in", CheckStatus.Good, "AC power", L.T("Full power available."), L.T("Nothing to do."), ImpactLevel.Low));
         }
 
         // 9. Graphics class summary
         if (gpuClass != null)
         {
             list.Add(new HardwareInsight("Graphics performance class", CheckStatus.Good, gpuClass.Name, L.F("Approximate performance class {0:0.00}× a Radeon Vega 8 iGPU (used for FPS estimates in Games).", gpuClass.Index),
-                gpuClass.Integrated ? "Performance modes, lower 3D resolution and FPS caps give the biggest gains on integrated graphics." : "Dedicated graphics – keep the laptop plugged in and drivers current.", ImpactLevel.Low));
+                gpuClass.Integrated ? L.T("Performance modes, lower 3D resolution and FPS caps give the biggest gains on integrated graphics.") : L.T("Dedicated graphics – keep the laptop plugged in and drivers current."), ImpactLevel.Low));
         }
 
         return list.OrderBy(i => i.Status switch { CheckStatus.Bad => 0, CheckStatus.Warning => 1, CheckStatus.Good => 3, _ => 2 })

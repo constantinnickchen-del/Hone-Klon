@@ -58,7 +58,7 @@ public sealed class PowerSettingFeature : FpsBoostFeature
         bool optimal = _isOptimal(value.Value);
         Set(optimal ? CheckStatus.Good : CheckStatus.Warning,
             L.F("Plugged in: {0}", L.T(_describe(value.Value))),
-            optimal ? "Already optimal." : L.F("Recommended: {0}", L.T(_describe(_target))),
+            optimal ? L.T("Already optimal.") : L.F("Recommended: {0}", L.T(_describe(_target))),
             !optimal);
     }
 
@@ -89,13 +89,13 @@ public sealed class WindowedOptimizationsFeature : FpsBoostFeature
     {
         if (Environment.OSVersion.Version.Build < 22000)
         {
-            Unavailable("This optimization is unavailable on your system (Windows 11 only).");
+            Unavailable(L.T("This optimization is unavailable on your system (Windows 11 only)."));
             return;
         }
 
         string current = RegistryHelper.ReadString("HKCU", Key, Value) ?? string.Empty;
         bool on = current.Contains(Flag, StringComparison.OrdinalIgnoreCase);
-        Set(on ? CheckStatus.Good : CheckStatus.Warning, on ? "On" : "Off", on ? "Already optimal." : "Recommended: On", !on);
+        Set(on ? CheckStatus.Good : CheckStatus.Warning, on ? L.T("On") : L.T("Off"), on ? L.T("Already optimal.") : L.T("Recommended: On"), !on);
     }
 
     protected override Task<OperationResult> ApplyCoreAsync(BackupSession backup)
@@ -109,7 +109,7 @@ public sealed class WindowedOptimizationsFeature : FpsBoostFeature
         using var key = root.CreateSubKey(Key, true);
         key.SetValue(Value, updated, Microsoft.Win32.RegistryValueKind.String);
         ActionLog.Success("FPS Boost: windowed game optimizations", current, updated);
-        return Task.FromResult(OperationResult.Ok("Windowed game optimizations ON (applies to games started from now on)."));
+        return Task.FromResult(OperationResult.Ok(L.T("Windowed game optimizations ON (applies to games started from now on).")));
     }
 }
 
@@ -133,7 +133,7 @@ public sealed class BrowserGpuPreferenceFeature : FpsBoostFeature
         var browsers = Browsers();
         if (browsers.Count == 0)
         {
-            Unavailable("No browser found.");
+            Unavailable(L.T("No browser found."));
             return;
         }
 
@@ -141,14 +141,14 @@ public sealed class BrowserGpuPreferenceFeature : FpsBoostFeature
         var missing = browsers.Where(b => !(RegistryHelper.ReadString("HKCU", Key, b) ?? string.Empty).Contains("GpuPreference=2", StringComparison.OrdinalIgnoreCase)).ToList();
         if (gpus <= 1)
         {
-            Set(CheckStatus.Good, "Not needed", "Your PC has one graphics chip – browsers always use it. Nothing to do.", missing.Count > 0);
+            Set(CheckStatus.Good, "Not needed", L.T("Your PC has one graphics chip – browsers always use it. Nothing to do."), missing.Count > 0);
             CanImprove = false;
             return;
         }
 
         Set(missing.Count == 0 ? CheckStatus.Good : CheckStatus.Warning,
             missing.Count == 0 ? "All browsers: High performance" : L.F("{0} browser(s) not set", missing.Count),
-            missing.Count == 0 ? "Already optimal." : string.Join(", ", missing.Select(Path.GetFileName)),
+            missing.Count == 0 ? L.T("Already optimal.") : string.Join(", ", missing.Select(Path.GetFileName)),
             missing.Count > 0);
     }
 
@@ -187,7 +187,7 @@ public sealed class RefreshRateFeature : FpsBoostFeature
         var current = DisplayModes.Current();
         if (current is null)
         {
-            Unavailable("The display mode could not be read.");
+            Unavailable(L.T("The display mode could not be read."));
             return;
         }
 
@@ -237,7 +237,7 @@ public sealed class GamingResolutionFeature : FpsBoostFeature
         var current = DisplayModes.Current();
         if (current is null)
         {
-            Unavailable("The display mode could not be read.");
+            Unavailable(L.T("The display mode could not be read."));
             return;
         }
 
@@ -252,7 +252,7 @@ public sealed class GamingResolutionFeature : FpsBoostFeature
             new AsyncRelayCommand(async () => { _target = m; CanImprove = true; await ApplyAsync(); }))).ToList();
         if (candidates.Count == 0)
         {
-            Unavailable("This optimization is unavailable on your system (no smaller resolution with the same aspect ratio).");
+            Unavailable(L.T("This optimization is unavailable on your system (no smaller resolution with the same aspect ratio)."));
             return;
         }
 
@@ -310,7 +310,7 @@ public sealed class DeliveryOptimizationFeature : FpsBoostFeature
         bool off = mode is 0 or 99 or 100;
         Set(off ? CheckStatus.Good : CheckStatus.Warning,
             mode is null ? "Windows default (sharing allowed)" : L.F("Mode {0}", mode),
-            off ? "Already optimal – no peer-to-peer uploads." : "Recommended: HTTP only (direct download from Microsoft, no uploading).",
+            off ? L.T("Already optimal – no peer-to-peer uploads.") : L.T("Recommended: HTTP only (direct download from Microsoft, no uploading)."),
             !off);
     }
 
@@ -325,7 +325,7 @@ public sealed class DeliveryOptimizationFeature : FpsBoostFeature
         if (result.Success)
         {
             ActionLog.Success("FPS Boost: Delivery Optimization", "sharing", "HTTP only");
-            return OperationResult.Ok("Update sharing is off. Windows Update still downloads directly from Microsoft.");
+            return OperationResult.Ok(L.T("Update sharing is off. Windows Update still downloads directly from Microsoft."));
         }
 
         return OperationResult.Fail("This optimization couldn't be applied.", result.Message);

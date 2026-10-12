@@ -10,6 +10,8 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
+using ConstiBoost.Localization;
+
 namespace ConstiBoost.Hardware;
 
 public sealed record WifiInfo(string Ssid, int? SignalPercent, string RadioType, string Channel, string Band, string ReceiveRate, string TransmitRate, List<string> Tips);
@@ -59,14 +61,14 @@ public static class GamerNetworkService
         double? loadedAvg = loaded.Count > 0 ? loaded.Average() : null;
         if (idleAvg is null || loadedAvg is null)
         {
-            return new BufferbloatResult(idleAvg, loadedAvg, "–", "Ping did not respond – the test could not be completed.");
+            return new BufferbloatResult(idleAvg, loadedAvg, "–", L.T("Ping did not respond – the test could not be completed."));
         }
 
         double extra = Math.Max(0, loadedAvg.Value - idleAvg.Value);
         string grade = extra < 5 ? "A+" : extra < 30 ? "A" : extra < 60 ? "B" : extra < 200 ? "C" : extra < 400 ? "D" : "F";
         string text = extra < 30
-            ? $"Latency rises only {extra:0} ms under load – downloads in the background barely affect your game."
-            : $"Latency rises by {extra:0} ms while the connection is busy. Downloads, streams or cloud sync during a match cause lag spikes. Fix: pause downloads while gaming, or enable 'SQM/QoS' on your router if it offers it.";
+            ? L.F("Latency rises only {0:0} ms under load – downloads in the background barely affect your game.", extra)
+            : L.F("Latency rises by {0:0} ms while the connection is busy. Downloads, streams or cloud sync during a match cause lag spikes. Fix: pause downloads while gaming, or enable 'SQM/QoS' on your router if it offers it.", extra);
         return new BufferbloatResult(idleAvg, loadedAvg, grade, text);
     }
 
@@ -137,11 +139,11 @@ public static class GamerNetworkService
             string tx = Get("Transmit rate \\(Mbps\\)|.bertragungsrate \\(MBit/s\\)|Transmit rate") ?? "–";
 
             var tips = new List<string>();
-            if (signal is < 50) tips.Add($"Weak signal ({signal} %): move closer to the router or use a LAN cable – weak Wi-Fi causes packet loss and lag spikes.");
-            else if (signal is < 70) tips.Add($"Medium signal ({signal} %): a LAN cable or a better position gives more stable ping.");
-            if (band.Contains("2.4", StringComparison.Ordinal) || (int.TryParse(channel, out int c) && c <= 14)) tips.Add("You are on 2.4 GHz – if your router offers 5 GHz, use it for gaming (less interference).");
-            if (radio.Contains("802.11n", StringComparison.OrdinalIgnoreCase) && !radio.Contains("ac", StringComparison.OrdinalIgnoreCase)) tips.Add("Wi-Fi 4 (802.11n) connection – newer standards (ac/ax) are usually more stable.");
-            if (tips.Count == 0) tips.Add("Wi-Fi looks good. For competitive play a LAN cable is still the most stable option.");
+            if (signal is < 50) tips.Add(L.F("Weak signal ({0} %): move closer to the router or use a LAN cable – weak Wi-Fi causes packet loss and lag spikes.", signal));
+            else if (signal is < 70) tips.Add(L.F("Medium signal ({0} %): a LAN cable or a better position gives more stable ping.", signal));
+            if (band.Contains("2.4", StringComparison.Ordinal) || (int.TryParse(channel, out int c) && c <= 14)) tips.Add(L.T("You are on 2.4 GHz – if your router offers 5 GHz, use it for gaming (less interference)."));
+            if (radio.Contains("802.11n", StringComparison.OrdinalIgnoreCase) && !radio.Contains("ac", StringComparison.OrdinalIgnoreCase)) tips.Add(L.T("Wi-Fi 4 (802.11n) connection – newer standards (ac/ax) are usually more stable."));
+            if (tips.Count == 0) tips.Add(L.T("Wi-Fi looks good. For competitive play a LAN cable is still the most stable option."));
             return new WifiInfo(ssid, signal, radio, channel, band, rx, tx, tips);
         }
         catch (Exception ex)

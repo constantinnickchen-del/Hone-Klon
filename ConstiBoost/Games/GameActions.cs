@@ -5,6 +5,8 @@ using System.Text.RegularExpressions;
 using ConstiBoost.Core;
 using ConstiBoost.Logging;
 
+using ConstiBoost.Localization;
+
 namespace ConstiBoost.Games;
 
 /// <summary>Launch / uninstall / open folder – always through the official launcher or the game's own uninstaller.</summary>
@@ -17,7 +19,7 @@ public static class GameActions
             if (game.Source == GameSource.Browser && game.MainExecutable != null)
             {
                 Process.Start(new ProcessStartInfo(game.MainExecutable) { UseShellExecute = true });
-                return OperationResult.Ok($"{game.Publisher} is starting – open your web game there.");
+                return OperationResult.Ok(L.F("{0} is starting – open your web game there.", game.Publisher));
             }
 
             if (game.LaunchUri != null || game.AppUserModelId != null)
@@ -27,7 +29,7 @@ public static class GameActions
                     : new ProcessStartInfo(game.LaunchUri!) { UseShellExecute = true };
                 Process.Start(start);
                 ActionLog.Success("Launch game: " + game.Name, null, game.SourceText);
-                return OperationResult.Ok($"{game.Name} is starting…");
+                return OperationResult.Ok(L.F("{0} is starting…", game.Name));
             }
 
             string target = game.Source switch
@@ -44,12 +46,12 @@ public static class GameActions
 
             Process.Start(psi);
             ActionLog.Success("Launch game: " + game.Name, null, game.SourceText);
-            return OperationResult.Ok($"{game.Name} is starting…");
+            return OperationResult.Ok(L.F("{0} is starting…", game.Name));
         }
         catch (Exception ex)
         {
             ActionLog.Failed("Launch game: " + game.Name, null, null, Safe.Describe(ex));
-            return OperationResult.Fail($"{game.Name} couldn't be started: {Safe.Describe(ex)}");
+            return OperationResult.Fail(L.F("{0} couldn't be started: {1}", game.Name, Safe.Describe(ex)));
         }
     }
 
@@ -64,7 +66,7 @@ public static class GameActions
             {
                 if (!Regex.IsMatch(game.PackageFullName, @"^[A-Za-z0-9._~\-]+$"))
                 {
-                    return OperationResult.Fail("Unexpected package name – uninstall it via Windows Settings > Apps.");
+                    return OperationResult.Fail(L.T("Unexpected package name – uninstall it via Windows Settings > Apps."));
                 }
 
                 // Documented PowerShell cmdlet, current user only, no admin rights.
@@ -74,7 +76,7 @@ public static class GameActions
                     CreateNoWindow = true,
                 });
                 ActionLog.Success("Uninstall game: " + game.Name, "Installed", "Remove-AppxPackage started");
-                return OperationResult.Ok($"{game.Name} is being removed. This can take a moment – press RESCAN afterwards.");
+                return OperationResult.Ok(L.F("{0} is being removed. This can take a moment – press RESCAN afterwards.", game.Name));
             }
 
             if (game.Source == GameSource.Minecraft)
@@ -87,18 +89,18 @@ public static class GameActions
             {
                 case GameSource.Xbox:
                     Process.Start(new ProcessStartInfo("ms-settings:appsfeatures") { UseShellExecute = true });
-                    return OperationResult.Ok("Windows Settings > Apps opens – uninstall the game there (or in the Xbox app).");
+                    return OperationResult.Ok(L.T("Windows Settings > Apps opens – uninstall the game there (or in the Xbox app)."));
                 case GameSource.Steam:
                     Process.Start(new ProcessStartInfo($"steam://uninstall/{game.SteamAppId}") { UseShellExecute = true });
                     break;
                 case GameSource.Epic:
                     Process.Start(new ProcessStartInfo("com.epicgames.launcher://store/library") { UseShellExecute = true });
                     ActionLog.Success("Uninstall game: " + game.Name, null, "Epic Games Launcher opened");
-                    return OperationResult.Ok("The Epic Games Launcher opens – in your Library click ··· on the game and choose 'Uninstall'.");
+                    return OperationResult.Ok(L.T("The Epic Games Launcher opens – in your Library click ··· on the game and choose 'Uninstall'."));
                 default:
                     if (string.IsNullOrWhiteSpace(game.UninstallString))
                     {
-                        return OperationResult.Fail("This game has no registered uninstaller. Remove it via Windows Settings > Apps.");
+                        return OperationResult.Fail(L.T("This game has no registered uninstaller. Remove it via Windows Settings > Apps."));
                     }
 
                     var (exe, args) = Split(game.UninstallString);
@@ -107,16 +109,16 @@ public static class GameActions
             }
 
             ActionLog.Success("Uninstall game: " + game.Name, "Installed", "Uninstaller started");
-            return OperationResult.Ok($"The uninstaller for {game.Name} was started. Follow its instructions.");
+            return OperationResult.Ok(L.F("The uninstaller for {0} was started. Follow its instructions.", game.Name));
         }
         catch (System.ComponentModel.Win32Exception ex) when (ex.NativeErrorCode == 1223)
         {
-            return OperationResult.Fail("Uninstall cancelled (administrator permission declined).");
+            return OperationResult.Fail(L.T("Uninstall cancelled (administrator permission declined)."));
         }
         catch (Exception ex)
         {
             ActionLog.Failed("Uninstall game: " + game.Name, null, null, Safe.Describe(ex));
-            return OperationResult.Fail($"The uninstaller couldn't be started: {Safe.Describe(ex)}");
+            return OperationResult.Fail(L.F("The uninstaller couldn't be started: {0}", Safe.Describe(ex)));
         }
     }
 

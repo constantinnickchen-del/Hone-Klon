@@ -1,3 +1,4 @@
+using ConstiBoost.Localization;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -120,7 +121,7 @@ public sealed class AutoProfileService
                 if (_goneSince.HasValue && DateTime.UtcNow - _goneSince.Value > TimeSpan.FromSeconds(20))
                 {
                     var messages = await focus.StopAsync();
-                    Notify($"Game closed – Auto-Focus for {profile?.GameName} stopped and everything restored." + (messages.Count > 0 ? " Notes: " + string.Join("; ", messages) : string.Empty));
+                    Notify(L.F("Game closed – Auto-Focus for {0} stopped and everything restored.", profile?.GameName) + (messages.Count > 0 ? L.T(" Notes: ") + string.Join("; ", messages) : string.Empty));
                     _autoStartedGameId = null;
                     _goneSince = null;
                 }
@@ -156,7 +157,7 @@ public sealed class AutoProfileService
                     DisableThrottling: Services.SettingsService.Instance.Current.FocusDisableThrottling));
                 _autoStartedGameId = profile.GameId;
                 _goneSince = null;
-                Notify($"🎯 {profile.GameName} started – Auto-Focus ({GamingModeService.ProfileName(profile.Profile)}) is active." + (messages.Count > 0 ? " Notes: " + string.Join("; ", messages) : string.Empty));
+                Notify(L.F("🎯 {0} started – Auto-Focus ({1}) is active.", profile.GameName, GamingModeService.ProfileName(profile.Profile)) + (messages.Count > 0 ? L.T(" Notes: ") + string.Join("; ", messages) : string.Empty));
                 break;
             }
         }

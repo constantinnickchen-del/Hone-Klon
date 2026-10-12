@@ -5,6 +5,8 @@ using ConstiBoost.Hardware;
 using ConstiBoost.Models;
 using ConstiBoost.WinSys;
 
+using ConstiBoost.Localization;
+
 namespace ConstiBoost.Games;
 
 public sealed record FpsEstimate(string Setting, string Resolution, int Low, int High, bool AboveRefresh, bool IsCurrent)
@@ -55,16 +57,16 @@ public static class FpsEstimator
     {
         var list = new List<(string, string)>
         {
-            ("Graphics", c.Gpu is null ? "Unknown GPU – no estimate" : $"{c.Gpu.Name} (performance class {c.Gpu.Index:0.00}× Vega 8)"),
+            ("Graphics", c.Gpu is null ? L.T("Unknown GPU – no estimate") : $"{c.Gpu.Name} (performance class {c.Gpu.Index:0.00}× Vega 8)"),
         };
         if (c.Gpu?.Integrated == true)
         {
-            list.Add(("Memory", c.SingleChannelRam ? "Single-channel RAM: about −25 % for integrated graphics" : "Dual-channel RAM (good for integrated graphics)"));
+            list.Add(("Memory", c.SingleChannelRam ? L.T("Single-channel RAM: about −25 % for integrated graphics") : L.T("Dual-channel RAM (good for integrated graphics)")));
         }
 
-        if (c.OnBattery) list.Add(("Power", "On battery: about −15 %"));
-        if (c.PowerSaving) list.Add(("Power mode", "Power saving: about −20 %"));
-        if (c.CoolProfile) list.Add(("Gaming Mode", "COOL profile (CPU boost off): about −15 %"));
+        if (c.OnBattery) list.Add(("Power", L.T("On battery: about −15 %")));
+        if (c.PowerSaving) list.Add(("Power mode", L.T("Power saving: about −20 %")));
+        if (c.CoolProfile) list.Add(("Gaming Mode", L.T("COOL profile (CPU boost off): about −15 %")));
         if (c.RecentTemperature >= 90) list.Add(("Heat", $"{c.RecentTemperature:0} °C measured – possible throttling: about −10 %"));
         if (c.RefreshRate is int hz) list.Add(("Display", $"{hz} Hz – FPS above {hz} are not visible on this screen"));
         return list;

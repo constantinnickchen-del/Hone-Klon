@@ -26,7 +26,7 @@ public sealed class BackgroundRecordingOptimization : Optimization
         bool on = GameFeatures.BackgroundRecordingEnabled;
         CurrentState = OnOff(on);
         RecommendedState = "OFF";
-        Reason = "Continuous background recording costs performance on every game, especially on integrated graphics.";
+        Reason = L.T("Continuous background recording costs performance on every game, especially on integrated graphics.");
         NeedsChange = on;
     }
 
@@ -54,8 +54,8 @@ public sealed class GameDvrOptimization : Optimization
         CurrentState = OnOff(on);
         RecommendedState = context.Profile.IsLowPowerIntegrated ? "OFF" : "Your choice";
         Reason = context.Profile.IsLowPowerIntegrated
-            ? "On low-power integrated graphics the capture hooks add overhead you probably do not need."
-            : "Only matters if you do not use Game Bar recordings.";
+            ? L.T("On low-power integrated graphics the capture hooks add overhead you probably do not need.")
+            : L.T("Only matters if you do not use Game Bar recordings.");
         NeedsChange = on && context.Profile.IsLowPowerIntegrated;
     }
 
@@ -92,8 +92,8 @@ public sealed class TransparencyOptimization : Optimization
         CurrentState = OnOff(on);
         RecommendedState = context.Profile.IsLowPowerIntegrated ? "OFF" : "Your choice";
         Reason = context.Profile.IsLowPowerIntegrated
-            ? "Integrated GPUs share power and memory with the CPU – desktop blur effects take a small share of that."
-            : "Negligible effect on dedicated GPUs.";
+            ? L.T("Integrated GPUs share power and memory with the CPU – desktop blur effects take a small share of that.")
+            : L.T("Negligible effect on dedicated GPUs.");
         NeedsChange = on && context.Profile.IsLowPowerIntegrated;
     }
 
@@ -125,7 +125,7 @@ public sealed class BackgroundAppsOptimization : Optimization
         bool disabled = GameFeatures.BackgroundAppsDisabled;
         CurrentState = disabled ? "Blocked" : "Allowed";
         RecommendedState = "Optional: Blocked";
-        Reason = "Fewer background tasks while gaming. Optional because it can delay notifications.";
+        Reason = L.T("Fewer background tasks while gaming. Optional because it can delay notifications.");
         NeedsChange = !disabled;
     }
 
@@ -158,7 +158,7 @@ public sealed class HagsOptimization : Optimization
         if (_enabled is null)
         {
             IsAvailable = false;
-            UnavailableReason = "This optimization is unavailable on your system. Your graphics driver does not expose hardware-accelerated GPU scheduling.";
+            UnavailableReason = L.T("This optimization is unavailable on your system. Your graphics driver does not expose hardware-accelerated GPU scheduling.");
             CurrentState = Formatting.Unavailable;
             RecommendedState = "–";
             NeedsChange = false;
@@ -167,7 +167,7 @@ public sealed class HagsOptimization : Optimization
 
         CurrentState = OnOff(_enabled.Value);
         RecommendedState = L.F("Toggle to {0} (test it)", L.T(OnOff(!_enabled.Value)));
-        Reason = "No universal best value – try both and keep what feels smoother in your games.";
+        Reason = L.T("No universal best value – try both and keep what feels smoother in your games.");
         NeedsChange = false;
     }
 

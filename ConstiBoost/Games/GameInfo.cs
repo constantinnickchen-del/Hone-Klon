@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using ConstiBoost.Core;
 
+using ConstiBoost.Localization;
+
 namespace ConstiBoost.Games;
 
 public enum GameSource
@@ -116,16 +118,16 @@ public sealed class GameInfo : ObservableObject
         {
             if (_lastPlayed is not DateTime d)
             {
-                return "Last played: unknown";
+                return L.T("Last played: unknown");
             }
 
             var age = DateTime.Now - d;
-            string relative = age.TotalMinutes < 60 ? "just now"
-                : age.TotalHours < 24 ? $"{(int)age.TotalHours} h ago"
-                : age.TotalDays < 2 ? "yesterday"
-                : age.TotalDays < 60 ? $"{(int)age.TotalDays} days ago"
+            string relative = age.TotalMinutes < 60 ? L.T("just now")
+                : age.TotalHours < 24 ? L.F("{0} h ago", (int)age.TotalHours)
+                : age.TotalDays < 2 ? L.T("yesterday")
+                : age.TotalDays < 60 ? L.F("{0} days ago", (int)age.TotalDays)
                 : d.ToString("dd.MM.yyyy");
-            return $"Last played: {relative}";
+            return L.F("Last played: {0}", relative);
         }
     }
 

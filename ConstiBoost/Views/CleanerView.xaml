@@ -31,7 +31,7 @@
                             <DockPanel>
                                 <StackPanel DockPanel.Dock="Right" VerticalAlignment="Center" Margin="16,0,0,0">
                                     <TextBlock Text="{Binding SizeText}" Style="{StaticResource Text.H2}" HorizontalAlignment="Right" />
-                                    <TextBlock Text="{Binding FileCount, StringFormat={}{0} files}" Style="{StaticResource Text.Caption}" HorizontalAlignment="Right" />
+                                    <TextBlock Text="{Binding FileCount, Converter={StaticResource Tr}, ConverterParameter='{}{0} files'}" Style="{StaticResource Text.Caption}" HorizontalAlignment="Right" />
                                 </StackPanel>
                                 <CheckBox DockPanel.Dock="Left" IsChecked="{Binding IsSelected}" VerticalAlignment="Center" Margin="0,0,14,0" />
                                 <TextBlock DockPanel.Dock="Left" Text="{Binding Icon}" Style="{StaticResource Icon}" FontSize="20" Margin="0,0,14,0" />

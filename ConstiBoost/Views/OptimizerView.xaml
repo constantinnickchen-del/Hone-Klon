@@ -74,7 +74,7 @@
                                 <TextBlock Text="Xbox Game Bar" Style="{StaticResource Text.H3}" />
                             </DockPanel>
                             <TextBlock Style="{StaticResource Text.Body}" Margin="0,8,0,0" Text="What: overlay (Win+G) with widgets, captures and performance stats. Captures/background recording cost performance; the overlay itself only runs when opened." />
-                            <TextBlock Style="{StaticResource Text.Body}" Margin="0,6,0,0" Text="{Binding GameBarControllerState, StringFormat='Controller button opens Game Bar: {0}'}" />
+                            <TextBlock Style="{StaticResource Text.Body}" Margin="0,6,0,0" Text="{Binding GameBarControllerState, Converter={StaticResource Tr}, ConverterParameter='Controller button opens Game Bar: {0}'}" />
                             <Button Style="{StaticResource GhostButton}" Content="Open Game Bar settings" Command="{Binding OpenGameBarSettingsCommand}" HorizontalAlignment="Left" Padding="0,8,0,0" />
                         </StackPanel>
                     </Border>

@@ -83,7 +83,7 @@
                         <CheckBox Content="Reopen closed apps afterwards" IsChecked="{Binding RelaunchClosedApps}" Margin="0,0,24,8" />
                         <CheckBox IsChecked="{Binding CapFortniteFps}" Margin="0,0,24,8"
                                   ToolTip="An FPS cap is one of the most effective ways to reduce gaming heat. Only applied while Fortnite is closed; the previous value is restored when Gaming Mode stops.">
-                            <TextBlock Text="{Binding FortniteFpsCap, StringFormat='Cap Fortnite at {0} FPS'}" />
+                            <TextBlock Text="{Binding FortniteFpsCap, Converter={StaticResource Tr}, ConverterParameter='Cap Fortnite at {0} FPS'}" />
                         </CheckBox>
                         <Button Style="{StaticResource GhostButton}" Content="Choose apps to close…" Command="{Binding LoadAppsCommand}" Padding="0,0,0,8" />
                     </WrapPanel>

@@ -80,7 +80,7 @@
                                         <DataTemplate>
                                             <StackPanel VerticalAlignment="Center">
                                                 <TextBlock Text="{Binding ResultText}" FontWeight="Bold" Foreground="{Binding Success, Converter={StaticResource StatusBrush}}" />
-                                                <TextBlock Text="{Binding Reason, StringFormat='Reason: {0}'}" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" TextTrimming="CharacterEllipsis"
+                                                <TextBlock Text="{Binding Reason, Converter={StaticResource Tr}, ConverterParameter='Reason: {0}'}" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" TextTrimming="CharacterEllipsis"
                                                            ToolTip="{Binding Reason}" Visibility="{Binding Reason, Converter={StaticResource NullToVis}}" />
                                             </StackPanel>
                                         </DataTemplate>

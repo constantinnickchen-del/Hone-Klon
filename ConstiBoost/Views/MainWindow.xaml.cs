@@ -1,6 +1,7 @@
 using System;
 using System.ComponentModel;
 using System.Windows;
+using ConstiBoost.Localization;
 using ConstiBoost.Services;
 using ConstiBoost.ViewModels;
 using System.Windows.Data;
@@ -48,7 +49,7 @@ public partial class MainWindow : Window
             if (!_trayHintShown)
             {
                 _trayHintShown = true;
-                TrayService.Instance.ShowBalloon("ConstiBoost keeps running", "ConstiBoost is still running in the notification area. Right-click the tray icon → Exit to close it completely.");
+                TrayService.Instance.ShowBalloon(L.T("ConstiBoost keeps running"), L.T("ConstiBoost is still running in the notification area. Right-click the tray icon → Exit to close it completely."));
             }
 
             return;

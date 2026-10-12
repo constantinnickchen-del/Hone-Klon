@@ -152,7 +152,8 @@ public sealed class AutoProfileService
                     ExtraProcessRoots = profile.ProcessRoots.Where(r => !string.Equals(r, profile.InstallPath, StringComparison.OrdinalIgnoreCase)).ToList(),
                 };
                 var messages = await focus.StartAsync(game, new FocusOptions(profile.Profile, apps, profile.LowerPriority, profile.BoostPriority,
-                    profile.GpuPreference, profile.MuteNotifications, profile.CapFps ? profile.FpsCap : null));
+                    profile.GpuPreference, profile.MuteNotifications, profile.CapFps ? profile.FpsCap : null,
+                    DisableThrottling: Services.SettingsService.Instance.Current.FocusDisableThrottling));
                 _autoStartedGameId = profile.GameId;
                 _goneSince = null;
                 Notify($"🎯 {profile.GameName} started – Auto-Focus ({GamingModeService.ProfileName(profile.Profile)}) is active." + (messages.Count > 0 ? " Notes: " + string.Join("; ", messages) : string.Empty));

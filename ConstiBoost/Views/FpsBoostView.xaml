@@ -1,0 +1,89 @@
+<UserControl x:Class="ConstiBoost.Views.FpsBoostView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="0,0,0,32">
+            <DockPanel Margin="0,0,0,16">
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Style="{StaticResource SecondaryButton}" Content="CHECK AGAIN" Command="{Binding CheckAllCommand}" Margin="0,0,10,0" />
+                    <Button Style="{StaticResource AccentButton}" Content="⚡ APPLY ALL RECOMMENDED" Command="{Binding ApplyAllCommand}" />
+                </StackPanel>
+                <StackPanel>
+                    <TextBlock Text="⚡ FPS Boost" Style="{StaticResource Text.H1}" />
+                    <TextBlock Text="20 real FPS features – each one checks your PC first, explains honestly what it does and can be undone." Style="{StaticResource Text.Body}" TextWrapping="Wrap" />
+                </StackPanel>
+            </DockPanel>
+
+            <Border Style="{StaticResource Card}" Margin="0,0,0,16" BorderBrush="{DynamicResource AccentBrush}">
+                <StackPanel>
+                    <TextBlock Text="{Binding Summary}" Style="{StaticResource Text.H3}" TextWrapping="Wrap" />
+                    <ProgressBar IsIndeterminate="True" Margin="0,8,0,0" Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}" />
+                    <TextBlock Style="{StaticResource Text.Body}" Margin="0,8,0,0" TextWrapping="Wrap"
+                               Text="Honest note: settings remove brakes – they cannot turn integrated graphics into a gaming GPU. The biggest gains usually come from: charger plugged in, current AMD driver, dual-channel RAM and fewer pixels. Use 🔍 ANALYZE and 📏 MEASURE in Games to see the real effect." />
+                    <Button Style="{StaticResource GhostButton}" Content="→ Games: Analyze / Measure / Focus" Command="{Binding OpenGamesCommand}" HorizontalAlignment="Left" Padding="0" Margin="0,8,0,0" />
+                </StackPanel>
+            </Border>
+
+            <ItemsControl ItemsSource="{Binding Groups}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Margin="0,0,0,8">
+                            <TextBlock Text="{Binding Name}" Style="{StaticResource SectionTitle}" />
+                            <ItemsControl ItemsSource="{Binding Features}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Style="{StaticResource Card}" Margin="0,0,0,10" Padding="18">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <Border Width="34" Height="34" CornerRadius="17" Background="{DynamicResource AccentSoftBrush}" VerticalAlignment="Top" Margin="0,0,14,0">
+                                                    <TextBlock Text="{Binding Number}" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}" />
+                                                </Border>
+                                                <StackPanel Grid.Column="1">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <TextBlock Text="{Binding Icon}" FontSize="16" Margin="0,0,8,0" VerticalAlignment="Center" />
+                                                        <TextBlock Text="{Binding Name}" Style="{StaticResource Text.H3}" FontSize="15" VerticalAlignment="Center" />
+                                                    </StackPanel>
+                                                    <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                                                        <Ellipse Width="9" Height="9" Margin="0,0,8,0" VerticalAlignment="Center" Fill="{Binding Status, Converter={StaticResource StatusBrush}}" />
+                                                        <TextBlock Text="{Binding StateText}" Foreground="{DynamicResource TextPrimaryBrush}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                                    </StackPanel>
+                                                    <TextBlock Text="{Binding Description}" Style="{StaticResource Text.Body}" Margin="0,6,0,0" TextWrapping="Wrap" />
+                                                    <TextBlock Text="{Binding Detail}" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="13" Margin="0,6,0,0" TextWrapping="Wrap"
+                                                               Visibility="{Binding Detail, Converter={StaticResource NullToVis}}" />
+                                                    <TextBlock Text="{Binding Downside, StringFormat='Downside: {0}'}" Style="{StaticResource Text.Caption}" Margin="0,6,0,0" TextWrapping="Wrap" />
+                                                    <ItemsControl ItemsSource="{Binding Actions}" Margin="0,8,0,0">
+                                                        <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <Button Style="{StaticResource SecondaryButton}" Content="{Binding Label}" Command="{Binding Command}" Margin="0,0,8,6" Padding="12,6" />
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                    <TextBlock Text="{Binding ResultText}" Foreground="{DynamicResource AccentBrush}" Margin="0,4,0,0" TextWrapping="Wrap"
+                                                               Visibility="{Binding ResultText, Converter={StaticResource NullToVis}}" />
+                                                </StackPanel>
+                                                <StackPanel Grid.Column="2" Margin="14,0,0,0" MinWidth="110">
+                                                    <TextBlock Text="FPS IMPACT" Style="{StaticResource Text.Caption}" HorizontalAlignment="Right" />
+                                                    <TextBlock Text="{Binding Impact}" FontWeight="Bold" HorizontalAlignment="Right" Foreground="{DynamicResource AccentBrush}" />
+                                                    <Button Style="{StaticResource AccentButton}" Content="APPLY" Command="{Binding ApplyCommand}" Margin="0,10,0,0"
+                                                            Visibility="{Binding ShowApply, Converter={StaticResource BoolToVis}}" />
+                                                    <Button Style="{StaticResource GhostButton}" Content="↩ UNDO" Command="{Binding UndoCommand}" Margin="0,8,0,0"
+                                                            Visibility="{Binding ShowUndo, Converter={StaticResource BoolToVis}}" />
+                                                    <ProgressBar IsIndeterminate="True" Margin="0,10,0,0" Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}" />
+                                                </StackPanel>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

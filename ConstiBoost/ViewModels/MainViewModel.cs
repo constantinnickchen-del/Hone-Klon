@@ -28,12 +28,13 @@ public sealed class MainViewModel : ObservableObject
         Thermal = new ThermalViewModel();
         Games = new GamesViewModel();
         BoostLab = new BoostLabViewModel();
+        FpsBoost = new FpsBoostViewModel();
         Cleaner = new CleanerViewModel();
         Startup = new StartupViewModel();
         Hardware = new HardwareViewModel();
         Backups = new BackupsViewModel();
         Settings = new SettingsViewModel();
-        Pages = new List<PageViewModel> { Dashboard, Optimizer, BoostLab, Games, Thermal, Cleaner, Startup, Hardware, Backups, Settings };
+        Pages = new List<PageViewModel> { Dashboard, Optimizer, FpsBoost, BoostLab, Games, Thermal, Cleaner, Startup, Hardware, Backups, Settings };
         Welcome = new WelcomeViewModel(this);
 
         _currentPage = Dashboard;
@@ -59,6 +60,7 @@ public sealed class MainViewModel : ObservableObject
     public ThermalViewModel Thermal { get; }
     public GamesViewModel Games { get; }
     public BoostLabViewModel BoostLab { get; }
+    public FpsBoostViewModel FpsBoost { get; }
     public CleanerViewModel Cleaner { get; }
     public StartupViewModel Startup { get; }
     public HardwareViewModel Hardware { get; }

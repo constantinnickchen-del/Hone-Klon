@@ -34,4 +34,7 @@ public sealed class AppSettings
     public bool BrowserUnlockFps { get; set; }
     public bool BrowserLaunchStartsFocus { get; set; } = true;
     public bool BrowserSeparateProfile { get; set; }
+    public bool FocusDisableThrottling { get; set; } = true;
+    public bool FocusLowerOtherTabs { get; set; } = true;
+    public bool FocusPauseSearch { get; set; }
 }

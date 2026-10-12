@@ -23,7 +23,10 @@ public sealed record FocusOptions(
     bool HighPerformanceGpu,
     bool MuteNotifications,
     int? FortniteFpsCap,
-    bool BoostBrowserTab = false);
+    bool BoostBrowserTab = false,
+    bool DisableThrottling = false,
+    bool LowerOtherTabs = false,
+    bool PauseSearch = false);
 
 public sealed class FocusState
 {
@@ -33,6 +36,10 @@ public sealed class FocusState
     public List<string> ProcessRoots { get; set; } = new();
     public bool BoostGamePriority { get; set; }
     public bool BoostBrowserTab { get; set; }
+    public bool DisableThrottling { get; set; }
+    public bool LowerOtherTabs { get; set; }
+    public bool SearchPaused { get; set; }
+    public List<int> LoweredPids { get; set; } = new();
     public RegistryValueSnapshot? GpuPreference { get; set; }
     public RegistryValueSnapshot? Notifications { get; set; }
     public DateTime Started { get; set; }
@@ -52,6 +59,7 @@ public sealed class GameFocusService : ObservableObject
 
     private readonly DispatcherTimer _watcher = new() { Interval = TimeSpan.FromSeconds(3) };
     private readonly HashSet<int> _boosted = new();
+    private readonly HashSet<int> _unthrottled = new();
     private readonly Dictionary<int, TimeSpan> _cpuTimes = new();
     private int? _boostedRenderer;
     private FocusState? _state;
@@ -101,7 +109,7 @@ public sealed class GameFocusService : ObservableObject
             messages.AddRange(await StopAsync(false));
         }
 
-        var state = new FocusState { GameId = game.Id, GameName = game.Name, InstallPath = game.InstallPath, ProcessRoots = game.ProcessRoots.ToList(), BoostGamePriority = options.BoostGamePriority, BoostBrowserTab = options.BoostBrowserTab && game.IsBrowser, Started = DateTime.Now };
+        var state = new FocusState { GameId = game.Id, GameName = game.Name, InstallPath = game.InstallPath, ProcessRoots = game.ProcessRoots.ToList(), BoostGamePriority = options.BoostGamePriority, BoostBrowserTab = options.BoostBrowserTab && game.IsBrowser, DisableThrottling = options.DisableThrottling, LowerOtherTabs = options.LowerOtherTabs && game.IsBrowser, Started = DateTime.Now };
         _state = state;
         Persist();
 
@@ -132,6 +140,20 @@ public sealed class GameFocusService : ObservableObject
             catch (Exception ex)
             {
                 messages.Add("Notifications: " + Safe.Describe(ex));
+            }
+        }
+
+        if (options.PauseSearch)
+        {
+            var r = await ElevationService.RunAsync(new ElevatedTask { Operation = ElevatedOperations.ServiceControl, ServiceName = "WSearch", ServiceStart = false });
+            if (r.Success)
+            {
+                state.SearchPaused = true;
+                ActionLog.Success("Game Focus: Windows Search indexing", "running", "paused");
+            }
+            else
+            {
+                messages.Add("Search indexing: " + r.Message);
             }
         }
 
@@ -178,6 +200,42 @@ public sealed class GameFocusService : ObservableObject
         }
 
         _boosted.Clear();
+        foreach (int pid in _unthrottled)
+        {
+            ProcessThrottling.Set(pid, false);
+        }
+
+        _unthrottled.Clear();
+        foreach (int pid in state.LoweredPids)
+        {
+            try
+            {
+                using var p = System.Diagnostics.Process.GetProcessById(pid);
+                if (p.PriorityClass == ProcessPriorityClass.BelowNormal)
+                {
+                    p.PriorityClass = ProcessPriorityClass.Normal;
+                }
+            }
+            catch
+            {
+                // tab closed meanwhile
+            }
+        }
+
+        state.LoweredPids.Clear();
+        if (state.SearchPaused)
+        {
+            var r = await ElevationService.RunAsync(new ElevatedTask { Operation = ElevatedOperations.ServiceControl, ServiceName = "WSearch", ServiceStart = true });
+            if (r.Success)
+            {
+                ActionLog.Success("Game Focus: Windows Search indexing", "paused", "running");
+            }
+            else
+            {
+                messages.Add("Search indexing could not be restarted (it starts again with Windows): " + r.Message);
+            }
+        }
+
         _cpuTimes.Clear();
         _boostedRenderer = null;
         foreach (var snapshot in new[] { state.GpuPreference, state.Notifications })
@@ -247,9 +305,20 @@ public sealed class GameFocusService : ObservableObject
                 LastPlayedService.RecordSession(state.GameId);
             }
 
+            if (state.DisableThrottling)
+            {
+                foreach (var p in processes)
+                {
+                    if (_unthrottled.Add(p.Id) && ProcessThrottling.Set(p.Id, true))
+                    {
+                        AppLog.Info($"Game Focus: efficiency mode off for {p.ProcessName} ({p.Id})");
+                    }
+                }
+            }
+
             if (state.BoostBrowserTab)
             {
-                BoostBrowser(processes);
+                BoostBrowser(processes, state);
                 return;
             }
 
@@ -290,7 +359,7 @@ public sealed class GameFocusService : ObservableObject
     /// only the GPU process and the renderer that currently uses the most CPU (= the game
     /// tab) get Above-normal priority. Everything is reverted on Stop.
     /// </summary>
-    private void BoostBrowser(List<Process> processes)
+    private void BoostBrowser(List<Process> processes, FocusState state)
     {
         try
         {
@@ -357,8 +426,19 @@ public sealed class GameFocusService : ObservableObject
                     Lower(old);
                 }
 
-                Raise(processes.First(p => p.Id == r), "game tab");
+                var tab = processes.First(p => p.Id == r);
+                if (state.LoweredPids.Remove(r))
+                {
+                    Safe.Try(() => tab.PriorityClass = ProcessPriorityClass.Normal, "Restore game tab priority");
+                }
+
+                Raise(tab, "game tab");
                 _boostedRenderer = r;
+            }
+
+            if (state.LowerOtherTabs && _boostedRenderer is int game)
+            {
+                LowerOtherTabs(processes, commandLines, game, state);
             }
         }
         finally
@@ -367,6 +447,46 @@ public sealed class GameFocusService : ObservableObject
             {
                 p.Dispose();
             }
+        }
+    }
+
+    private void LowerOtherTabs(List<Process> processes, Dictionary<int, string> commandLines, int gameTab, FocusState state)
+    {
+        bool changed = false;
+
+        foreach (var p in processes)
+        {
+            if (p.Id == gameTab || state.LoweredPids.Contains(p.Id) || !commandLines.TryGetValue(p.Id, out string? cmd))
+            {
+                continue;
+            }
+
+            bool renderer = cmd.Contains("--type=renderer", StringComparison.OrdinalIgnoreCase) || cmd.Contains("-contentproc", StringComparison.OrdinalIgnoreCase);
+            bool extension = cmd.Contains("--extension-process", StringComparison.OrdinalIgnoreCase);
+            if (!renderer || extension)
+            {
+                continue;
+            }
+
+            try
+            {
+                if (p.PriorityClass == ProcessPriorityClass.Normal)
+                {
+                    p.PriorityClass = ProcessPriorityClass.BelowNormal;
+                    state.LoweredPids.Add(p.Id);
+                    changed = true;
+                }
+            }
+            catch
+            {
+                // protected
+            }
+        }
+
+        if (changed)
+        {
+            ActionLog.Success("Game Focus: other browser tabs", "Normal", $"BelowNormal ({state.LoweredPids.Count} tabs)");
+            Persist();
         }
     }
 

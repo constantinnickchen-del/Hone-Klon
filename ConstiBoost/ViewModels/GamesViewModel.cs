@@ -1094,6 +1094,9 @@ public sealed class GameDetailViewModel : ObservableObject
             if (LowerPriority) details.Add("Lower priority of browsers/launchers still running");
             if (BoostPriority) details.Add($"{Game.Name}: priority 'Above normal' while it runs (anti-cheat may block this – harmless)");
             if (GpuPreference && Game.MainExecutable != null) details.Add($"Windows graphics preference 'High performance' for {Path.GetFileName(Game.MainExecutable)}");
+            if (SettingsService.Instance.Current.FocusDisableThrottling) details.Add("No Windows efficiency mode (EcoQoS) for the game processes");
+            if (Game.IsBrowser && SettingsService.Instance.Current.FocusLowerOtherTabs) details.Add("Other browser tabs: priority 'Below normal' (extensions untouched)");
+            if (SettingsService.Instance.Current.FocusPauseSearch) details.Add("Pause Windows Search indexing (UAC prompt; restarted on Stop)");
             if (Game.IsBrowser) details.Add("Browser: priority 'Above normal' only for the browser GPU process and the game tab (busiest tab) – other tabs stay normal");
             if (MuteNotifications) details.Add("Mute Windows notification banners");
             if (CapFps && Game.IsFortnite) details.Add($"Fortnite frame rate limit {FpsCap} FPS (only while Fortnite is closed)");
@@ -1103,7 +1106,8 @@ public sealed class GameDetailViewModel : ObservableObject
                 return;
             }
 
-            var messages = await GameFocusService.Instance.StartAsync(Game, new FocusOptions(_focusProfile, apps, LowerPriority, BoostPriority, GpuPreference, MuteNotifications, CapFps ? FpsCap : null, Game.IsBrowser));
+            var messages = await GameFocusService.Instance.StartAsync(Game, new FocusOptions(_focusProfile, apps, LowerPriority, BoostPriority, GpuPreference, MuteNotifications, CapFps ? FpsCap : null, Game.IsBrowser,
+                SettingsService.Instance.Current.FocusDisableThrottling, SettingsService.Instance.Current.FocusLowerOtherTabs, SettingsService.Instance.Current.FocusPauseSearch));
             NotificationService.Instance.Show(messages.Count == 0 ? $"🎯 Focus on {Game.Name} active. Have fun!" : "Focus active with notes: " + string.Join("; ", messages),
                 messages.Count == 0 ? NotificationKind.Success : NotificationKind.Warning);
             await LoadAppsAsync();

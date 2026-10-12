@@ -76,7 +76,25 @@ public sealed class BackupService
             }
         }
 
-        foreach (var entry in entries.Where(e => !e.RequiresAdmin && e.Kind != BackupKinds.ProcessorMaxState))
+        foreach (var entry in entries.Where(e => e.Kind == BackupKinds.PowerSetting))
+        {
+            string[] parts = (entry.Data ?? string.Empty).Split('|');
+            var def = parts.Length == 4 ? PowerSettings.Find(Guid.Parse(parts[1]), Guid.Parse(parts[2])) : null;
+            var result = def != null
+                ? await PowerTweakService.SetPowerSettingAsync(Guid.Parse(parts[0]), def, uint.Parse(parts[3]), "Restore: " + entry.Description)
+                : OperationResult.Fail("Invalid backup entry");
+            if (result.Success)
+            {
+                restored++;
+            }
+            else
+            {
+                failed++;
+                messages.Add($"{entry.Description}: {result.TechnicalDetails ?? result.Message}");
+            }
+        }
+
+        foreach (var entry in entries.Where(e => !e.RequiresAdmin && e.Kind != BackupKinds.ProcessorMaxState && e.Kind != BackupKinds.PowerSetting))
         {
             try
             {
@@ -148,7 +166,7 @@ public sealed class BackupService
     private static string Describe(BackupEntry entry) => entry.Kind switch
     {
         BackupKinds.Registry => entry.Registry?.DisplayValue ?? string.Empty,
-        BackupKinds.PowerScheme or BackupKinds.PowerOverlay or BackupKinds.ProcessorMaxState => entry.Name ?? entry.Data ?? string.Empty,
+        BackupKinds.PowerScheme or BackupKinds.PowerOverlay or BackupKinds.ProcessorMaxState or BackupKinds.PowerSetting or BackupKinds.DisplayMode => entry.Name ?? entry.Data ?? string.Empty,
         BackupKinds.File => entry.BackupFileName is null ? "(file removed)" : "original file",
         _ => entry.Data ?? string.Empty,
     };
@@ -189,6 +207,13 @@ public sealed class BackupService
                 }
 
                 break;
+            case BackupKinds.DisplayMode:
+            {
+                string[] p = entry.Data!.Split('|');
+                DisplayModes.Apply(new DisplayMode(int.Parse(p[0]), int.Parse(p[1]), int.Parse(p[2])), true);
+                break;
+            }
+
             default:
                 throw new InvalidOperationException("Unknown backup entry type: " + entry.Kind);
         }

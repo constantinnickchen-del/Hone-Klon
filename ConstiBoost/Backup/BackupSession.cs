@@ -108,6 +108,18 @@ public sealed class BackupSession
         AddOnce(BackupKinds.ProcessorMaxState, "Previous maximum processor state", $"{scheme}|{value.ac}|{value.dc}", $"{PowerManager.GetFriendlyName(scheme)}: AC {value.ac} % / DC {value.dc} %");
     }
 
+    public void CapturePowerSetting(Guid scheme, PowerSettingDef def)
+    {
+        uint value = PowerSettings.ReadAc(def, scheme) ?? throw new InvalidOperationException(def.Name + " could not be read.");
+        AddOnce(BackupKinds.PowerSetting, "Previous " + def.Name, $"{scheme}|{def.Subgroup}|{def.Setting}|{value}", $"{def.Name} (plugged in) = {value}");
+    }
+
+    public void CaptureDisplayMode()
+    {
+        var mode = DisplayModes.Current() ?? throw new InvalidOperationException("The display mode could not be read.");
+        AddOnce(BackupKinds.DisplayMode, "Previous display mode", $"{mode.Width}|{mode.Height}|{mode.RefreshRate}", mode.ToString());
+    }
+
     public void CaptureSystemParameter(string name, string data, string description) =>
         AddOnce(BackupKinds.SystemParameter, description, data, name);
 

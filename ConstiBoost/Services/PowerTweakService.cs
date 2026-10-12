@@ -50,4 +50,41 @@ public static class PowerTweakService
             return OperationResult.Fail("This optimization couldn't be applied.", Safe.Describe(ex));
         }
     }
+
+    /// <summary>Writes one allow-listed power setting (AC value of a plan), falling back to the elevated helper.</summary>
+    public static async Task<OperationResult> SetPowerSettingAsync(Guid scheme, PowerSettingDef def, uint ac, string action, bool allowElevation = true)
+    {
+        var before = PowerSettings.ReadAc(def, scheme);
+        string oldText = before?.ToString() ?? "unknown";
+        try
+        {
+            PowerSettings.WriteAc(scheme, def.Subgroup, def.Setting, ac);
+            ActionLog.Success(action, oldText, ac.ToString());
+            return OperationResult.Ok($"{def.Name}: {ac}");
+        }
+        catch (Win32Exception ex) when (ex.NativeErrorCode == 5 && allowElevation)
+        {
+            var result = await ElevationService.RunAsync(new ElevatedTask
+            {
+                Operation = ElevatedOperations.PowerSetting,
+                PowerScheme = scheme.ToString(),
+                PowerSubgroup = def.Subgroup.ToString(),
+                PowerSettingId = def.Setting.ToString(),
+                AcValue = ac,
+            });
+            if (result.Success)
+            {
+                ActionLog.Success(action + " (admin)", oldText, ac.ToString());
+                return OperationResult.Ok($"{def.Name}: {ac}");
+            }
+
+            ActionLog.Failed(action, oldText, ac.ToString(), result.Message);
+            return OperationResult.Fail("This optimization couldn't be applied.", result.Message);
+        }
+        catch (Exception ex)
+        {
+            ActionLog.Failed(action, oldText, ac.ToString(), Safe.Describe(ex));
+            return OperationResult.Fail("This optimization couldn't be applied.", Safe.Describe(ex));
+        }
+    }
 }

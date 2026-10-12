@@ -11,6 +11,8 @@ public static class ElevatedOperations
     public const string CreateRestorePoint = "create-restore-point";
     public const string ProcessorMaxState = "processor-max-state";
     public const string FrameCapture = "frame-capture";
+    public const string PowerSetting = "power-setting";
+    public const string ServiceControl = "service-control";
 }
 
 public sealed class DwordWrite
@@ -37,6 +39,10 @@ public sealed class ElevatedTask
     public string? StopFile { get; set; }
     public uint AcValue { get; set; }
     public uint DcValue { get; set; }
+    public string? PowerSubgroup { get; set; }
+    public string? PowerSettingId { get; set; }
+    public string? ServiceName { get; set; }
+    public bool ServiceStart { get; set; }
 }
 
 public sealed class ElevatedResult

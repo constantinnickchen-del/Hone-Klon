@@ -18,7 +18,11 @@ public static class ElevatedTaskRunner
     {
         @"SYSTEM\CurrentControlSet\Control\GraphicsDrivers",
         @"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\",
+        @"SOFTWARE\Policies\Microsoft\Windows\DeliveryOptimization",
     };
+
+    /// <summary>Services the helper may pause/resume (only for the duration of Game Focus).</summary>
+    private static readonly string[] AllowedServices = { "WSearch" };
 
     public static int RunFromCommandLine(string taskFile, string resultFile)
     {
@@ -103,6 +107,36 @@ public static class ElevatedTaskRunner
 
                 case ElevatedOperations.FrameCapture:
                     return FrameCaptureRunner.Run(task);
+
+                case ElevatedOperations.PowerSetting:
+                    PowerSettings.WriteAc(Guid.Parse(task.PowerScheme ?? string.Empty), Guid.Parse(task.PowerSubgroup ?? string.Empty), Guid.Parse(task.PowerSettingId ?? string.Empty), task.AcValue);
+                    return new ElevatedResult { Success = true, Message = "Power setting written." };
+
+                case ElevatedOperations.ServiceControl:
+                {
+                    string name = task.ServiceName ?? string.Empty;
+                    if (!AllowedServices.Contains(name, StringComparer.OrdinalIgnoreCase))
+                    {
+                        throw new UnauthorizedAccessException("Service is not on the ConstiBoost allowlist: " + name);
+                    }
+
+                    using var sc = new System.ServiceProcess.ServiceController(name);
+                    if (task.ServiceStart)
+                    {
+                        if (sc.Status != System.ServiceProcess.ServiceControllerStatus.Running)
+                        {
+                            sc.Start();
+                            sc.WaitForStatus(System.ServiceProcess.ServiceControllerStatus.Running, TimeSpan.FromSeconds(20));
+                        }
+                    }
+                    else if (sc.Status == System.ServiceProcess.ServiceControllerStatus.Running && sc.CanStop)
+                    {
+                        sc.Stop();
+                        sc.WaitForStatus(System.ServiceProcess.ServiceControllerStatus.Stopped, TimeSpan.FromSeconds(20));
+                    }
+
+                    return new ElevatedResult { Success = true, Message = $"{name}: {(task.ServiceStart ? "running" : "paused")}" };
+                }
 
                 case ElevatedOperations.CreateRestorePoint:
                     return RestorePointService.CreateInProcess(task.Description ?? "ConstiBoost");

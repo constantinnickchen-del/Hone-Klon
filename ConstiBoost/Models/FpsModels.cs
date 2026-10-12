@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using ConstiBoost.Localization;
 
 namespace ConstiBoost.Models;
 
@@ -18,7 +19,7 @@ public sealed class FpsResult
     public double MedianFrameTimeMs { get; init; }
     public List<double> PerSecond { get; init; } = new();
 
-    public string Summary => $"{AverageFps:0} FPS avg · 1 % low {Low1:0} · 0.1 % low {Low01:0} · {Stutters} stutter(s)";
+    public string Summary => L.F("{0:0} FPS avg · 1 % low {1:0} · 0.1 % low {2:0} · {3} stutter(s)", AverageFps, Low1, Low01, Stutters);
 }
 
 /// <summary>Stored measurement for history, before/after and estimate calibration.</summary>

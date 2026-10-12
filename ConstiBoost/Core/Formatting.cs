@@ -1,11 +1,12 @@
 using System;
 using System.Globalization;
+using ConstiBoost.Localization;
 
 namespace ConstiBoost.Core;
 
 public static class Formatting
 {
-    public const string Unavailable = "Unavailable";
+    public static string Unavailable => L.T("Unavailable");
 
     public static string Bytes(long bytes)
     {

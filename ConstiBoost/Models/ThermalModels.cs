@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using ConstiBoost.Core;
+using ConstiBoost.Localization;
 
 namespace ConstiBoost.Models;
 
@@ -36,12 +37,12 @@ public static class TemperatureLevels
 
     public static string Text(TemperatureLevel level) => level switch
     {
-        TemperatureLevel.Cool => "Cool",
-        TemperatureLevel.Normal => "Normal",
-        TemperatureLevel.Warm => "Warm",
-        TemperatureLevel.Hot => "Hot",
-        TemperatureLevel.Critical => "Critical",
-        _ => "Sensor unavailable",
+        TemperatureLevel.Cool => L.T("Cool"),
+        TemperatureLevel.Normal => L.T("Normal"),
+        TemperatureLevel.Warm => L.T("Warm"),
+        TemperatureLevel.Hot => L.T("Hot"),
+        TemperatureLevel.Critical => L.T("Critical"),
+        _ => L.T("Sensor unavailable"),
     };
 
     public static CheckStatus Status(TemperatureLevel level) => level switch
@@ -71,7 +72,7 @@ public sealed record ProcessUsage(string Name, double Cpu, long Ram, double? Gpu
     public string CpuText => $"{Cpu:0.0} %";
     public string RamText => Formatting.Bytes(Ram);
     public string GpuText => Gpu.HasValue ? $"{Gpu:0} %" : "–";
-    public string Kind => IsGame ? "Game" : IsSystem ? "Windows/system" : IsBackground ? "Background" : "App";
+    public string Kind => IsGame ? L.T("Game") : IsSystem ? L.T("Windows/system") : IsBackground ? L.T("Background") : L.T("App");
 }
 
 public sealed class ThermalCause

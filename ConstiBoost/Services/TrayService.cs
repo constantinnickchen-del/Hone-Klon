@@ -6,6 +6,7 @@ using ConstiBoost.Games;
 using ConstiBoost.Logging;
 using ConstiBoost.Models;
 using WinForms = System.Windows.Forms;
+using ConstiBoost.Localization;
 
 namespace ConstiBoost.Services;
 
@@ -26,15 +27,15 @@ public sealed class TrayService : IDisposable
         try
         {
             var menu = new WinForms.ContextMenuStrip();
-            menu.Items.Add("Open ConstiBoost", null, (_, _) => ShowWindow());
-            _gamingItem = new WinForms.ToolStripMenuItem("Start Gaming Mode  (Ctrl+Alt+G)", null, async (_, _) => await QuickActions.ToggleGamingModeAsync());
-            _focusItem = new WinForms.ToolStripMenuItem("Stop Game Focus", null, async (_, _) => await GameFocusService.Instance.StopAsync());
-            _overlayItem = new WinForms.ToolStripMenuItem("Show FPS overlay  (Ctrl+Alt+O)", null, (_, _) => OverlayService.Instance.Toggle());
+            menu.Items.Add(L.T("Open ConstiBoost"), null, (_, _) => ShowWindow());
+            _gamingItem = new WinForms.ToolStripMenuItem(L.T("Start Gaming Mode  (Ctrl+Alt+G)"), null, async (_, _) => await QuickActions.ToggleGamingModeAsync());
+            _focusItem = new WinForms.ToolStripMenuItem(L.T("Stop Game Focus"), null, async (_, _) => await GameFocusService.Instance.StopAsync());
+            _overlayItem = new WinForms.ToolStripMenuItem(L.T("Show FPS overlay  (Ctrl+Alt+O)"), null, (_, _) => OverlayService.Instance.Toggle());
             menu.Items.Add(_gamingItem);
             menu.Items.Add(_focusItem);
             menu.Items.Add(_overlayItem);
             menu.Items.Add(new WinForms.ToolStripSeparator());
-            menu.Items.Add("Exit ConstiBoost", null, (_, _) => Exit());
+            menu.Items.Add(L.T("Exit ConstiBoost"), null, (_, _) => Exit());
             menu.Opening += (_, _) => UpdateMenu();
 
             Icon? icon = null;
@@ -66,18 +67,18 @@ public sealed class TrayService : IDisposable
     {
         if (_gamingItem != null)
         {
-            _gamingItem.Text = GamingModeService.Instance.IsActive ? "Stop Gaming Mode  (Ctrl+Alt+G)" : "Start Gaming Mode  (Ctrl+Alt+G)";
+            _gamingItem.Text = GamingModeService.Instance.IsActive ? L.T("Stop Gaming Mode  (Ctrl+Alt+G)") : L.T("Start Gaming Mode  (Ctrl+Alt+G)");
         }
 
         if (_focusItem != null)
         {
             _focusItem.Visible = GameFocusService.Instance.IsActive;
-            _focusItem.Text = GameFocusService.Instance.State is { } s ? $"Stop Game Focus ({s.GameName})" : "Stop Game Focus";
+            _focusItem.Text = GameFocusService.Instance.State is { } s ? L.F("Stop Game Focus ({0})", s.GameName) : L.T("Stop Game Focus");
         }
 
         if (_overlayItem != null)
         {
-            _overlayItem.Text = OverlayService.Instance.IsVisible ? "Hide FPS overlay  (Ctrl+Alt+O)" : "Show FPS overlay  (Ctrl+Alt+O)";
+            _overlayItem.Text = OverlayService.Instance.IsVisible ? L.T("Hide FPS overlay  (Ctrl+Alt+O)") : L.T("Show FPS overlay  (Ctrl+Alt+O)");
         }
     }
 
@@ -142,7 +143,7 @@ public static class QuickActions
             if (GamingModeService.Instance.IsActive)
             {
                 await GamingModeService.Instance.DeactivateAsync(SettingsService.Instance.Current.GamingModeRelaunchClosedApps);
-                Tell("Gaming Mode stopped – settings restored.");
+                Tell(L.T("Gaming Mode stopped – settings restored."));
                 return;
             }
 
@@ -153,8 +154,8 @@ public static class QuickActions
                 .ToList();
             var profile = SettingsService.Instance.Current.GamingProfile;
             var messages = await GamingModeService.Instance.ActivateAsync(apps, new GamingModeOptions(profile, true, null));
-            Tell($"Gaming Mode ({GamingModeService.ProfileName(profile)}) active" + (apps.Count > 0 ? $" – closed {string.Join(", ", apps.Select(a => a.DisplayName))}" : string.Empty) +
-                 (messages.Count > 0 ? ". Notes: " + string.Join("; ", messages) : "."));
+            Tell(L.F("Gaming Mode ({0}) active", L.T(GamingModeService.ProfileName(profile))) + (apps.Count > 0 ? L.F(" – closed {0}", string.Join(", ", apps.Select(a => a.DisplayName))) : string.Empty) +
+                 (messages.Count > 0 ? L.T(". Notes: ") + string.Join("; ", messages) : "."));
         }
         catch (Exception ex)
         {

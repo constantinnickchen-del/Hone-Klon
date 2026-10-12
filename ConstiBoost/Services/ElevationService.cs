@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using ConstiBoost.Core;
 using ConstiBoost.Logging;
 using ConstiBoost.WinSys;
+using ConstiBoost.Localization;
 
 namespace ConstiBoost.Services;
 
@@ -49,7 +50,7 @@ public static class ElevationService
         }
         catch (Win32Exception ex) when (ex.NativeErrorCode == 1223)
         {
-            error = "Administrator permission was declined (UAC). Windows only allows FPS capture with administrator rights.";
+            error = L.T("Administrator permission was declined (UAC). Windows only allows FPS capture with administrator rights.");
             return null;
         }
         catch (Exception ex)
@@ -91,21 +92,21 @@ public static class ElevationService
             using var process = Process.Start(psi);
             if (process is null)
             {
-                return new ElevatedResult { Success = false, Message = "The elevated helper could not be started." };
+                return new ElevatedResult { Success = false, Message = L.T("The elevated helper could not be started.") };
             }
 
             await process.WaitForExitAsync();
             if (!File.Exists(resultFile))
             {
-                return new ElevatedResult { Success = false, Message = $"The elevated helper exited without a result (code {process.ExitCode})." };
+                return new ElevatedResult { Success = false, Message = L.F("The elevated helper exited without a result (code {0}).", process.ExitCode) };
             }
 
             return JsonSerializer.Deserialize<ElevatedResult>(await File.ReadAllTextAsync(resultFile))
-                ?? new ElevatedResult { Success = false, Message = "Invalid result from elevated helper." };
+                ?? new ElevatedResult { Success = false, Message = L.T("Invalid result from elevated helper.") };
         }
         catch (Win32Exception ex) when (ex.NativeErrorCode == 1223)
         {
-            return new ElevatedResult { Success = false, Message = "Administrator permission was declined (UAC)." };
+            return new ElevatedResult { Success = false, Message = L.T("Administrator permission was declined (UAC).") };
         }
         catch (Exception ex)
         {

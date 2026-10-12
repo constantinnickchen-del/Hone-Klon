@@ -2,6 +2,7 @@ using System;
 using System.Management;
 using System.Threading.Tasks;
 using ConstiBoost.Logging;
+using ConstiBoost.Localization;
 
 namespace ConstiBoost.Services;
 
@@ -50,19 +51,19 @@ public static class RestorePointService
                     Success = false,
                     Message = code switch
                     {
-                        1058 => "System Protection is turned off. Enable it under 'Create a restore point' (SystemPropertiesProtection).",
-                        _ => $"Windows refused to create a restore point (code {code}). System Protection may be disabled for the system drive.",
+                        1058 => L.T("System Protection is turned off. Enable it under 'Create a restore point' (SystemPropertiesProtection)."),
+                        _ => L.F("Windows refused to create a restore point (code {0}). System Protection may be disabled for the system drive.", code),
                     },
                 };
             }
         }
         catch (ManagementException ex)
         {
-            return new ElevatedResult { Success = false, Message = "System Restore is not available: " + ex.Message };
+            return new ElevatedResult { Success = false, Message = L.T("System Restore is not available: ") + ex.Message };
         }
         catch (UnauthorizedAccessException)
         {
-            return new ElevatedResult { Success = false, Message = "Creating a restore point requires administrator rights." };
+            return new ElevatedResult { Success = false, Message = L.T("Creating a restore point requires administrator rights.") };
         }
 
         int after = CountRestorePoints();
@@ -71,11 +72,11 @@ public static class RestorePointService
             return new ElevatedResult
             {
                 Success = false,
-                Message = "Windows skipped the restore point. By default Windows allows only one restore point every 24 hours, or System Protection is off.",
+                Message = L.T("Windows skipped the restore point. By default Windows allows only one restore point every 24 hours, or System Protection is off."),
             };
         }
 
-        return new ElevatedResult { Success = true, Message = "Restore point created." };
+        return new ElevatedResult { Success = true, Message = L.T("Restore point created.") };
     }
 
     private static int CountRestorePoints()

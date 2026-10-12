@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Threading;
 using ConstiBoost.Views;
+using ConstiBoost.Localization;
 
 namespace ConstiBoost.Services;
 
@@ -20,14 +21,14 @@ public static class DisplayKeepPrompt
 
         return dispatcher.InvokeAsync(() =>
         {
-            var dialog = new ConfirmDialog(title, "Does the picture look right? Without confirmation the previous mode returns in 15 seconds.",
-                new List<string> { "KEEP = use the new mode", "Cancel or wait = go back" }, "KEEP", false, showCancel: true);
+            var dialog = new ConfirmDialog(title, L.T("Does the picture look right? Without confirmation the previous mode returns in 15 seconds."),
+                new List<string> { L.T("KEEP = use the new mode"), L.T("Cancel or wait = go back") }, L.T("KEEP"), false, showCancel: true);
             int left = 15;
             var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
             timer.Tick += (_, _) =>
             {
                 left--;
-                dialog.MessageText.Text = $"Does the picture look right? Without confirmation the previous mode returns in {left} s.";
+                dialog.MessageText.Text = L.F("Does the picture look right? Without confirmation the previous mode returns in {0} s.", left);
                 if (left <= 0)
                 {
                     timer.Stop();

@@ -7,6 +7,7 @@ using ConstiBoost.Hardware;
 using ConstiBoost.Logging;
 using ConstiBoost.Models;
 using ConstiBoost.WinSys;
+using ConstiBoost.Localization;
 
 namespace ConstiBoost.Services;
 
@@ -34,18 +35,18 @@ public sealed class ScanService
     {
         var result = await Task.Run(() =>
         {
-            progress?.Report("Detecting CPU, GPU and memory…");
+            progress?.Report(L.T("Detecting CPU, GPU and memory…"));
             var hw = HardwareScanner.Scan();
 
-            progress?.Report("Reading Windows gaming settings…");
+            progress?.Report(L.T("Reading Windows gaming settings…"));
             var state = ReadState(hw);
 
-            progress?.Report("Checking startup apps…");
+            progress?.Report(L.T("Checking startup apps…"));
             var startup = Core.Safe.Try(StartupService.GetEntries, new List<StartupEntry>(), "Startup scan");
             state.TotalStartupApps = startup.Count;
             state.EnabledStartupApps = startup.Count(s => s.IsEnabled && !s.IsProtected);
 
-            progress?.Report("Measuring background load…");
+            progress?.Report(L.T("Measuring background load…"));
             state.IdleCpuPercent = MeasureCpu();
 
             var profile = DeviceProfile.From(hw);
@@ -97,7 +98,7 @@ public sealed class ScanService
             HagsEnabled = GameFeatures.HagsEnabled,
             TransparencyEnabled = Core.Safe.Try<bool?>(() => GameFeatures.TransparencyEnabled, null),
         };
-        state.HagsText = state.HagsEnabled switch { true => "ON", false => "OFF", _ => "Unavailable" };
+        state.HagsText = state.HagsEnabled switch { true => L.T("ON"), false => L.T("OFF"), _ => Core.Formatting.Unavailable };
 
         var scheme = PowerManager.GetActiveSchemeId();
         state.PowerPlanName = scheme.HasValue ? PowerManager.GetFriendlyName(scheme.Value) : Core.Formatting.Unavailable;
@@ -125,9 +126,9 @@ public sealed class ScanService
 
         checks.Add(s.GameModeEnabled switch
         {
-            true => new ReadinessCheck("Game Mode enabled", CheckStatus.Good, 15, 15),
-            false => new ReadinessCheck("Game Mode is turned off", CheckStatus.Bad, 0, 15),
-            _ => new ReadinessCheck("Game Mode status unavailable", CheckStatus.Unavailable, 8, 15),
+            true => new ReadinessCheck(L.T("Game Mode enabled"), CheckStatus.Good, 15, 15),
+            false => new ReadinessCheck(L.T("Game Mode is turned off"), CheckStatus.Bad, 0, 15),
+            _ => new ReadinessCheck(L.T("Game Mode status unavailable"), CheckStatus.Unavailable, 8, 15),
         });
 
         var scheme = PowerManager.GetActiveSchemeId();
@@ -137,69 +138,69 @@ public sealed class ScanService
         bool savingPower = scheme == PowerManager.PowerSaver || overlay == PowerManager.OverlayBestEfficiency;
         if (perfPower)
         {
-            checks.Add(new ReadinessCheck("Power profile optimized for performance", CheckStatus.Good, 15, 15));
+            checks.Add(new ReadinessCheck(L.T("Power profile optimized for performance"), CheckStatus.Good, 15, 15));
         }
         else if (savingPower)
         {
-            checks.Add(new ReadinessCheck("Power saving mode limits CPU/GPU clocks", CheckStatus.Bad, 0, 15));
+            checks.Add(new ReadinessCheck(L.T("Power saving mode limits CPU/GPU clocks"), CheckStatus.Bad, 0, 15));
         }
         else
         {
-            checks.Add(new ReadinessCheck("Power mode is balanced – could be improved", CheckStatus.Warning, 8, 15));
+            checks.Add(new ReadinessCheck(L.T("Power mode is balanced – could be improved"), CheckStatus.Warning, 8, 15));
         }
 
         if (hw.HasBattery && hw.OnAcPower == false)
         {
-            checks.Add(new ReadinessCheck("Running on battery – plug in for full performance", CheckStatus.Warning, 0, 0));
+            checks.Add(new ReadinessCheck(L.T("Running on battery – plug in for full performance"), CheckStatus.Warning, 0, 0));
         }
 
         checks.Add(s.EnabledStartupApps switch
         {
-            <= 4 => new ReadinessCheck($"Startup apps under control ({s.EnabledStartupApps} active)", CheckStatus.Good, 15, 15),
-            <= 8 => new ReadinessCheck($"Some startup apps active ({s.EnabledStartupApps})", CheckStatus.Warning, 8, 15),
-            _ => new ReadinessCheck($"Many startup apps active ({s.EnabledStartupApps})", CheckStatus.Bad, 0, 15),
+            <= 4 => new ReadinessCheck(L.F("Startup apps under control ({0} active)", s.EnabledStartupApps), CheckStatus.Good, 15, 15),
+            <= 8 => new ReadinessCheck(L.F("Some startup apps active ({0})", s.EnabledStartupApps), CheckStatus.Warning, 8, 15),
+            _ => new ReadinessCheck(L.F("Many startup apps active ({0})", s.EnabledStartupApps), CheckStatus.Bad, 0, 15),
         });
 
         checks.Add(s.IdleCpuPercent switch
         {
-            null => new ReadinessCheck("Background load unavailable", CheckStatus.Unavailable, 8, 15),
-            < 10 => new ReadinessCheck($"Background processes normal ({s.IdleCpuPercent:0}% CPU)", CheckStatus.Good, 15, 15),
-            < 25 => new ReadinessCheck($"Elevated background load ({s.IdleCpuPercent:0}% CPU)", CheckStatus.Warning, 8, 15),
-            _ => new ReadinessCheck($"High background load ({s.IdleCpuPercent:0}% CPU)", CheckStatus.Bad, 0, 15),
+            null => new ReadinessCheck(L.T("Background load unavailable"), CheckStatus.Unavailable, 8, 15),
+            < 10 => new ReadinessCheck(L.F("Background processes normal ({0:0}% CPU)", s.IdleCpuPercent), CheckStatus.Good, 15, 15),
+            < 25 => new ReadinessCheck(L.F("Elevated background load ({0:0}% CPU)", s.IdleCpuPercent), CheckStatus.Warning, 8, 15),
+            _ => new ReadinessCheck(L.F("High background load ({0:0}% CPU)", s.IdleCpuPercent), CheckStatus.Bad, 0, 15),
         });
 
         checks.Add(s.RamUsedPercent switch
         {
-            null => new ReadinessCheck("RAM usage unavailable", CheckStatus.Unavailable, 8, 15),
-            < 70 => new ReadinessCheck($"RAM usage OK ({s.RamUsedPercent:0}%)", CheckStatus.Good, 15, 15),
-            < 85 => new ReadinessCheck($"RAM usage high ({s.RamUsedPercent:0}%)", CheckStatus.Warning, 8, 15),
-            _ => new ReadinessCheck($"RAM almost full ({s.RamUsedPercent:0}%)", CheckStatus.Bad, 0, 15),
+            null => new ReadinessCheck(L.T("RAM usage unavailable"), CheckStatus.Unavailable, 8, 15),
+            < 70 => new ReadinessCheck(L.F("RAM usage OK ({0:0}%)", s.RamUsedPercent), CheckStatus.Good, 15, 15),
+            < 85 => new ReadinessCheck(L.F("RAM usage high ({0:0}%)", s.RamUsedPercent), CheckStatus.Warning, 8, 15),
+            _ => new ReadinessCheck(L.F("RAM almost full ({0:0}%)", s.RamUsedPercent), CheckStatus.Bad, 0, 15),
         });
 
         checks.Add(s.SystemDriveFreePercent switch
         {
-            null => new ReadinessCheck("System drive space unavailable", CheckStatus.Unavailable, 5, 10),
-            >= 15 => new ReadinessCheck($"Enough free space on system drive ({s.SystemDriveFreePercent:0}%)", CheckStatus.Good, 10, 10),
-            >= 8 => new ReadinessCheck($"System drive getting full ({s.SystemDriveFreePercent:0}% free)", CheckStatus.Warning, 5, 10),
-            _ => new ReadinessCheck($"System drive almost full ({s.SystemDriveFreePercent:0}% free)", CheckStatus.Bad, 0, 10),
+            null => new ReadinessCheck(L.T("System drive space unavailable"), CheckStatus.Unavailable, 5, 10),
+            >= 15 => new ReadinessCheck(L.F("Enough free space on system drive ({0:0}%)", s.SystemDriveFreePercent), CheckStatus.Good, 10, 10),
+            >= 8 => new ReadinessCheck(L.F("System drive getting full ({0:0}% free)", s.SystemDriveFreePercent), CheckStatus.Warning, 5, 10),
+            _ => new ReadinessCheck(L.F("System drive almost full ({0:0}% free)", s.SystemDriveFreePercent), CheckStatus.Bad, 0, 10),
         });
 
         checks.Add(s.BackgroundRecordingEnabled switch
         {
-            false => new ReadinessCheck("Background recording off", CheckStatus.Good, 10, 10),
-            true => new ReadinessCheck("Xbox background recording is active", CheckStatus.Warning, 0, 10),
-            _ => new ReadinessCheck("Background recording status unavailable", CheckStatus.Unavailable, 5, 10),
+            false => new ReadinessCheck(L.T("Background recording off"), CheckStatus.Good, 10, 10),
+            true => new ReadinessCheck(L.T("Xbox background recording is active"), CheckStatus.Warning, 0, 10),
+            _ => new ReadinessCheck(L.T("Background recording status unavailable"), CheckStatus.Unavailable, 5, 10),
         });
 
         if (profile.IsLowPowerIntegrated)
         {
             checks.Add(s.TransparencyEnabled == true
-                ? new ReadinessCheck("Transparency effects active (costs iGPU time)", CheckStatus.Warning, 0, 5)
-                : new ReadinessCheck("Visual effects lightweight", CheckStatus.Good, 5, 5));
+                ? new ReadinessCheck(L.T("Transparency effects active (costs iGPU time)"), CheckStatus.Warning, 0, 5)
+                : new ReadinessCheck(L.T("Visual effects lightweight"), CheckStatus.Good, 5, 5));
         }
         else
         {
-            checks.Add(new ReadinessCheck("Visual effects OK for this GPU", CheckStatus.Good, 5, 5));
+            checks.Add(new ReadinessCheck(L.T("Visual effects OK for this GPU"), CheckStatus.Good, 5, 5));
         }
 
         return checks;

@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using ConstiBoost.Logging;
 using ConstiBoost.Models;
+using ConstiBoost.Localization;
 
 namespace ConstiBoost.Services;
 
@@ -31,36 +32,36 @@ public static class CleanerService
             new()
             {
                 Id = "temp",
-                Name = "Temporary Files",
+                Name = L.T("Temporary Files"),
                 Icon = "\uE74D",
-                Description = "Your user temp folder (%TEMP%). Files changed in the last 24 hours are kept so running installers are not affected.",
+                Description = L.T("Your user temp folder (%TEMP%). Files changed in the last 24 hours are kept so running installers are not affected."),
                 Paths = { Path.GetTempPath() },
                 MinAgeHours = 24,
             },
             new()
             {
                 Id = "wintemp",
-                Name = "Windows Temporary Files",
+                Name = L.T("Windows Temporary Files"),
                 Icon = "\uE7B8",
-                Description = @"C:\Windows\Temp. Requires administrator permission (UAC). Files changed in the last 24 hours are kept.",
+                Description = L.T(@"C:\Windows\Temp. Requires administrator permission (UAC). Files changed in the last 24 hours are kept."),
                 AdminPaths = { Path.Combine(WindowsDir, "Temp") },
                 MinAgeHours = 24,
             },
             new()
             {
                 Id = "shader",
-                Name = "Shader Cache",
+                Name = L.T("Shader Cache"),
                 Icon = "\uE7F4",
-                Description = "DirectX and GPU driver shader caches. Windows/drivers rebuild them automatically – the first game start afterwards can stutter briefly. Useful after driver updates or when games stutter permanently.",
+                Description = L.T("DirectX and GPU driver shader caches. Windows/drivers rebuild them automatically – the first game start afterwards can stutter briefly. Useful after driver updates or when games stutter permanently."),
                 Paths = ShaderCachePaths(),
                 AdminPaths = { Path.Combine(ProgramData, "NVIDIA Corporation", "NV_Cache") },
             },
             new()
             {
                 Id = "crash",
-                Name = "Crash Reports",
+                Name = L.T("Crash Reports"),
                 Icon = "\uE7BA",
-                Description = "Windows Error Reporting archives and app crash dumps. Only needed if you want to send a crash report to a developer.",
+                Description = L.T("Windows Error Reporting archives and app crash dumps. Only needed if you want to send a crash report to a developer."),
                 Paths =
                 {
                     Path.Combine(Local, "CrashDumps"),
@@ -76,9 +77,9 @@ public static class CleanerService
             new()
             {
                 Id = "browser",
-                Name = "Browser Cache",
+                Name = L.T("Browser Cache"),
                 Icon = "\uE774",
-                Description = "Cached web files of Chrome, Edge, Brave and Firefox. Cookies, passwords, history and logins are NOT touched or read. Close your browser first – files in use are skipped.",
+                Description = L.T("Cached web files of Chrome, Edge, Brave and Firefox. Cookies, passwords, history and logins are NOT touched or read. Close your browser first – files in use are skipped."),
                 Paths = BrowserCachePaths(),
                 IsSelected = false,
             },

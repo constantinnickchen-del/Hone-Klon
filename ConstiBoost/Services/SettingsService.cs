@@ -5,6 +5,7 @@ using ConstiBoost.Core;
 using ConstiBoost.Logging;
 using ConstiBoost.Models;
 using Microsoft.Win32;
+using ConstiBoost.Localization;
 
 namespace ConstiBoost.Services;
 
@@ -81,7 +82,7 @@ public sealed class SettingsService
         catch (Exception ex)
         {
             ActionLog.Failed("Start ConstiBoost with Windows", null, enabled ? "ON" : "OFF", Safe.Describe(ex));
-            return OperationResult.Fail("This setting couldn't be applied.", ex.Message);
+            return OperationResult.Fail(L.T("This setting couldn't be applied."), ex.Message);
         }
     }
 }

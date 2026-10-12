@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using ConstiBoost.Fortnite;
 using ConstiBoost.Models;
+using ConstiBoost.Localization;
 
 namespace ConstiBoost.Services;
 
@@ -182,7 +183,7 @@ public sealed class ThermalMonitorService
             if (now - _lastCriticalAlert > TimeSpan.FromMinutes(5))
             {
                 _lastCriticalAlert = now;
-                NotificationService.Instance.Show("🔴 CRITICAL TEMPERATURE – The system may be under excessive thermal load. Consider stopping the workload and checking cooling.", NotificationKind.Error);
+                NotificationService.Instance.Show(L.T("🔴 CRITICAL TEMPERATURE – The system may be under excessive thermal load. Consider stopping the workload and checking cooling."), NotificationKind.Error);
             }
         }
         else if (_highSince.HasValue && now - _highSince.Value >= TimeSpan.FromSeconds(sustain))
@@ -191,7 +192,7 @@ public sealed class ThermalMonitorService
             if (now - _lastHighAlert > TimeSpan.FromMinutes(10))
             {
                 _lastHighAlert = now;
-                NotificationService.Instance.Show("🟠 HIGH TEMPERATURE – Your CPU temperature is currently high. Check CPU load and cooling conditions.", NotificationKind.Warning);
+                NotificationService.Instance.Show(L.T("🟠 HIGH TEMPERATURE – Your CPU temperature is currently high. Check CPU load and cooling conditions."), NotificationKind.Warning);
             }
         }
         else if (t is null || t < high - 3)
@@ -211,7 +212,7 @@ public sealed class ThermalMonitorService
             if (minuteAgo?.Temperature is double old && t - old >= 15)
             {
                 _lastRiseAlert = now;
-                NotificationService.Instance.Show($"Temperature rose from {old:0} °C to {t:0} °C within a minute. Check what started running (Thermal page → SCAN MY PC).", NotificationKind.Warning);
+                NotificationService.Instance.Show(L.F("Temperature rose from {0:0} °C to {1:0} °C within a minute. Check what started running (Thermal page → SCAN MY PC).", old, t), NotificationKind.Warning);
             }
         }
 
@@ -234,17 +235,17 @@ public sealed class ThermalMonitorService
                 var loads = g.Where(x => x.CpuLoad.HasValue).Select(x => x.CpuLoad!.Value).ToList();
                 double? load = loads.Count > 0 ? loads.Average() : null;
                 bool game = g.Any(x => x.GameRunning);
-                string phase = game ? "Gaming" : load switch
+                string phase = game ? L.T("Gaming") : load switch
                 {
                     null => "–",
-                    < 15 => "Idle",
-                    < 40 => "Light load",
-                    < 70 => "Medium load",
-                    _ => "Heavy load",
+                    < 15 => L.T("Idle"),
+                    < 40 => L.T("Light load"),
+                    < 70 => L.T("Medium load"),
+                    _ => L.T("Heavy load"),
                 };
                 return new MinuteSummary(
                     g.Key.ToString("HH:mm"),
-                    temps.Count > 0 ? $"{temps.Average():0} °C (max {temps.Max():0})" : "Sensor unavailable",
+                    temps.Count > 0 ? L.F("{0:0} °C (max {1:0})", temps.Average(), temps.Max()) : L.T("Sensor unavailable"),
                     load.HasValue ? $"{load:0} %" : "–",
                     phase);
             })

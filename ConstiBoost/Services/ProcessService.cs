@@ -7,6 +7,7 @@ using ConstiBoost.Core;
 using ConstiBoost.Hardware;
 using ConstiBoost.Logging;
 using ConstiBoost.WinSys;
+using ConstiBoost.Localization;
 
 namespace ConstiBoost.Services;
 
@@ -115,7 +116,7 @@ public static class ProcessService
         }
         catch
         {
-            return OperationResult.Ok($"{name} is no longer running.");
+            return OperationResult.Ok(L.F("{0} is no longer running.", name));
         }
 
         using (process)
@@ -123,7 +124,7 @@ public static class ProcessService
             if (!ProcessSafety.CanTouch(process, out string reason))
             {
                 ActionLog.Failed($"Close process {name}", "Running", "Closed", reason);
-                return OperationResult.Fail($"{name} can't be closed: {reason}");
+                return OperationResult.Fail(L.F("{0} can't be closed: {1}", name, L.T(reason)));
             }
 
             try
@@ -152,7 +153,7 @@ public static class ProcessService
                     if (!allowKill)
                     {
                         ActionLog.Failed($"Close process {name}", "Running", "Closed", "The app did not close (it may be asking to save).");
-                        return OperationResult.Fail($"{name} did not close – it may be waiting for you to save something.");
+                        return OperationResult.Fail(L.F("{0} did not close – it may be waiting for you to save something.", name));
                     }
 
                     process.Kill(entireProcessTree: false);
@@ -160,12 +161,12 @@ public static class ProcessService
                 }
 
                 ActionLog.Success($"Close process {name} (PID {pid})", "Running", "Closed");
-                return OperationResult.Ok($"{name} closed.");
+                return OperationResult.Ok(L.F("{0} closed.", name));
             }
             catch (Exception ex)
             {
                 ActionLog.Failed($"Close process {name}", "Running", "Closed", Safe.Describe(ex));
-                return OperationResult.Fail($"{name} couldn't be closed: {Safe.Describe(ex)}");
+                return OperationResult.Fail(L.F("{0} couldn't be closed: {1}", name, Safe.Describe(ex)));
             }
         }
     }

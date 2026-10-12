@@ -8,6 +8,7 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Threading;
 using ConstiBoost.Games;
+using ConstiBoost.Localization;
 
 namespace ConstiBoost.Services;
 
@@ -76,7 +77,7 @@ public sealed class OverlayService
             }
             else
             {
-                _fps!.Text = "FPS n/a";
+                _fps!.Text = L.T("FPS n/a");
             }
         }
     }

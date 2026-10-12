@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using ConstiBoost.Core;
 using ConstiBoost.Logging;
 using ConstiBoost.WinSys;
+using ConstiBoost.Localization;
 
 namespace ConstiBoost.Services;
 
@@ -24,7 +25,7 @@ public static class PowerTweakService
         catch (Win32Exception ex) when (ex.NativeErrorCode == 5 && !allowElevation)
         {
             ActionLog.Failed(action, oldText, newText, "Access denied (no UAC prompt in automatic mode)");
-            return OperationResult.Fail("Access denied", "Windows requires administrator permission for this setting.");
+            return OperationResult.Fail(L.T("Access denied"), L.T("Windows requires administrator permission for this setting."));
         }
         catch (Win32Exception ex) when (ex.NativeErrorCode == 5)
         {
@@ -42,12 +43,12 @@ public static class PowerTweakService
             }
 
             ActionLog.Failed(action, oldText, newText, result.Message);
-            return OperationResult.Fail("This optimization couldn't be applied.", result.Message);
+            return OperationResult.Fail(L.T("This optimization couldn't be applied."), result.Message);
         }
         catch (Exception ex)
         {
             ActionLog.Failed(action, oldText, newText, Safe.Describe(ex));
-            return OperationResult.Fail("This optimization couldn't be applied.", Safe.Describe(ex));
+            return OperationResult.Fail(L.T("This optimization couldn't be applied."), Safe.Describe(ex));
         }
     }
 
@@ -79,12 +80,12 @@ public static class PowerTweakService
             }
 
             ActionLog.Failed(action, oldText, ac.ToString(), result.Message);
-            return OperationResult.Fail("This optimization couldn't be applied.", result.Message);
+            return OperationResult.Fail(L.T("This optimization couldn't be applied."), result.Message);
         }
         catch (Exception ex)
         {
             ActionLog.Failed(action, oldText, ac.ToString(), Safe.Describe(ex));
-            return OperationResult.Fail("This optimization couldn't be applied.", Safe.Describe(ex));
+            return OperationResult.Fail(L.T("This optimization couldn't be applied."), Safe.Describe(ex));
         }
     }
 }

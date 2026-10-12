@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using ConstiBoost.Core;
 using ConstiBoost.Logging;
 using ConstiBoost.Models;
+using ConstiBoost.Localization;
 
 namespace ConstiBoost.Services;
 
@@ -22,7 +23,7 @@ public sealed class UpdateService : ObservableObject
 {
     public const string Repository = "constantinnickchen-del/hone-klon";
     private UpdateInfo? _available;
-    private string _status = "Not checked yet";
+    private string _status = L.T("Not checked yet");
 
     public static UpdateService Instance { get; } = new();
 
@@ -35,7 +36,7 @@ public sealed class UpdateService : ObservableObject
     {
         if (!SettingsService.Instance.Current.CheckForUpdates)
         {
-            Status = "Automatic update check is off";
+            Status = L.T("Automatic update check is off");
             return;
         }
 
@@ -54,8 +55,8 @@ public sealed class UpdateService : ObservableObject
             if (!response.IsSuccessStatusCode)
             {
                 Status = response.StatusCode == System.Net.HttpStatusCode.NotFound
-                    ? "No public release found yet (the repository may be private during development)."
-                    : $"Update check failed ({(int)response.StatusCode}).";
+                    ? L.T("No public release found yet (the repository may be private during development).")
+                    : L.F("Update check failed ({0}).", (int)response.StatusCode);
                 return;
             }
 
@@ -64,7 +65,7 @@ public sealed class UpdateService : ObservableObject
             string tag = root.GetProperty("tag_name").GetString() ?? "v0";
             if (!Version.TryParse(tag.TrimStart('v', 'V'), out var version))
             {
-                Status = "Release version could not be read.";
+                Status = L.T("Release version could not be read.");
                 return;
             }
 
@@ -77,13 +78,13 @@ public sealed class UpdateService : ObservableObject
             if (Normalize(version) > Normalize(CurrentVersion))
             {
                 Available = info;
-                Status = $"Update available: {tag} (installed: {CurrentVersion.ToString(3)})";
-                NotificationService.Instance.Show($"⬆️ ConstiBoost {tag} is available – Settings → Updates.", NotificationKind.Info);
+                Status = L.F("Update available: {0} (installed: {1})", tag, CurrentVersion.ToString(3));
+                NotificationService.Instance.Show(L.F("⬆️ ConstiBoost {0} is available – Settings → Updates.", tag), NotificationKind.Info);
             }
             else
             {
                 Available = null;
-                Status = $"ConstiBoost is up to date ({CurrentVersion.ToString(3)}).";
+                Status = L.F("ConstiBoost is up to date ({0}).", CurrentVersion.ToString(3));
                 if (userInitiated)
                 {
                     NotificationService.Instance.Show(Status, NotificationKind.Success);
@@ -92,7 +93,7 @@ public sealed class UpdateService : ObservableObject
         }
         catch (Exception ex)
         {
-            Status = "Update check not possible: " + Safe.Describe(ex);
+            Status = L.T("Update check not possible: ") + Safe.Describe(ex);
         }
     }
 
@@ -128,7 +129,7 @@ public sealed class UpdateService : ObservableObject
                 {
                     await file.WriteAsync(buffer.AsMemory(0, read));
                     done += read;
-                    progress.Report(total > 0 ? $"Downloading… {done * 100 / total} %" : $"Downloading… {Formatting.Bytes(done)}");
+                    progress.Report(total > 0 ? L.F("Downloading… {0} %", done * 100 / total) : L.F("Downloading… {0}", Formatting.Bytes(done)));
                 }
             }
 
@@ -139,7 +140,7 @@ public sealed class UpdateService : ObservableObject
         catch (Exception ex)
         {
             AppLog.Error("Update failed", ex);
-            NotificationService.Instance.Show("The update couldn't be downloaded: " + Safe.Describe(ex), NotificationKind.Error);
+            NotificationService.Instance.Show(L.T("The update couldn't be downloaded: ") + Safe.Describe(ex), NotificationKind.Error);
         }
     }
 

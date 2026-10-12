@@ -1,5 +1,6 @@
 using System;
 using ConstiBoost.WinSys;
+using ConstiBoost.Localization;
 
 namespace ConstiBoost.Backup;
 
@@ -29,13 +30,19 @@ public sealed class BackupEntry
 
     public bool RequiresAdmin => Kind == BackupKinds.Registry && Registry?.Hive == "HKLM";
 
+    /// <summary>The description in the app language (the stored description stays English).</summary>
+    public string DisplayDescription =>
+        !L.HasTranslation(Description) && Description.StartsWith("Previous ", StringComparison.Ordinal)
+            ? L.F("Previous {0}", L.T(Description["Previous ".Length..]))
+            : L.T(Description);
+
     public string Summary => Kind switch
     {
-        BackupKinds.Registry => $"{Description} ({Registry?.FullPath} = {Registry?.DisplayValue})",
-        BackupKinds.PowerScheme => $"{Description} ({Data})",
-        BackupKinds.PowerOverlay => $"{Description} ({Data})",
-        BackupKinds.ProcessorMaxState or BackupKinds.PowerSetting or BackupKinds.DisplayMode => $"{Description} ({Name})",
-        BackupKinds.File => $"{Description} ({OriginalPath})",
-        _ => $"{Description} ({Name} = {Data})",
+        BackupKinds.Registry => $"{DisplayDescription} ({Registry?.FullPath} = {Registry?.DisplayValue})",
+        BackupKinds.PowerScheme => $"{DisplayDescription} ({Data})",
+        BackupKinds.PowerOverlay => $"{DisplayDescription} ({Data})",
+        BackupKinds.ProcessorMaxState or BackupKinds.PowerSetting or BackupKinds.DisplayMode => $"{DisplayDescription} ({Name})",
+        BackupKinds.File => $"{DisplayDescription} ({OriginalPath})",
+        _ => $"{DisplayDescription} ({Name} = {Data})",
     };
 }

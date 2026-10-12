@@ -6,6 +6,7 @@ using System.Windows.Threading;
 using ConstiBoost.Core;
 using ConstiBoost.Logging;
 using ConstiBoost.Models;
+using ConstiBoost.Localization;
 
 namespace ConstiBoost.Services;
 
@@ -55,23 +56,23 @@ public sealed class MaintenanceService
                 }
             }
 
-            var parts = new System.Collections.Generic.List<string> { $"{Formatting.Bytes(freed)} of temp files and crash reports removed" };
+            var parts = new System.Collections.Generic.List<string> { L.F("{0} of temp files and crash reports removed", Formatting.Bytes(freed)) };
             int startup = Safe.Try(() => StartupService.GetEntries().Count(e => e.IsEnabled && e.IsKnownNonEssential), 0);
             if (startup > 0)
             {
-                parts.Add($"{startup} non-essential startup app(s) enabled – see Startup");
+                parts.Add(L.F("{0} non-essential startup app(s) enabled – see Startup", startup));
             }
 
             var system = new DriveInfo(Path.GetPathRoot(Environment.GetFolderPath(Environment.SpecialFolder.Windows)) ?? "C:\\");
             if (system.IsReady && system.TotalSize > 0 && 100.0 * system.AvailableFreeSpace / system.TotalSize < 12)
             {
-                parts.Add($"system drive almost full ({Formatting.Bytes(system.AvailableFreeSpace)} free)");
+                parts.Add(L.F("system drive almost full ({0} free)", Formatting.Bytes(system.AvailableFreeSpace)));
             }
 
             var driver = ScanService.Instance.Last?.Hardware.Gpus.FirstOrDefault()?.DriverDate;
             if (driver is DateTime d && DateTime.Now - d > TimeSpan.FromDays(180))
             {
-                parts.Add($"graphics driver from {d:MM/yyyy} – an update may improve game performance");
+                parts.Add(L.F("graphics driver from {0:MM/yyyy} – an update may improve game performance", d));
             }
 
             return string.Join(" · ", parts);
@@ -80,11 +81,11 @@ public sealed class MaintenanceService
         SettingsService.Instance.Current.LastMaintenance = DateTime.Now;
         SettingsService.Instance.Save();
         ActionLog.Success("Weekly maintenance", null, report);
-        string message = "🧹 Maintenance done: " + report;
+        string message = L.T("🧹 Maintenance done: ") + report;
         NotificationService.Instance.Show(message, NotificationKind.Success);
         if (silent)
         {
-            TrayService.Instance.ShowBalloon("ConstiBoost maintenance", report);
+            TrayService.Instance.ShowBalloon(L.T("ConstiBoost maintenance"), report);
         }
 
         return report;

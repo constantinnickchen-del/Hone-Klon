@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using ConstiBoost.Core;
+using ConstiBoost.Localization;
 using ConstiBoost.Models;
 using ConstiBoost.Services;
 
@@ -69,9 +70,9 @@ public sealed class GamingModeViewModel : ObservableObject
 
     public string ProfileDescription => Profile switch
     {
-        GamingProfile.MaxFps => "MAX FPS – maximum performance: 'Best performance' power mode. Higher temperature possible.",
-        GamingProfile.Balanced => "BALANCED – good FPS with less sustained heat: 'Balanced' power mode, CPU boost stays on. Optional FPS cap.",
-        _ => "COOL – lower heat, somewhat less performance: 'Balanced' power mode + maximum processor state 99 % (turns off CPU boost; can noticeably lower FPS in CPU-heavy scenes). Thermal protection stays fully active.",
+        GamingProfile.MaxFps => L.T("MAX FPS – maximum performance: 'Best performance' power mode. Higher temperature possible."),
+        GamingProfile.Balanced => L.T("BALANCED – good FPS with less sustained heat: 'Balanced' power mode, CPU boost stays on. Optional FPS cap."),
+        _ => L.T("COOL – lower heat, somewhat less performance: 'Balanced' power mode + maximum processor state 99 % (turns off CPU boost; can noticeably lower FPS in CPU-heavy scenes). Thermal protection stays fully active."),
     };
 
     public int FortniteFpsCap => ScanService.Instance.Last?.Hardware.Gpus.FirstOrDefault()?.RefreshRate is int hz and >= 30 and <= 240 ? hz : 60;
@@ -79,7 +80,7 @@ public sealed class GamingModeViewModel : ObservableObject
     /// <summary>Caps Fortnite's frame rate at the display refresh rate (only possible while Fortnite is closed).</summary>
     public bool CapFortniteFps { get => _capFortniteFps; set => SetProperty(ref _capFortniteFps, value); }
 
-    public string ActiveProfileText => GamingModeService.Instance.ActiveProfile is GamingProfile p ? "Profile: " + GamingModeService.ProfileName(p) : string.Empty;
+    public string ActiveProfileText => GamingModeService.Instance.ActiveProfile is GamingProfile p ? L.F("Profile: {0}", L.T(GamingModeService.ProfileName(p))) : string.Empty;
 
     public ICommand ToggleCommand { get; }
     public ICommand LoadAppsCommand { get; }
@@ -89,10 +90,10 @@ public sealed class GamingModeViewModel : ObservableObject
     public bool IsActive => GamingModeService.Instance.IsActive;
 
     public string StatusText => IsActive
-        ? $"Gaming Mode ACTIVE since {GamingModeService.Instance.ActivatedAt:HH:mm}"
-        : "Gaming Mode is off";
+        ? L.F("Gaming Mode ACTIVE since {0:HH:mm}", GamingModeService.Instance.ActivatedAt)
+        : L.T("Gaming Mode is off");
 
-    public string ButtonText => IsActive ? "STOP GAMING MODE" : "START GAMING MODE";
+    public string ButtonText => IsActive ? L.T("STOP GAMING MODE") : L.T("START GAMING MODE");
 
     public bool IsBusy { get => _isBusy; private set => SetProperty(ref _isBusy, value); }
     public bool LowerPriority { get => _lowerPriority; set => SetProperty(ref _lowerPriority, value); }
@@ -131,7 +132,7 @@ public sealed class GamingModeViewModel : ObservableObject
             {
                 var messages = await GamingModeService.Instance.DeactivateAsync(RelaunchClosedApps);
                 NotificationService.Instance.Show(
-                    messages.Count == 0 ? "Gaming Mode stopped – settings restored." : "Gaming Mode stopped. Some items couldn't be restored: " + string.Join("; ", messages),
+                    messages.Count == 0 ? L.T("Gaming Mode stopped – settings restored.") : L.F("Gaming Mode stopped. Some items couldn't be restored: {0}", string.Join("; ", messages)),
                     messages.Count == 0 ? NotificationKind.Success : NotificationKind.Warning);
                 return;
             }
@@ -144,7 +145,7 @@ public sealed class GamingModeViewModel : ObservableObject
             var selected = Apps.Where(a => a.IsSelected).ToList();
             var details = new System.Collections.Generic.List<string>
             {
-                "Profile: " + GamingModeService.ProfileName(Profile),
+                L.F("Profile: {0}", L.T(GamingModeService.ProfileName(Profile))),
                 "Turn on Windows Game Mode",
                 Profile == GamingProfile.MaxFps ? "Power mode: Best performance (if available)" : "Power mode: Balanced",
             };
@@ -155,9 +156,9 @@ public sealed class GamingModeViewModel : ObservableObject
 
             if (CapFortniteFps)
             {
-                details.Add($"Fortnite frame rate limit: {FortniteFpsCap} FPS (only if Fortnite is closed; previous value is restored)");
+                details.Add(L.F("Fortnite frame rate limit: {0} FPS (only if Fortnite is closed; previous value is restored)", FortniteFpsCap));
             }
-            details.AddRange(selected.Select(a => "Close " + a.DisplayName));
+            details.AddRange(selected.Select(a => L.F("Close {0}", a.DisplayName)));
             if (LowerPriority)
             {
                 details.Add("Lower priority of browsers/launchers still running (Below normal)");
@@ -172,7 +173,7 @@ public sealed class GamingModeViewModel : ObservableObject
             var result = await GamingModeService.Instance.ActivateAsync(selected, new GamingModeOptions(Profile, LowerPriority, CapFortniteFps ? FortniteFpsCap : null));
             ShowApps = false;
             NotificationService.Instance.Show(
-                result.Count == 0 ? "Gaming Mode ACTIVE. Have fun!" : "Gaming Mode active with notes: " + string.Join("; ", result),
+                result.Count == 0 ? L.T("Gaming Mode ACTIVE. Have fun!") : L.F("Gaming Mode active with notes: {0}", string.Join("; ", result)),
                 result.Count == 0 ? NotificationKind.Success : NotificationKind.Warning);
         }
         finally

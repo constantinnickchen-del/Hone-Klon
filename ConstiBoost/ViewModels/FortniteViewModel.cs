@@ -8,6 +8,7 @@ using System.Windows.Threading;
 using ConstiBoost.Backup;
 using ConstiBoost.Core;
 using ConstiBoost.Fortnite;
+using ConstiBoost.Localization;
 using ConstiBoost.Models;
 using ConstiBoost.Services;
 
@@ -36,7 +37,7 @@ public sealed class PresetViewModel : ObservableObject
         }
     }
 
-    public string ImpactText => Impact.ToString().ToUpperInvariant();
+    public string ImpactText => L.T(Impact.ToString().ToUpperInvariant());
 
     public bool IsSelected { get => _isSelected; set => SetProperty(ref _isSelected, value); }
 }
@@ -54,7 +55,7 @@ public sealed class FortniteViewModel : PageViewModel
     private int _fpsCap = 60;
     private bool _fullscreen = true;
     private bool _isRunning;
-    private string _processText = "Fortnite is not running";
+    private string _processText = L.T("Fortnite is not running");
     private string _shaderCacheText = "–";
     private bool _isLoading;
     private bool _isIntegrated;
@@ -99,12 +100,12 @@ public sealed class FortniteViewModel : PageViewModel
 
     public bool IsLoading { get => _isLoading; private set => SetProperty(ref _isLoading, value); }
     public bool IsInstalled => _install != null;
-    public string InstallPath => _install?.InstallPath ?? "Not found";
-    public string InstallSource => _install is null ? "Fortnite was not found in the Epic Games Launcher manifests or common install folders." : "Detected via " + _install.Source;
-    public string Version => _install?.Version ?? "Unknown";
+    public string InstallPath => _install?.InstallPath ?? L.T("Not found");
+    public string InstallSource => _install is null ? L.T("Fortnite was not found in the Epic Games Launcher manifests or common install folders.") : L.F("Detected via {0}", _install.Source);
+    public string Version => _install?.Version ?? L.T("Unknown");
     public bool ConfigExists => _config.Exists;
     public string ConfigPath => FortniteConfigService.ConfigPath;
-    public string ConfigStatus => _config.Exists ? "Settings file found" : "Settings file not found – start Fortnite once so it creates its settings.";
+    public string ConfigStatus => _config.Exists ? L.T("Settings file found") : L.T("Settings file not found – start Fortnite once so it creates its settings.");
 
     public string CurrentRenderingMode => _config.RenderingMode;
     public string Current3DResolution => _config.Get("sg.ResolutionQuality").Split('.')[0] + (_config.Values.ContainsKey("sg.ResolutionQuality") ? " %" : string.Empty);
@@ -112,10 +113,10 @@ public sealed class FortniteViewModel : PageViewModel
     public string CurrentViewDistance => Level(_config.Get("sg.ViewDistanceQuality"));
     public string CurrentTextures => Level(_config.Get("sg.TextureQuality"));
     public string CurrentEffects => Level(_config.Get("sg.EffectsQuality"));
-    public string CurrentVSync => _config.Get("bUseVSync") is "–" ? "–" : (_config.Get("bUseVSync").Equals("True", StringComparison.OrdinalIgnoreCase) ? "ON" : "OFF");
-    public string CurrentMotionBlur => _config.Get("bMotionBlur") is "–" ? "Not in file (set in-game)" : (_config.Get("bMotionBlur").Equals("True", StringComparison.OrdinalIgnoreCase) ? "ON" : "OFF");
-    public string CurrentFrameLimit => _config.Get("FrameRateLimit") is "–" ? "–" : (_config.Get("FrameRateLimit").StartsWith("0") ? "Unlimited" : _config.Get("FrameRateLimit").Split('.')[0] + " FPS");
-    public string CurrentWindowMode => _config.Get("FullscreenMode") switch { "0" => "Fullscreen", "1" => "Windowed Fullscreen", "2" => "Windowed", _ => "–" };
+    public string CurrentVSync => _config.Get("bUseVSync") is "–" ? "–" : L.T(_config.Get("bUseVSync").Equals("True", StringComparison.OrdinalIgnoreCase) ? "ON" : "OFF");
+    public string CurrentMotionBlur => _config.Get("bMotionBlur") is "–" ? L.T("Not in file (set in-game)") : L.T(_config.Get("bMotionBlur").Equals("True", StringComparison.OrdinalIgnoreCase) ? "ON" : "OFF");
+    public string CurrentFrameLimit => _config.Get("FrameRateLimit") is "–" ? "–" : (_config.Get("FrameRateLimit").StartsWith("0") ? L.T("Unlimited") : _config.Get("FrameRateLimit").Split('.')[0] + " FPS");
+    public string CurrentWindowMode => _config.Get("FullscreenMode") switch { "0" => L.T("Fullscreen"), "1" => L.T("Windowed Fullscreen"), "2" => L.T("Windowed"), _ => "–" };
 
     public bool IsIntegrated { get => _isIntegrated; private set => SetProperty(ref _isIntegrated, value); }
     public bool IsLowEnd { get => _isLowEnd; private set => SetProperty(ref _isLowEnd, value); }
@@ -139,10 +140,10 @@ public sealed class FortniteViewModel : PageViewModel
 
     public string ResolutionHint => Resolution switch
     {
-        >= 95 => "Sharpest image, highest GPU load.",
-        >= 80 => "Slightly softer image, noticeably less GPU load on integrated graphics.",
-        >= 65 => "Visibly softer image, much less GPU load – good for weak iGPUs.",
-        _ => "Blurry image, lowest GPU load. Only if nothing else helps.",
+        >= 95 => L.T("Sharpest image, highest GPU load."),
+        >= 80 => L.T("Slightly softer image, noticeably less GPU load on integrated graphics."),
+        >= 65 => L.T("Visibly softer image, much less GPU load – good for weak iGPUs."),
+        _ => L.T("Blurry image, lowest GPU load. Only if nothing else helps."),
     };
 
     public bool DisableVSync { get => _disableVSync; set => SetProperty(ref _disableVSync, value); }
@@ -169,11 +170,11 @@ public sealed class FortniteViewModel : PageViewModel
 
     private static string Level(string raw) => raw switch
     {
-        "0" => "Low / Off",
-        "1" => "Medium",
-        "2" => "High",
+        "0" => L.T("Low / Off"),
+        "1" => L.T("Medium"),
+        "2" => L.T("High"),
         "3" => "Epic",
-        "4" => "Cinematic",
+        "4" => L.T("Cinematic"),
         _ => raw,
     };
 
@@ -195,14 +196,14 @@ public sealed class FortniteViewModel : PageViewModel
 
             bool nvidia = scan.Hardware.Gpus.Any(g => g.Vendor == "NVIDIA" && !g.IsIntegrated);
             ReflexText = nvidia
-                ? "Available on your NVIDIA GPU: set 'NVIDIA Reflex Low Latency' to On in Fortnite (Settings > Video > Advanced Graphics). Reflex is only available in DirectX 11/12 modes."
-                : "Unavailable on this system – NVIDIA Reflex requires a supported NVIDIA graphics card. ConstiBoost does not enable it.";
+                ? L.T("Available on your NVIDIA GPU: set 'NVIDIA Reflex Low Latency' to On in Fortnite (Settings > Video > Advanced Graphics). Reflex is only available in DirectX 11/12 modes.")
+                : L.T("Unavailable on this system – NVIDIA Reflex requires a supported NVIDIA graphics card. ConstiBoost does not enable it.");
 
             DeviceRecommendation = IsLowEnd
-                ? $"{scan.Profile.Title}: use PERFORMANCE MODE with LOW settings, 3D resolution 70–85 % (depending on how sharp you want it), VSync OFF, Motion Blur OFF, Shadows OFF and an FPS cap at your display's {FpsCap} Hz for stable frame times and lower temperatures."
+                ? L.F("{0}: use PERFORMANCE MODE with LOW settings, 3D resolution 70–85 % (depending on how sharp you want it), VSync OFF, Motion Blur OFF, Shadows OFF and an FPS cap at your display's {1} Hz for stable frame times and lower temperatures.", L.T(scan.Profile.Title), FpsCap)
                 : scan.Profile.HasDedicatedGpu
-                    ? "Dedicated GPU detected: BALANCED or QUALITY usually give the best mix. Use MAX FPS for competitive play."
-                    : "Use MAX FPS or BALANCED depending on how smooth the game runs.";
+                    ? L.T("Dedicated GPU detected: BALANCED or QUALITY usually give the best mix. Use MAX FPS for competitive play.")
+                    : L.T("Use MAX FPS or BALANCED depending on how smooth the game runs.");
 
             if (SelectedPreset is null)
             {
@@ -270,11 +271,11 @@ public sealed class FortniteViewModel : PageViewModel
             return;
         }
 
-        var details = preset.Display.Select(d => $"{d.Label}: {d.Value}").ToList();
-        details.Add($"3D Resolution: {Resolution} %");
+        var details = preset.Display.Select(d => $"{L.T(d.Label)}: {L.T(d.Value)}").ToList();
+        details.Add(L.F("3D Resolution: {0} %", Resolution));
         if (CapFps)
         {
-            details.Add($"Frame rate limit: {FpsCap} FPS");
+            details.Add(L.F("Frame rate limit: {0} FPS", FpsCap));
         }
 
         if (Fullscreen)
@@ -282,9 +283,9 @@ public sealed class FortniteViewModel : PageViewModel
             details.Add("Window mode: Fullscreen");
         }
 
-        details.Add($"Estimated impact: {SelectedPreset!.ImpactText} (no FPS promise – depends on map, scene and hardware)");
+        details.Add(L.F("Estimated impact: {0} (no FPS promise – depends on map, scene and hardware)", SelectedPreset!.ImpactText));
         details.Add("GameUserSettings.ini is backed up first.");
-        if (!DialogService.Confirm($"Apply {preset.Name}?", "ConstiBoost will update Fortnite's own settings file:", details, "APPLY PRESET"))
+        if (!DialogService.Confirm(L.F("Apply {0}?", L.T(preset.Name)), "ConstiBoost will update Fortnite's own settings file:", details, "APPLY PRESET"))
         {
             return;
         }
@@ -304,7 +305,7 @@ public sealed class FortniteViewModel : PageViewModel
             DialogService.Info(
                 "One step in Fortnite",
                 "ConstiBoost does not change Fortnite's rendering mode itself. In Fortnite open Settings > Video > Advanced Graphics and set 'Rendering Mode' to PERFORMANCE, then restart Fortnite.",
-                MissingKeys.Count > 0 ? MissingKeys.Select(k => $"Not in your settings file (set in-game): {k}") : null);
+                MissingKeys.Count > 0 ? MissingKeys.Select(k => L.F("Not in your settings file (set in-game): {0}", k)) : null);
         }
 
         MainViewModel.Instance?.Backups.Reload();
@@ -316,9 +317,9 @@ public sealed class FortniteViewModel : PageViewModel
         var info = FortnitePriorityService.GetRunning();
         IsRunning = info != null;
         ProcessText = info is null
-            ? "Fortnite is not running"
-            : $"Running · PID {info.Pid} · Priority {(info.Priority?.ToString() ?? "protected by anti-cheat")} · RAM {Formatting.Bytes(info.WorkingSet)}"
-              + (FortnitePriorityService.IsChangedByConstiBoost ? " · changed by ConstiBoost" : string.Empty);
+            ? L.T("Fortnite is not running")
+            : L.F("Running · PID {0} · Priority {1} · RAM {2}", info.Pid, info.Priority?.ToString() ?? L.T("protected by anti-cheat"), Formatting.Bytes(info.WorkingSet))
+              + (FortnitePriorityService.IsChangedByConstiBoost ? L.T(" · changed by ConstiBoost") : string.Empty);
         CommandManager.InvalidateRequerySuggested();
     }
 
@@ -339,7 +340,7 @@ public sealed class FortniteViewModel : PageViewModel
 
         long freed = await Task.Run(() => CleanerService.ShaderCachePaths().Sum(p => CleanerService.DeleteContents(p).FreedBytes));
         Logging.ActionLog.Success("Clear shader caches (Fortnite page)", ShaderCacheText, Formatting.Bytes(freed) + " freed");
-        NotificationService.Instance.Show($"Shader caches cleared: {Formatting.Bytes(freed)} freed.", NotificationKind.Success);
+        NotificationService.Instance.Show(L.F("Shader caches cleared: {0} freed.", Formatting.Bytes(freed)), NotificationKind.Success);
         await LoadAsync();
     }
 
@@ -381,7 +382,7 @@ public sealed class FortniteViewModel : PageViewModel
             }
         }
 
-        NotificationService.Instance.Show($"{ok} app(s) closed.", NotificationKind.Success);
+        NotificationService.Instance.Show(L.F("{0} app(s) closed.", ok), NotificationKind.Success);
         await LoadAppsAsync();
     }
 
@@ -395,14 +396,14 @@ public sealed class FortniteViewModel : PageViewModel
         }
         catch (Exception ex)
         {
-            NotificationService.Instance.Show("Fortnite couldn't be started via the Epic Games Launcher: " + ex.Message, NotificationKind.Error);
+            NotificationService.Instance.Show(L.F("Fortnite couldn't be started via the Epic Games Launcher: {0}", ex.Message), NotificationKind.Error);
         }
     }
 
     private static void Report(OperationResult result)
     {
         NotificationService.Instance.Show(
-            result.Message + (result.TechnicalDetails is null ? string.Empty : $" ({result.TechnicalDetails})"),
+            L.T(result.Message) + (result.TechnicalDetails is null ? string.Empty : $" ({result.TechnicalDetails})"),
             result.Success ? NotificationKind.Success : NotificationKind.Warning);
     }
 }

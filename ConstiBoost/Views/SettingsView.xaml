@@ -159,7 +159,7 @@
                     <TextBlock Text="Privacy &amp; safety" Style="{StaticResource Text.H3}" />
                     <TextBlock Style="{StaticResource Text.Body}" Margin="0,8,0,0"
                                Text="ConstiBoost works 100 % locally: no account, no cloud, no telemetry, no ads. It never disables Defender, the firewall or Windows Update, never reads passwords, cookies or browser data, and never deletes personal files. Network access: the tests you start yourself (ping, DNS, speed, bufferbloat) and – if enabled – the anonymous update check on GitHub." />
-                    <TextBlock Text="{Binding DataFolder, StringFormat='Data folder (settings, backups, logs): {0}'}" Style="{StaticResource Text.Caption}" Margin="0,10,0,0" TextWrapping="Wrap" />
+                    <TextBlock Text="{Binding DataFolder, Converter={StaticResource Tr}, ConverterParameter='Data folder (settings, backups, logs): {0}'}" Style="{StaticResource Text.Caption}" Margin="0,10,0,0" TextWrapping="Wrap" />
                     <TextBlock Text="{Binding VersionText}" Style="{StaticResource Text.Caption}" Margin="0,4,0,0" />
                     <Button Style="{StaticResource GhostButton}" Content="Show welcome screen again" Command="{Binding ShowWelcomeCommand}" HorizontalAlignment="Left" Padding="0,10,0,0" />
                 </StackPanel>

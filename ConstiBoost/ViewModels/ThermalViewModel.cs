@@ -10,6 +10,7 @@ using ConstiBoost.Backup;
 using ConstiBoost.Core;
 using ConstiBoost.Fortnite;
 using ConstiBoost.Hardware;
+using ConstiBoost.Localization;
 using ConstiBoost.Logging;
 using ConstiBoost.Models;
 using ConstiBoost.Services;
@@ -28,17 +29,17 @@ public sealed class ThermalViewModel : PageViewModel
     private int _uiTick;
     private CancellationTokenSource? _cts;
 
-    private string _cpuTemp = "Sensor unavailable";
+    private string _cpuTemp = L.T("Sensor unavailable");
     private TemperatureLevel _level = TemperatureLevel.Unavailable;
     private string _tempSource = string.Empty;
-    private string _gpuTemp = "Sensor unavailable";
-    private string _acpiText = "Sensor unavailable";
+    private string _gpuTemp = L.T("Sensor unavailable");
+    private string _acpiText = L.T("Sensor unavailable");
     private string _cpuLoad = "–";
     private string _gpuLoad = "–";
     private string _ram = "–";
-    private string _cpuClock = "Unavailable";
-    private string _gpuClock = "Unavailable";
-    private string _fan = "Fan speed unavailable on this device.";
+    private string _cpuClock = L.T("Unavailable");
+    private string _gpuClock = L.T("Unavailable");
+    private string _fan = L.T("Fan speed unavailable on this device.");
     private string _power = "–";
     private string _processes = "–";
     private IReadOnlyList<double> _tempHistory = Array.Empty<double>();
@@ -175,7 +176,7 @@ public sealed class ThermalViewModel : PageViewModel
     public int AutoCoolTrigger { get => S.AutoCoolTrigger; set { S.AutoCoolTrigger = Math.Clamp(value, 75, 95); SaveSettings(); } }
     public bool AutoCoolDuringGaming { get => S.AutoCoolDuringGaming; set { S.AutoCoolDuringGaming = value; SaveSettings(); } }
     public bool AutoCoolLimitBoost { get => S.AutoCoolLimitBoost; set { S.AutoCoolLimitBoost = value; SaveSettings(); } }
-    public string AutoCoolStatus => AutoCoolService.Instance.IsEngaged ? $"❄️ Auto-Cool ENGAGED since {AutoCoolService.Instance.EngagedAt:HH:mm}" : S.AutoCoolEnabled ? "Auto-Cool armed – watching the temperature" : "Auto-Cool off";
+    public string AutoCoolStatus => AutoCoolService.Instance.IsEngaged ? L.F("❄️ Auto-Cool ENGAGED since {0:HH:mm}", AutoCoolService.Instance.EngagedAt) : S.AutoCoolEnabled ? L.T("Auto-Cool armed – watching the temperature") : L.T("Auto-Cool off");
 
     private void SaveSettings()
     {
@@ -186,10 +187,10 @@ public sealed class ThermalViewModel : PageViewModel
     // ---------- Alerts ----------
     public bool HasAlert => _monitor.Alert != ThermalAlertLevel.None;
     public bool IsCriticalAlert => _monitor.Alert == ThermalAlertLevel.Critical;
-    public string AlertTitle => _monitor.Alert == ThermalAlertLevel.Critical ? "🔴 CRITICAL TEMPERATURE" : "🟠 HIGH TEMPERATURE";
+    public string AlertTitle => _monitor.Alert == ThermalAlertLevel.Critical ? L.T("🔴 CRITICAL TEMPERATURE") : L.T("🟠 HIGH TEMPERATURE");
     public string AlertText => _monitor.Alert == ThermalAlertLevel.Critical
-        ? "The system may be under excessive thermal load. Consider stopping the workload and checking cooling."
-        : "Your CPU temperature is currently high. Check CPU load and cooling conditions.";
+        ? L.T("The system may be under excessive thermal load. Consider stopping the workload and checking cooling.")
+        : L.T("Your CPU temperature is currently high. Check CPU load and cooling conditions.");
 
     // ---------- CPU detection ----------
     public string CpuDetected
@@ -203,15 +204,15 @@ public sealed class ThermalViewModel : PageViewModel
             }
 
             string shortName = CpuDatabase.ShortName(hw.CpuName);
-            return $"{shortName} detected.";
+            return L.F("{0} detected.", shortName);
         }
     }
 
     public string CpuName => ScanService.Instance.Last?.Hardware is { } hw ? CpuDatabase.ShortName(hw.CpuName) : "–";
-    public string CpuArchitecture => ScanService.Instance.Last?.Hardware is { } hw ? CpuDatabase.Architecture(hw.CpuName) ?? "Unknown" : "–";
+    public string CpuArchitecture => ScanService.Instance.Last?.Hardware is { } hw ? CpuDatabase.Architecture(hw.CpuName) ?? L.T("Unknown") : "–";
     public string CpuCores => ScanService.Instance.Last?.Hardware.CpuCores?.ToString() ?? Formatting.Unavailable;
     public string CpuThreads => ScanService.Instance.Last?.Hardware.CpuThreads?.ToString() ?? Formatting.Unavailable;
-    public string CpuBase => ScanService.Instance.Last?.Hardware.CpuMaxClockMhz is int mhz ? $"{mhz} MHz (reported by Windows)" : Formatting.Unavailable;
+    public string CpuBase => ScanService.Instance.Last?.Hardware.CpuMaxClockMhz is int mhz ? L.F("{0} MHz (reported by Windows)", mhz) : Formatting.Unavailable;
 
     // ---------- Scan ----------
     public bool IsBusy
@@ -232,29 +233,29 @@ public sealed class ThermalViewModel : PageViewModel
 
     public string ScanTemperature => _scan is null ? "–" : T(_scan.Measurement.AverageTemperature, "Sensor unavailable");
     public string ScanTempRange => _scan?.Measurement.AverageTemperature is null ? string.Empty
-        : $"now {T(_scan.Measurement.FinalTemperature)} · avg {T(_scan.Measurement.AverageTemperature)} · max {T(_scan.Measurement.MaxTemperature)}";
+        : L.F("now {0} · avg {1} · max {2}", T(_scan.Measurement.FinalTemperature), T(_scan.Measurement.AverageTemperature), T(_scan.Measurement.MaxTemperature));
     public string ScanCpuLoad => _scan is null ? "–" : P(_scan.Measurement.AverageCpuLoad);
-    public string ScanCpuClock => _scan?.Measurement.AverageCpuMhz is double mhz ? $"{mhz / 1000:0.00} GHz avg" : Formatting.Unavailable;
-    public string ScanGpu => _scan is null ? "–" : $"{P(_scan.GpuLoadAverage)} · Temp {T(_scan.GpuTemperature, "Sensor unavailable")}";
-    public string ScanVram => _scan?.GpuMemory is { } g ? $"Dedicated {Formatting.Bytes(g.DedicatedBytes)} · Shared {Formatting.Bytes(g.SharedBytes)}" : Formatting.Unavailable;
+    public string ScanCpuClock => _scan?.Measurement.AverageCpuMhz is double mhz ? L.F("{0:0.00} GHz avg", mhz / 1000) : Formatting.Unavailable;
+    public string ScanGpu => _scan is null ? "–" : L.F("{0} · Temp {1}", P(_scan.GpuLoadAverage), T(_scan.GpuTemperature, "Sensor unavailable"));
+    public string ScanVram => _scan?.GpuMemory is { } g ? L.F("Dedicated {0} · Shared {1}", Formatting.Bytes(g.DedicatedBytes), Formatting.Bytes(g.SharedBytes)) : Formatting.Unavailable;
     public string ScanRam => _scan is null || _scan.RamTotal == 0 ? "–"
-        : $"{Formatting.Bytes(_scan.RamUsed)} used · {Formatting.Bytes(_scan.RamTotal - _scan.RamUsed)} free · {Formatting.Bytes(_scan.RamTotal)} total";
+        : L.F("{0} used · {1} free · {2} total", Formatting.Bytes(_scan.RamUsed), Formatting.Bytes(_scan.RamTotal - _scan.RamUsed), Formatting.Bytes(_scan.RamTotal));
     public string ScanSource => _scan?.TemperatureSource ?? string.Empty;
     public string MainCause => _scan?.MainCause ?? "–";
     public int RecommendationCount => _scan?.Findings.Count ?? 0;
-    public string Potential => _scan?.Potential.ToString() ?? "–";
+    public string Potential => _scan is null ? "–" : L.T(_scan.Potential.ToString());
     public ImpactLevel PotentialLevel => _scan?.Potential ?? ImpactLevel.Low;
     public int Score => _scan?.Score ?? 0;
-    public string ScoreText => _scan is null ? "–" : $"{_scan.Score}/100" + (_scan.ScoreIsPartial ? " (partial)" : string.Empty);
+    public string ScoreText => _scan is null ? "–" : $"{_scan.Score}/100" + (_scan.ScoreIsPartial ? L.T(" (partial)") : string.Empty);
     public string ScoreSummary => _scan?.ScoreSummary ?? string.Empty;
     public string ScoreTemperature => _scan is null ? "–" : T(_scan.Measurement.AverageTemperature, "Sensor unavailable");
     public string ScoreCooling => _scan is null ? "–"
-        : _scan.Fans.Count > 0 ? $"Fan active ({string.Join(", ", _scan.Fans.Select(f => $"{f.Value:0} RPM"))})" : "Unknown";
-    public string ScoreBackground => _scan is null ? "–" : $"{_scan.BackgroundLevel} ({_scan.BackgroundCpu:0.0} % CPU)";
+        : _scan.Fans.Count > 0 ? L.F("Fan active ({0})", string.Join(", ", _scan.Fans.Select(f => $"{f.Value:0} RPM"))) : L.T("Unknown");
+    public string ScoreBackground => _scan is null ? "–" : $"{L.T(_scan.BackgroundLevel)} ({_scan.BackgroundCpu:0.0} % CPU)";
     public string ScanPower => _scan?.PowerText ?? "–";
     public string FoundText => Findings.Count == 0
-        ? "No safe software measures found – the current load and settings already look reasonable."
-        : $"We found {Findings.Count(f => f.CanApply)} potentially useful optimization(s) and {Findings.Count(f => !f.CanApply)} piece(s) of advice.";
+        ? L.T("No safe software measures found – the current load and settings already look reasonable.")
+        : L.F("We found {0} potentially useful optimization(s) and {1} piece(s) of advice.", Findings.Count(f => f.CanApply), Findings.Count(f => !f.CanApply));
 
     // ---------- Before / after ----------
     public bool HasResult => _before != null && _after != null;
@@ -281,11 +282,11 @@ public sealed class ThermalViewModel : PageViewModel
             {
                 double diff = a - b;
                 return diff <= -2
-                    ? $"Temperature measured {Math.Abs(diff):0.0} °C lower than before. Workload and room temperature also influence this value."
-                    : "No measurable temperature improvement detected." + (diff >= 2 ? " The temperature was higher during the second measurement – the workload may have changed." : string.Empty);
+                    ? L.F("Temperature measured {0:0.0} °C lower than before. Workload and room temperature also influence this value.", Math.Abs(diff))
+                    : L.T("No measurable temperature improvement detected.") + (diff >= 2 ? L.T(" The temperature was higher during the second measurement – the workload may have changed.") : string.Empty);
             }
 
-            return "Thermal sensor unavailable – only CPU load, RAM and background processes can be compared.";
+            return L.T("Thermal sensor unavailable – only CPU load, RAM and background processes can be compared.");
         }
     }
 
@@ -311,11 +312,11 @@ public sealed class ThermalViewModel : PageViewModel
     public string TestFinal => T(_test?.FinalTemperature, "–");
     public string TestLoad => P(_test?.AverageCpuLoad);
     public string TestClock => _test?.AverageCpuMhz is double mhz ? $"{mhz / 1000:0.00} GHz" : Formatting.Unavailable;
-    public string TestInfo => _test is null ? string.Empty : $"{_test.Profile} · {_test.Time:HH:mm} · {_test.Source}" + (_test.GameRunning ? " · game running" : string.Empty);
+    public string TestInfo => _test is null ? string.Empty : $"{L.T(_test.Profile)} · {_test.Time:HH:mm} · {_test.Source}" + (_test.GameRunning ? L.T(" · game running") : string.Empty);
 
     // ---------- Fortnite thermal mode ----------
     public bool IsFortniteRunning => string.Equals(_monitor.RunningGame, FortniteLocator.ProcessName, StringComparison.OrdinalIgnoreCase);
-    public string FpsText => "FPS: unavailable – no supported FPS source (ConstiBoost does not hook into the game).";
+    public string FpsText => L.T("FPS: unavailable – no supported FPS source (ConstiBoost does not hook into the game).");
 
     public string FanCheck => _fan;
 
@@ -362,17 +363,17 @@ public sealed class ThermalViewModel : PageViewModel
 
             var sensors = snapshot.Sensors;
             double? temp = sensors.BestTemperature;
-            CpuTemp = temp.HasValue ? $"{temp:0} °C" : "Sensor unavailable";
+            CpuTemp = temp.HasValue ? $"{temp:0} °C" : L.T("Sensor unavailable");
             Level = TemperatureLevels.Classify(temp);
             TempSource = sensors.BestTemperatureSource;
-            GpuTemp = sensors.GpuTemperature is double g ? $"{g:0} °C" : "Sensor unavailable";
-            AcpiText = sensors.AcpiZone is { } z ? $"{z.Celsius:0} °C ({z.Zone})" : "Sensor unavailable";
+            GpuTemp = sensors.GpuTemperature is double g ? $"{g:0} °C" : L.T("Sensor unavailable");
+            AcpiText = sensors.AcpiZone is { } z ? $"{z.Celsius:0} °C ({z.Zone})" : L.T("Sensor unavailable");
             CpuLoad = Formatting.Percent(snapshot.CpuPercent);
-            GpuLoad = MonitorService.Instance.GpuAvailable ? Formatting.Percent(snapshot.GpuPercent) : "Sensor unavailable";
+            GpuLoad = MonitorService.Instance.GpuAvailable ? Formatting.Percent(snapshot.GpuPercent) : L.T("Sensor unavailable");
             Ram = snapshot.RamTotalBytes > 0 ? $"{Formatting.Percent(snapshot.RamPercent)} · {Formatting.Bytes(snapshot.RamUsedBytes)} / {Formatting.Bytes(snapshot.RamTotalBytes)}" : "–";
-            CpuClock = snapshot.CpuMhz is double mhz ? $"{mhz / 1000:0.00} GHz" : "Unavailable";
-            GpuClock = sensors.GpuClockMhz is double gc ? $"{gc:0} MHz" : "Unavailable";
-            Fan = sensors.Fans.Count > 0 ? string.Join(" · ", sensors.Fans.Select(f => $"{f.Name}: {f.Value:0} RPM")) : "Fan speed unavailable on this device.";
+            CpuClock = snapshot.CpuMhz is double mhz ? $"{mhz / 1000:0.00} GHz" : L.T("Unavailable");
+            GpuClock = sensors.GpuClockMhz is double gc ? $"{gc:0} MHz" : L.T("Unavailable");
+            Fan = sensors.Fans.Count > 0 ? string.Join(" · ", sensors.Fans.Select(f => $"{f.Name}: {f.Value:0} RPM")) : L.T("Fan speed unavailable on this device.");
             OnPropertyChanged(nameof(FanCheck));
             Processes = snapshot.ProcessCount?.ToString() ?? "–";
 
@@ -419,20 +420,20 @@ public sealed class ThermalViewModel : PageViewModel
         double? temp = s.Sensors.BestTemperature;
         double bg = _scan?.BackgroundCpu ?? -1;
         FortniteRecommendations.Add(bg < 0
-            ? "Background load: run SCAN MY PC once to see what else uses CPU while you play."
-            : bg >= 5 ? $"Background load: other apps use about {bg:0} % CPU – closing them leaves more headroom for Fortnite and may reduce heat."
-            : "Background load: low – good.");
+            ? L.T("Background load: run SCAN MY PC once to see what else uses CPU while you play.")
+            : bg >= 5 ? L.F("Background load: other apps use about {0:0} % CPU – closing them leaves more headroom for Fortnite and may reduce heat.", bg)
+            : L.T("Background load: low – good."));
         FortniteRecommendations.Add(s.GpuPercent >= 90
-            ? "Graphics load: the GPU is at its limit. A lower 3D resolution or an FPS cap (e.g. 60) reduces GPU heat; use Performance Mode on integrated graphics."
+            ? L.T("Graphics load: the GPU is at its limit. A lower 3D resolution or an FPS cap (e.g. 60) reduces GPU heat; use Performance Mode on integrated graphics.")
             : s.CpuPercent >= 85
-                ? "Graphics load: the CPU is the limit. Lower view distance and an FPS cap reduce CPU work and heat."
-                : "Graphics load: neither CPU nor GPU is fully loaded.");
+                ? L.T("Graphics load: the CPU is the limit. Lower view distance and an FPS cap reduce CPU work and heat.")
+                : L.T("Graphics load: neither CPU nor GPU is fully loaded."));
         FortniteRecommendations.Add(Power.Contains("Best performance") || Power.Contains("High performance")
-            ? "Power mode: maximum performance is active – highest FPS, but also the most heat. BALANCED in Cool Gaming Mode is a middle ground."
-            : $"Power mode: {Power}.");
+            ? L.T("Power mode: maximum performance is active – highest FPS, but also the most heat. BALANCED in Cool Gaming Mode is a middle ground.")
+            : L.F("Power mode: {0}.", Power));
         FortniteRecommendations.Add(temp is null
-            ? "Cooling status: no temperature sensor readable."
-            : $"Cooling status: {TemperatureLevels.Text(TemperatureLevels.Classify(temp))} ({temp:0} °C). High temperatures during gaming can be expected under load.");
+            ? L.T("Cooling status: no temperature sensor readable.")
+            : L.F("Cooling status: {0} ({1:0} °C). High temperatures during gaming can be expected under load.", L.T(TemperatureLevels.Text(TemperatureLevels.Classify(temp))), temp));
     }
 
     private void RaiseAlert()
@@ -466,7 +467,7 @@ public sealed class ThermalViewModel : PageViewModel
         {
             if (ScanService.Instance.Last is null)
             {
-                ProgressText = "Reading hardware…";
+                ProgressText = L.T("Reading hardware…");
                 await ScanService.Instance.ScanAsync();
                 RaiseCpuInfo();
             }
@@ -474,11 +475,11 @@ public sealed class ThermalViewModel : PageViewModel
             var result = await ThermalAnalysisService.ScanAsync(new Progress<string>(t => ProgressText = t), _cts.Token);
             ApplyScan(result);
             ShowFindings = ShowFindings || focusFindings;
-            NotificationService.Instance.Show($"Scan complete – main cause: {result.MainCause}.", NotificationKind.Info);
+            NotificationService.Instance.Show(L.F("Scan complete – main cause: {0}.", L.T(result.MainCause)), NotificationKind.Info);
         }
         catch (OperationCanceledException)
         {
-            ProgressText = "Scan cancelled.";
+            ProgressText = L.T("Scan cancelled.");
         }
         catch (Exception ex)
         {
@@ -522,10 +523,10 @@ public sealed class ThermalViewModel : PageViewModel
             return;
         }
 
-        var details = selected.Select(f => $"{f.Problem} → {f.Recommended}  (impact: {f.ImpactText})").ToList();
+        var details = selected.Select(f => L.F("{0} → {1}  (impact: {2})", L.T(f.Problem), L.T(f.Recommended), L.T(f.ImpactText))).ToList();
         details.Add("Changed settings are backed up first. Closed apps can simply be opened again.");
         details.Add("Afterwards ConstiBoost measures again for 30 seconds and compares the real values.");
-        if (!DialogService.Confirm($"We found {selected.Count} potentially useful optimization(s).", "Apply these safe measures?", details, "OPTIMIZE TEMPERATURE"))
+        if (!DialogService.Confirm(L.F("We found {0} potentially useful optimization(s).", selected.Count), "Apply these safe measures?", details, "OPTIMIZE TEMPERATURE"))
         {
             return;
         }
@@ -537,11 +538,11 @@ public sealed class ThermalViewModel : PageViewModel
         RaiseResult();
         try
         {
-            ProgressText = "Creating backup…";
+            ProgressText = L.T("Creating backup…");
             var backup = BackupSession.Create("Thermal optimization");
             foreach (var f in selected)
             {
-                ProgressText = $"Applying: {f.Problem}…";
+                ProgressText = L.F("Applying: {0}…", L.T(f.Problem));
                 OperationResult r;
                 try
                 {
@@ -554,20 +555,20 @@ public sealed class ThermalViewModel : PageViewModel
                 }
 
                 f.ResultSuccess = r.Success;
-                f.ResultText = (r.Success ? "✓ " : "✕ ") + r.Message + (r.TechnicalDetails is null ? string.Empty : $" ({r.TechnicalDetails})");
+                f.ResultText = (r.Success ? "✓ " : "✕ ") + L.T(r.Message) + (r.TechnicalDetails is null ? string.Empty : $" ({r.TechnicalDetails})");
                 f.IsSelected = false;
             }
 
-            ProgressText = "Letting the system settle…";
+            ProgressText = L.T("Letting the system settle…");
             await Task.Delay(5000, _cts.Token);
-            _after = await ThermalAnalysisService.MeasureAsync(30, new Progress<(int s, int total)>(p => ProgressText = $"Measuring again… {p.s}/{p.total} s"), _cts.Token);
+            _after = await ThermalAnalysisService.MeasureAsync(30, new Progress<(int s, int total)>(p => ProgressText = L.F("Measuring again… {0}/{1} s", p.s, p.total)), _cts.Token);
             RaiseResult();
             MainViewModel.Instance?.Backups.Reload();
             NotificationService.Instance.Show(ResultVerdict, NotificationKind.Info);
         }
         catch (OperationCanceledException)
         {
-            ProgressText = "Measurement cancelled – changes were applied.";
+            ProgressText = L.T("Measurement cancelled – changes were applied.");
         }
         finally
         {
@@ -588,7 +589,7 @@ public sealed class ThermalViewModel : PageViewModel
         TestRunning = true;
         _cts = new CancellationTokenSource();
         var last = MonitorService.Instance.Last;
-        PreTest = $"Before: Temperature {T(last?.Sensors.BestTemperature, "Thermal sensor unavailable.")} · CPU load {P(last?.CpuPercent)}";
+        PreTest = L.F("Before: Temperature {0} · CPU load {1}", T(last?.Sensors.BestTemperature, "Thermal sensor unavailable."), P(last?.CpuPercent));
         try
         {
             _test = await ThermalTestService.RunAsync(60, new Progress<(int s, int total)>(p => TestSeconds = p.s), _cts.Token);
@@ -601,7 +602,7 @@ public sealed class ThermalViewModel : PageViewModel
         }
         catch (OperationCanceledException)
         {
-            PreTest = "Test cancelled.";
+            PreTest = L.T("Test cancelled.");
         }
         finally
         {
@@ -624,26 +625,26 @@ public sealed class ThermalViewModel : PageViewModel
         Comparison.Clear();
         foreach (var r in latest)
         {
-            Comparison.Add(new ComparisonLine(r.Profile, T(r.AverageTemperature, "n/a"), T(r.MaxTemperature, "n/a"),
-                r.AverageCpuMhz is double mhz ? $"{mhz / 1000:0.00} GHz" : "n/a", P(r.AverageCpuLoad), r.Time.ToString("dd.MM. HH:mm")));
+            Comparison.Add(new ComparisonLine(L.T(r.Profile), T(r.AverageTemperature, "n/a"), T(r.MaxTemperature, "n/a"),
+                r.AverageCpuMhz is double mhz ? $"{mhz / 1000:0.00} GHz" : L.T("n/a"), P(r.AverageCpuLoad), r.Time.ToString("dd.MM. HH:mm")));
         }
 
         // Real FPS measurements (Games → MEASURE REAL FPS) per Gaming Mode profile, with the temperature measured at the same time.
         var fps = FpsHistory.Load().GroupBy(r => (r.GameName, r.Profile)).Select(g => g.OrderByDescending(r => r.Time).First()).OrderBy(r => r.GameName).ThenBy(r => r.Profile).ToList();
         foreach (var r in fps)
         {
-            Comparison.Add(new ComparisonLine($"{r.GameName} · {(r.Profile == "Normal" ? "Normal" : r.Profile)}", T(r.AverageTemperature, "n/a"), T(r.MaxTemperature, "n/a"),
-                r.AverageCpuMhz is double mhz2 ? $"{mhz2 / 1000:0.00} GHz" : "n/a", "–", r.Time.ToString("dd.MM. HH:mm"), $"{r.AverageFps:0} FPS (1 % {r.Low1:0})"));
+            Comparison.Add(new ComparisonLine($"{r.GameName} · {L.T(r.Profile)}", T(r.AverageTemperature, "n/a"), T(r.MaxTemperature, "n/a"),
+                r.AverageCpuMhz is double mhz2 ? $"{mhz2 / 1000:0.00} GHz" : L.T("n/a"), "–", r.Time.ToString("dd.MM. HH:mm"), $"{r.AverageFps:0} FPS (1 % {r.Low1:0})"));
         }
 
         foreach (var game in fps.GroupBy(r => r.GameName).Where(g => g.Count() >= 2))
         {
             var fastest = game.OrderByDescending(r => r.AverageFps).First();
             var coolest = game.Where(r => r.AverageTemperature.HasValue).OrderBy(r => r.AverageTemperature).FirstOrDefault();
-            ComparisonStatements.Add($"{game.Key}: {fastest.Profile} gives higher performance ({fastest.AverageFps:0} FPS measured).");
+            ComparisonStatements.Add(L.F("{0}: {1} gives higher performance ({2:0} FPS measured).", game.Key, L.T(fastest.Profile), fastest.AverageFps));
             if (coolest != null && coolest != fastest)
             {
-                ComparisonStatements.Add($"{game.Key}: {coolest.Profile} runs cooler ({coolest.AverageTemperature:0} °C at {coolest.AverageFps:0} FPS). You decide.");
+                ComparisonStatements.Add(L.F("{0}: {1} runs cooler ({2:0} °C at {3:0} FPS). You decide.", game.Key, L.T(coolest.Profile), coolest.AverageTemperature, coolest.AverageFps));
             }
         }
 
@@ -654,20 +655,20 @@ public sealed class ThermalViewModel : PageViewModel
             if (withClock.Count >= 2)
             {
                 var fastest = withClock.OrderByDescending(r => r.AverageCpuMhz).First();
-                ComparisonStatements.Add($"{fastest.Profile} gives higher performance potential (highest average CPU clock: {fastest.AverageCpuMhz / 1000:0.00} GHz).");
+                ComparisonStatements.Add(L.F("{0} gives higher performance potential (highest average CPU clock: {1:0.00} GHz).", L.T(fastest.Profile), fastest.AverageCpuMhz / 1000));
             }
 
             if (withTemp.Count >= 2)
             {
                 var coolest = withTemp.OrderBy(r => r.AverageTemperature).First();
-                ComparisonStatements.Add($"{coolest.Profile} runs cooler (lowest average temperature: {coolest.AverageTemperature:0} °C).");
+                ComparisonStatements.Add(L.F("{0} runs cooler (lowest average temperature: {1:0} °C).", L.T(coolest.Profile), coolest.AverageTemperature));
             }
 
-            ComparisonStatements.Add("Only compare tests with a similar workload (e.g. the same game scene). You decide which balance you prefer.");
+            ComparisonStatements.Add(L.T("Only compare tests with a similar workload (e.g. the same game scene). You decide which balance you prefer."));
         }
         else
         {
-            ComparisonStatements.Add("Run the 60 second thermal test in different Gaming Mode profiles (e.g. during a Fortnite match) to compare performance and temperature with real measurements.");
+            ComparisonStatements.Add(L.T("Run the 60 second thermal test in different Gaming Mode profiles (e.g. during a Fortnite match) to compare performance and temperature with real measurements."));
         }
     }
 
@@ -680,7 +681,7 @@ public sealed class ThermalViewModel : PageViewModel
         }
     }
 
-    private static string T(double? celsius, string fallback = "–") => celsius.HasValue ? $"{celsius:0} °C" : fallback;
+    private static string T(double? celsius, string fallback = "–") => celsius.HasValue ? $"{celsius:0} °C" : L.T(fallback);
 
     private static string P(double? percent) => percent.HasValue ? $"{percent:0} %" : "–";
 }

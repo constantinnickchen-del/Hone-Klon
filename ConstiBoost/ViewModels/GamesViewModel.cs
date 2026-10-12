@@ -14,6 +14,7 @@ using ConstiBoost.Backup;
 using ConstiBoost.Core;
 using ConstiBoost.Fortnite;
 using ConstiBoost.Games;
+using ConstiBoost.Localization;
 using ConstiBoost.Logging;
 using ConstiBoost.Models;
 using ConstiBoost.Services;
@@ -79,13 +80,13 @@ public sealed class GamesViewModel : PageViewModel
         }
     }
 
-    public string SortText => _sort switch { "Name" => "A–Z", "Size" => "Size", _ => "Last played" };
+    public string SortText => _sort switch { "Name" => "A–Z", "Size" => L.T("Size"), _ => L.T("Last played") };
 
     public string SummaryText => Games.Count == 0
-        ? "No games found yet."
-        : $"{Games.Count} games · {Formatting.Bytes(Games.Sum(g => g.SizeBytes ?? 0))} on disk · Steam {Games.Count(g => g.Source == GameSource.Steam)} · Epic {Games.Count(g => g.Source == GameSource.Epic)} · Store/Xbox {Games.Count(g => g.Source is GameSource.Store or GameSource.Xbox)} · other {Games.Count(g => g.Source is GameSource.Installed or GameSource.Minecraft)}";
+        ? L.T("No games found yet.")
+        : L.F("{0} games · {1} on disk · Steam {2} · Epic {3} · Store/Xbox {4} · other {5}", Games.Count, Formatting.Bytes(Games.Sum(g => g.SizeBytes ?? 0)), Games.Count(g => g.Source == GameSource.Steam), Games.Count(g => g.Source == GameSource.Epic), Games.Count(g => g.Source is GameSource.Store or GameSource.Xbox), Games.Count(g => g.Source is GameSource.Installed or GameSource.Minecraft));
 
-    public string FocusText => GameFocusService.Instance.State is { } s ? $"🎯 Focus active: {s.GameName} (since {s.Started:HH:mm})" : string.Empty;
+    public string FocusText => GameFocusService.Instance.State is { } s ? L.F("🎯 Focus active: {0} (since {1:HH:mm})", s.GameName, s.Started) : string.Empty;
 
     public GameDetailViewModel? Detail { get => _detail; private set => SetProperty(ref _detail, value); }
 
@@ -304,7 +305,7 @@ public sealed class GameDetailViewModel : ObservableObject
         Resolutions = new List<ResolutionOption> { new("1280×720", 1280, 720), new("1600×900", 1600, 900), new("1920×1080", 1920, 1080) };
         if (!Resolutions.Any(r => r.Width == w && r.Height == h) && w >= 1024)
         {
-            Resolutions.Add(new ResolutionOption($"{w}×{h} (native)", w, h));
+            Resolutions.Add(new ResolutionOption(L.F("{0}×{1} (native)", w, h), w, h));
         }
 
         _resolution = Resolutions.FirstOrDefault(r => r.Width == w && r.Height == h) ?? Resolutions[2];
@@ -369,11 +370,11 @@ public sealed class GameDetailViewModel : ObservableObject
         try
         {
             System.Windows.Clipboard.SetText(text.Split(' ')[0]);
-            NotificationService.Instance.Show($"Copied: {text.Split(' ')[0]} – paste it into the browser's address bar.", NotificationKind.Info);
+            NotificationService.Instance.Show(L.F("Copied: {0} – paste it into the browser's address bar.", text.Split(' ')[0]), NotificationKind.Info);
         }
         catch
         {
-            NotificationService.Instance.Show("Clipboard busy – type the address manually: " + text, NotificationKind.Warning);
+            NotificationService.Instance.Show(L.F("Clipboard busy – type the address manually: {0}", text), NotificationKind.Warning);
         }
     }
 
@@ -402,12 +403,12 @@ public sealed class GameDetailViewModel : ObservableObject
             var report = await BottleneckService.AnalyzeAsync(12, progress, System.Threading.CancellationToken.None, Game);
             Bottleneck = report;
             BottleneckStatus = report.Findings.Count == 0
-                ? report.Summary + "\nNo clear limit found – run it again while you actively play."
+                ? report.Summary + "\n" + L.T("No clear limit found – run it again while you actively play.")
                 : report.Summary;
         }
         catch (Exception ex)
         {
-            BottleneckStatus = "Analysis failed: " + Safe.Describe(ex);
+            BottleneckStatus = L.F("Analysis failed: {0}", Safe.Describe(ex));
         }
         finally
         {
@@ -448,7 +449,7 @@ public sealed class GameDetailViewModel : ObservableObject
         {
             int s = RenderScale;
             double pixels = s / 100.0 * (s / 100.0) * 100;
-            return s >= 100 ? "Full window (maximized) – most pixels, lowest FPS." : $"Window {s} % of the screen → ~{pixels:0} % of the pixels to render. Press F11 in the window for borderless full screen only if you want 100 % again.";
+            return s >= 100 ? L.T("Full window (maximized) – most pixels, lowest FPS.") : L.F("Window {0} % of the screen → ~{1:0} % of the pixels to render. Press F11 in the window for borderless full screen only if you want 100 % again.", s, pixels);
         }
     }
 
@@ -491,7 +492,7 @@ public sealed class GameDetailViewModel : ObservableObject
                 "Save anything you are typing in the browser first.",
                 "Choose 'Cancel' to just open the game in the running browser without the flags.",
             };
-            if (DialogService.Confirm($"Restart {Game.Publisher} for full GPU speed?", "The browser is running, so the speed flags cannot be applied right now.", details, "RESTART BROWSER"))
+            if (DialogService.Confirm(L.F("Restart {0} for full GPU speed?", Game.Publisher), "The browser is running, so the speed flags cannot be applied right now.", details, "RESTART BROWSER"))
             {
                 IsBusy = true;
                 try
@@ -505,7 +506,7 @@ public sealed class GameDetailViewModel : ObservableObject
 
                 if (!fresh)
                 {
-                    NotificationService.Instance.Show($"{Game.Publisher} is still running in the background (browser settings → System → 'Continue running background apps' OFF helps). The game was opened without the start flags.", NotificationKind.Warning);
+                    NotificationService.Instance.Show(L.F("{0} is still running in the background (browser settings → System → 'Continue running background apps' OFF helps). The game was opened without the start flags.", Game.Publisher), NotificationKind.Warning);
                 }
             }
         }
@@ -555,17 +556,17 @@ public sealed class GameDetailViewModel : ObservableObject
         {
             if (History.Count < 2)
             {
-                return History.Count == 1 ? "Measure again after a change to see Before / After." : string.Empty;
+                return History.Count == 1 ? L.T("Measure again after a change to see Before / After.") : string.Empty;
             }
 
             var after = History[0];
             var before = History[1];
             double diff = after.AverageFps - before.AverageFps;
             double pct = before.AverageFps > 0 ? diff / before.AverageFps * 100 : 0;
-            string verdict = Math.Abs(pct) < 3 ? "No measurable difference (within normal variation)." : diff > 0 ? "Faster than before." : "Slower than before.";
-            return $"Before ({before.TimeText}, {before.Setting}, {before.Profile}): {before.AverageFps:0} FPS · 1 % low {before.Low1:0}\n" +
-                   $"After ({after.TimeText}, {after.Setting}, {after.Profile}): {after.AverageFps:0} FPS · 1 % low {after.Low1:0}\n" +
-                   $"Difference: {diff:+0;-0;0} FPS ({pct:+0.0;-0.0;0} %) – {verdict}";
+            string verdict = Math.Abs(pct) < 3 ? L.T("No measurable difference (within normal variation).") : diff > 0 ? L.T("Faster than before.") : L.T("Slower than before.");
+            return L.F("Before ({0}, {1}, {2}): {3:0} FPS · 1 % low {4:0}", before.TimeText, L.T(before.Setting), L.T(before.Profile), before.AverageFps, before.Low1) + "\n" +
+                   L.F("After ({0}, {1}, {2}): {3:0} FPS · 1 % low {4:0}", after.TimeText, L.T(after.Setting), L.T(after.Profile), after.AverageFps, after.Low1) + "\n" +
+                   L.F("Difference: {0:+0;-0;0} FPS ({1:+0.0;-0.0;0} %) – {2}", diff, pct, verdict);
         }
     }
 
@@ -615,11 +616,11 @@ public sealed class GameDetailViewModel : ObservableObject
         });
         if (running)
         {
-            DialogService.Info("Close the game first", $"{Game.Name} saves its settings when it exits and would overwrite the change. Close it completely, then apply again.");
+            DialogService.Info("Close the game first", L.F("{0} saves its settings when it exits and would overwrite the change. Close it completely, then apply again.", Game.Name));
             return;
         }
 
-        if (!DialogService.Confirm($"Apply {preset.Name} to {Game.Name}?", preset.Description, new[] { "The settings file is backed up first (Backups → RESTORE).", _editor.FileInfo }, "APPLY"))
+        if (!DialogService.Confirm(L.F("Apply {0} to {1}?", L.T(preset.Name), Game.Name), preset.Description, new[] { "The settings file is backed up first (Backups → RESTORE).", _editor.FileInfo }, "APPLY"))
         {
             return;
         }
@@ -636,6 +637,7 @@ public sealed class GameDetailViewModel : ObservableObject
     private string _tunerAdvice = string.Empty;
     private Func<BackupSession, OperationResult>? _tunerAction;
     private string _tunerActionText = string.Empty;
+    private string _tunerStepText = string.Empty;
 
     public int TargetFps { get => _targetFps; set { if (SetProperty(ref _targetFps, Math.Clamp(value, 30, 240))) UpdateTuner(); } }
     public string TunerAdvice { get => _tunerAdvice; private set => SetProperty(ref _tunerAdvice, value); }
@@ -647,6 +649,7 @@ public sealed class GameDetailViewModel : ObservableObject
     {
         _tunerAction = null;
         TunerActionText = string.Empty;
+        _tunerStepText = string.Empty;
         if (!Game.IsFortnite)
         {
             return;
@@ -656,11 +659,11 @@ public sealed class GameDetailViewModel : ObservableObject
         var cfg = FortniteConfigService.Read();
         if (last is null)
         {
-            TunerAdvice = "Step 1: press MEASURE REAL FPS and play a normal match for 60 s. The tuner then tells you exactly what to change next.";
+            TunerAdvice = L.T("Step 1: press MEASURE REAL FPS and play a normal match for 60 s. The tuner then tells you exactly what to change next.");
         }
         else if (!cfg.Exists)
         {
-            TunerAdvice = "Fortnite's settings file was not found – start Fortnite once.";
+            TunerAdvice = L.T("Fortnite's settings file was not found – start Fortnite once.");
         }
         else
         {
@@ -669,47 +672,53 @@ public sealed class GameDetailViewModel : ObservableObject
             double res = double.TryParse(cfg.Get("sg.ResolutionQuality"), NumberStyles.Float, CultureInfo.InvariantCulture, out double r) ? r : 100;
             bool anyHigh = new[] { "sg.ViewDistanceQuality", "sg.ShadowQuality", "sg.EffectsQuality", "sg.PostProcessQuality", "sg.TextureQuality", "sg.FoliageQuality", "sg.ShadingQuality", "sg.AntiAliasingQuality", "sg.GlobalIlluminationQuality", "sg.ReflectionQuality" }
                 .Any(k => double.TryParse(cfg.Get(k), NumberStyles.Float, CultureInfo.InvariantCulture, out double v) && v > 0);
-            string measured = $"Last measurement ({last.TimeText}): {avg:0} FPS, 1 % low {low:0}. Target: {TargetFps} FPS.";
+            string measured = L.F("Last measurement ({0}): {1:0} FPS, 1 % low {2:0}. Target: {3} FPS.", last.TimeText, avg, low, TargetFps);
             if (avg < TargetFps * 0.95)
             {
                 if (cfg.RenderingMode != "Performance" && (ScanService.Instance.Last?.Profile.IsLowPowerIntegrated ?? true))
                 {
-                    TunerAdvice = measured + "\nNext step: switch Rendering Mode to PERFORMANCE in Fortnite (Settings > Video > Advanced Graphics) and restart the game – the biggest single gain on integrated graphics. Then measure again.";
+                    TunerAdvice = measured + "\n" + L.T("Next step: switch Rendering Mode to PERFORMANCE in Fortnite (Settings > Video > Advanced Graphics) and restart the game – the biggest single gain on integrated graphics. Then measure again.");
                 }
                 else if (anyHigh)
                 {
-                    TunerAdvice = measured + "\nNext step: set all graphics groups to Low (MAX FPS preset). Then play and measure again.";
-                    TunerActionText = "APPLY: all graphics Low";
+                    TunerAdvice = measured + "\n" + L.T("Next step: set all graphics groups to Low (MAX FPS preset). Then play and measure again.");
+                    SetTunerStep(L.T("all graphics Low"));
                     _tunerAction = b => FortniteConfigService.Apply(FortnitePreset.All[0], new PresetOptions((int)res, true, true, null, false), b).result;
                 }
                 else if (res > 65)
                 {
                     int next = (int)Math.Max(60, Math.Round((res - 10) / 5) * 5);
-                    TunerAdvice = measured + $"\nNext step: lower 3D resolution from {res:0} % to {next} % (sharper image loss is small, GPU load drops a lot). Then measure again.";
-                    TunerActionText = $"APPLY: 3D resolution {next} %";
+                    TunerAdvice = measured + "\n" + L.F("Next step: lower 3D resolution from {0:0} % to {1} % (sharper image loss is small, GPU load drops a lot). Then measure again.", res, next);
+                    SetTunerStep(L.F("3D resolution {0} %", next));
                     _tunerAction = b => FortniteConfigService.SetValues(new Dictionary<string, string> { ["sg.ResolutionQuality"] = next.ToString("0.000000", CultureInfo.InvariantCulture) }, b, "FPS Tuner");
                 }
                 else
                 {
-                    TunerAdvice = measured + "\nYour PC is at its limit for this target with these settings. Options: lower the target, use 1280×720 in-game, close background apps (Game Focus), keep the laptop plugged in and check the Thermal page for heat throttling.";
+                    TunerAdvice = measured + "\n" + L.T("Your PC is at its limit for this target with these settings. Options: lower the target, use 1280×720 in-game, close background apps (Game Focus), keep the laptop plugged in and check the Thermal page for heat throttling.");
                 }
             }
             else if (avg >= TargetFps * 1.15 && low >= TargetFps * 0.75 && res < 100)
             {
                 int next = (int)Math.Min(100, Math.Round((res + 10) / 5) * 5);
-                TunerAdvice = measured + $"\nYou have headroom ✓ – you can raise 3D resolution to {next} % for a sharper image, or cap FPS at {TargetFps} for cooler, smoother play.";
-                TunerActionText = $"APPLY: 3D resolution {next} %";
+                TunerAdvice = measured + "\n" + L.F("You have headroom ✓ – you can raise 3D resolution to {0} % for a sharper image, or cap FPS at {1} for cooler, smoother play.", next, TargetFps);
+                SetTunerStep(L.F("3D resolution {0} %", next));
                 _tunerAction = b => FortniteConfigService.SetValues(new Dictionary<string, string> { ["sg.ResolutionQuality"] = next.ToString("0.000000", CultureInfo.InvariantCulture) }, b, "FPS Tuner");
             }
             else
             {
-                TunerAdvice = measured + $"\nTarget reached ✓. Tip: cap FPS at {TargetFps} – more even frame times and less heat.";
-                TunerActionText = $"APPLY: FPS limit {TargetFps}";
+                TunerAdvice = measured + "\n" + L.F("Target reached ✓. Tip: cap FPS at {0} – more even frame times and less heat.", TargetFps);
+                SetTunerStep(L.F("FPS limit {0}", TargetFps));
                 _tunerAction = b => FortniteConfigService.SetValues(new Dictionary<string, string> { ["FrameRateLimit"] = TargetFps.ToString("0.000000", CultureInfo.InvariantCulture) }, b, "FPS Tuner");
             }
         }
 
         OnPropertyChanged(nameof(HasTunerAction));
+    }
+
+    private void SetTunerStep(string step)
+    {
+        _tunerStepText = step;
+        TunerActionText = L.F("APPLY: {0}", step);
     }
 
     private void ApplyTunerStep()
@@ -719,7 +728,7 @@ public sealed class GameDetailViewModel : ObservableObject
             return;
         }
 
-        if (!DialogService.Confirm("Apply tuner step?", TunerActionText.Replace("APPLY: ", string.Empty), new[] { "Fortnite must be closed. GameUserSettings.ini is backed up first.", "Afterwards: start Fortnite, play the same situation and press MEASURE REAL FPS again." }, "APPLY"))
+        if (!DialogService.Confirm("Apply tuner step?", _tunerStepText, new[] { "Fortnite must be closed. GameUserSettings.ini is backed up first.", "Afterwards: start Fortnite, play the same situation and press MEASURE REAL FPS again." }, "APPLY"))
         {
             return;
         }
@@ -745,8 +754,8 @@ public sealed class GameDetailViewModel : ObservableObject
 
     private async Task MeasureAsync(int seconds)
     {
-        if (!DialogService.Confirm($"Measure real FPS in {Game.Name}?",
-                $"ConstiBoost records the frames Windows reports for the game (DirectX present events – no injection, anti-cheat safe). Windows only allows this with administrator rights, so a UAC prompt appears once.\n\nStart the game, then play normally for {seconds} seconds – measuring starts automatically as soon as the game renders.",
+        if (!DialogService.Confirm(L.F("Measure real FPS in {0}?", Game.Name),
+                L.F("ConstiBoost records the frames Windows reports for the game (DirectX present events – no injection, anti-cheat safe). Windows only allows this with administrator rights, so a UAC prompt appears once.\n\nStart the game, then play normally for {0} seconds – measuring starts automatically as soon as the game renders.", seconds),
                 new[] { "Tip: measure the same situation each time (e.g. a Creative map or the same match phase) for a fair Before / After." }, "START MEASURING"))
         {
             return;
@@ -777,7 +786,7 @@ public sealed class GameDetailViewModel : ObservableObject
                 new Progress<string>(t => MeasureText = t), _measureCts.Token);
             if (result is null)
             {
-                MeasureText = FpsCaptureService.Instance.LastError ?? "Measurement not possible.";
+                MeasureText = FpsCaptureService.Instance.LastError ?? L.T("Measurement not possible.");
                 NotificationService.Instance.Show(MeasureText, NotificationKind.Warning);
                 return;
             }
@@ -803,7 +812,7 @@ public sealed class GameDetailViewModel : ObservableObject
                 AverageCpuMhz = clocks.Count > 0 ? clocks.Average() : null,
             });
             ActionLog.Success($"FPS measured: {Game.Name}", null, result.Summary);
-            MeasureText = $"Measured {result.ProcessName} for {result.Seconds:0} s: {result.Summary}";
+            MeasureText = L.F("Measured {0} for {1:0} s: {2}", result.ProcessName, result.Seconds, result.Summary);
             foreach (string n in new[] { nameof(HasResult), nameof(ResultAvg), nameof(ResultLow1), nameof(ResultLow01), nameof(ResultStutters), nameof(ResultFrameTime), nameof(ResultChart), nameof(ResultChartMax) })
             {
                 OnPropertyChanged(n);
@@ -816,7 +825,7 @@ public sealed class GameDetailViewModel : ObservableObject
         }
         catch (OperationCanceledException)
         {
-            MeasureText = "Measurement cancelled.";
+            MeasureText = L.T("Measurement cancelled.");
         }
         finally
         {
@@ -832,9 +841,9 @@ public sealed class GameDetailViewModel : ObservableObject
 
     public bool HasEstimate => _profile != null && _context?.Gpu != null;
     public string EstimateHeader => _profile is null
-        ? "No FPS estimate data for this game yet."
-        : _context?.Gpu is null ? "Your graphics chip is not in the estimate database – no FPS estimate shown." : $"Estimated FPS for {_profile.Name} on this PC";
-    public string Tip => _profile?.Tip ?? "Lower resolution, shadows and effects first – they cost the most on integrated graphics.";
+        ? L.T("No FPS estimate data for this game yet.")
+        : _context?.Gpu is null ? L.T("Your graphics chip is not in the estimate database – no FPS estimate shown.") : L.F("Estimated FPS for {0} on this PC", _profile.Name);
+    public string Tip => L.T(_profile?.Tip ?? "Lower resolution, shadows and effects first – they cost the most on integrated graphics.");
     public string CurrentSetting { get => _currentSetting; private set => SetProperty(ref _currentSetting, value); }
 
     public ResolutionOption Resolution
@@ -903,13 +912,13 @@ public sealed class GameDetailViewModel : ObservableObject
             AutoProfileService.Instance.Save(AutoProfile);
             OnPropertyChanged();
             NotificationService.Instance.Show(value
-                ? $"Auto-Focus for {Game.Name} is on: when the game starts, ConstiBoost applies these options automatically (ConstiBoost must be running, e.g. in the tray)."
-                : $"Auto-Focus for {Game.Name} is off.", NotificationKind.Info);
+                ? L.F("Auto-Focus for {0} is on: when the game starts, ConstiBoost applies these options automatically (ConstiBoost must be running, e.g. in the tray).", Game.Name)
+                : L.F("Auto-Focus for {0} is off.", Game.Name), NotificationKind.Info);
         }
     }
 
     public bool IsFocused => GameFocusService.Instance.FocusedGameId == Game.Id;
-    public string FocusButtonText => IsFocused ? "STOP FOCUS" : "🎯 FOCUS ON THIS GAME";
+    public string FocusButtonText => IsFocused ? L.T("STOP FOCUS") : L.T("🎯 FOCUS ON THIS GAME");
 
     public void Activate()
     {
@@ -971,7 +980,7 @@ public sealed class GameDetailViewModel : ObservableObject
         var cfg = FortniteConfigService.Read();
         if (!cfg.Exists)
         {
-            CurrentSetting = "Fortnite settings file not found – start Fortnite once.";
+            CurrentSetting = L.T("Fortnite settings file not found – start Fortnite once.");
             return;
         }
 
@@ -995,7 +1004,7 @@ public sealed class GameDetailViewModel : ObservableObject
             var match = Resolutions.FirstOrDefault(r => r.Width == rx && r.Height == ry);
             if (match is null)
             {
-                match = new ResolutionOption($"{rx}×{ry} (in-game)", rx, ry);
+                match = new ResolutionOption(L.F("{0}×{1} (in-game)", rx, ry), rx, ry);
                 Resolutions.Add(match);
                 OnPropertyChanged(nameof(Resolutions));
             }
@@ -1004,7 +1013,7 @@ public sealed class GameDetailViewModel : ObservableObject
             OnPropertyChanged(nameof(Resolution));
         }
 
-        CurrentSetting = $"Your current Fortnite settings: {mode} · ~{_fortnitePreset} · {_resolution.Label} · 3D resolution {_scale} %";
+        CurrentSetting = L.F("Your current Fortnite settings: {0} · ~{1} · {2} · 3D resolution {3} %", mode, L.T(_fortnitePreset), _resolution.Label, _scale);
     }
 
     private void UpdateEstimates()
@@ -1034,7 +1043,7 @@ public sealed class GameDetailViewModel : ObservableObject
             {
                 double mid = (refEstimate.Low + refEstimate.High) / 2.0;
                 factor = Math.Clamp(reference.AverageFps / Math.Max(1, mid), 0.4, 2.5);
-                CalibrationText = $"✓ Calibrated with your real measurement from {reference.TimeText} ({reference.AverageFps:0} FPS at {reference.Setting}) – correction ×{factor:0.00}.";
+                CalibrationText = L.F("✓ Calibrated with your real measurement from {0} ({1:0} FPS at {2}) – correction ×{3:0.00}.", reference.TimeText, reference.AverageFps, L.T(reference.Setting), factor);
             }
         }
 
@@ -1075,7 +1084,7 @@ public sealed class GameDetailViewModel : ObservableObject
             if (IsFocused)
             {
                 var stopMessages = await GameFocusService.Instance.StopAsync();
-                NotificationService.Instance.Show(stopMessages.Count == 0 ? "Game Focus stopped – everything restored." : "Game Focus stopped with notes: " + string.Join("; ", stopMessages),
+                NotificationService.Instance.Show(stopMessages.Count == 0 ? L.T("Game Focus stopped – everything restored.") : L.F("Game Focus stopped with notes: {0}", string.Join("; ", stopMessages)),
                     stopMessages.Count == 0 ? NotificationKind.Success : NotificationKind.Warning);
                 return;
             }
@@ -1083,27 +1092,27 @@ public sealed class GameDetailViewModel : ObservableObject
             var apps = Apps.Where(a => a.IsSelected).ToList();
             var details = new List<string>
             {
-                $"Gaming Mode profile: {GamingModeService.ProfileName(_focusProfile)} (Game Mode ON, power settings for the profile)",
+                L.F("Gaming Mode profile: {0} (Game Mode ON, power settings for the profile)", L.T(GamingModeService.ProfileName(_focusProfile))),
             };
-            details.AddRange(apps.Select(a => "Close " + a.DisplayName));
+            details.AddRange(apps.Select(a => L.F("Close {0}", a.DisplayName)));
             if (LowerPriority) details.Add("Lower priority of browsers/launchers still running");
-            if (BoostPriority) details.Add($"{Game.Name}: priority 'Above normal' while it runs (anti-cheat may block this – harmless)");
-            if (GpuPreference && Game.MainExecutable != null) details.Add($"Windows graphics preference 'High performance' for {Path.GetFileName(Game.MainExecutable)}");
+            if (BoostPriority) details.Add(L.F("{0}: priority 'Above normal' while it runs (anti-cheat may block this – harmless)", Game.Name));
+            if (GpuPreference && Game.MainExecutable != null) details.Add(L.F("Windows graphics preference 'High performance' for {0}", Path.GetFileName(Game.MainExecutable)));
             if (SettingsService.Instance.Current.FocusDisableThrottling) details.Add("No Windows efficiency mode (EcoQoS) for the game processes");
             if (Game.IsBrowser && SettingsService.Instance.Current.FocusLowerOtherTabs) details.Add("Other browser tabs: priority 'Below normal' (extensions untouched)");
             if (SettingsService.Instance.Current.FocusPauseSearch) details.Add("Pause Windows Search indexing (UAC prompt; restarted on Stop)");
             if (Game.IsBrowser) details.Add("Browser: priority 'Above normal' only for the browser GPU process and the game tab (busiest tab) – other tabs stay normal");
             if (MuteNotifications) details.Add("Mute Windows notification banners");
-            if (CapFps && Game.IsFortnite) details.Add($"Fortnite frame rate limit {FpsCap} FPS (only while Fortnite is closed)");
+            if (CapFps && Game.IsFortnite) details.Add(L.F("Fortnite frame rate limit {0} FPS (only while Fortnite is closed)", FpsCap));
             details.Add("Everything is restored when you press STOP FOCUS.");
-            if (!DialogService.Confirm($"Focus on {Game.Name}?", "ConstiBoost puts all safe system resources behind this game:", details, "START FOCUS"))
+            if (!DialogService.Confirm(L.F("Focus on {0}?", Game.Name), "ConstiBoost puts all safe system resources behind this game:", details, "START FOCUS"))
             {
                 return;
             }
 
             var messages = await GameFocusService.Instance.StartAsync(Game, new FocusOptions(_focusProfile, apps, LowerPriority, BoostPriority, GpuPreference, MuteNotifications, CapFps ? FpsCap : null, Game.IsBrowser,
                 SettingsService.Instance.Current.FocusDisableThrottling, SettingsService.Instance.Current.FocusLowerOtherTabs, SettingsService.Instance.Current.FocusPauseSearch));
-            NotificationService.Instance.Show(messages.Count == 0 ? $"🎯 Focus on {Game.Name} active. Have fun!" : "Focus active with notes: " + string.Join("; ", messages),
+            NotificationService.Instance.Show(messages.Count == 0 ? L.F("🎯 Focus on {0} active. Have fun!", Game.Name) : L.F("Focus active with notes: {0}", string.Join("; ", messages)),
                 messages.Count == 0 ? NotificationKind.Success : NotificationKind.Warning);
             await LoadAppsAsync();
         }
@@ -1116,7 +1125,7 @@ public sealed class GameDetailViewModel : ObservableObject
 
     private void Uninstall()
     {
-        if (!DialogService.Confirm($"Uninstall {Game.Name}?",
+        if (!DialogService.Confirm(L.F("Uninstall {0}?", Game.Name),
                 "ConstiBoost starts the official uninstaller (Steam, Epic or the game's own uninstaller). Game files are never deleted by ConstiBoost itself. Cloud saves are usually kept, local saves may be removed by the uninstaller.",
                 new[] { Game.InstallPath, Game.SizeText }, "UNINSTALL", danger: true))
         {

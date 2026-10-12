@@ -23,7 +23,7 @@ public sealed class StartupViewModel : PageViewModel
     }
 
     public override string Key => "startup";
-    public override string Title => "Startup";
+    public override string Title => Localization.L.T("Startup");
     public override string Icon => "";
 
     public ObservableCollection<StartupEntry> Entries { get; } = new();

@@ -35,7 +35,7 @@ public sealed class HardwareViewModel : PageViewModel
     }
 
     public override string Key => "hardware";
-    public override string Title => "Hardware";
+    public override string Title => Localization.L.T("Hardware");
     public override string Icon => "";
 
     public ProcessesViewModel Processes { get; }

@@ -14,7 +14,18 @@ namespace ConstiBoost;
 
 public partial class App : Application
 {
+    private const string RestartArgument = "--restart";
     private Mutex? _singleInstance;
+
+    /// <summary>Set before closing to start ConstiBoost again after exit (language change).</summary>
+    public static bool RestartRequested { get; set; }
+
+    /// <summary>Closes ConstiBoost (same flow as tray → Exit) and starts it again.</summary>
+    public static void Restart()
+    {
+        RestartRequested = true;
+        TrayService.Instance.Exit();
+    }
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -28,9 +39,22 @@ public partial class App : Application
         }
 
         _singleInstance = new Mutex(true, @"Local\ConstiBoost.SingleInstance", out bool isFirst);
+        if (!isFirst && e.Args.Contains(RestartArgument))
+        {
+            // Restart after a language change: wait until the previous instance has exited.
+            try
+            {
+                isFirst = _singleInstance.WaitOne(TimeSpan.FromSeconds(15));
+            }
+            catch (AbandonedMutexException)
+            {
+                isFirst = true;
+            }
+        }
+
         if (!isFirst)
         {
-            MessageBox.Show("ConstiBoost is already running.", "ConstiBoost", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show(Localization.L.T("ConstiBoost is already running."), "ConstiBoost", MessageBoxButton.OK, MessageBoxImage.Information);
             Shutdown(0);
             return;
         }
@@ -47,6 +71,8 @@ public partial class App : Application
         AppLog.Info("ConstiBoost started");
 
         SettingsService.Instance.Load();
+        Localization.L.Init(SettingsService.Instance.Current.Language);
+        Localization.AutoTranslate.Register();
         ThemeService.Apply(SettingsService.Instance.Current.Theme, SettingsService.Instance.Current.AccentColor);
         GamingModeService.Instance.LoadPersistedState();
         Games.GameFocusService.Instance.LoadPersisted();
@@ -91,7 +117,16 @@ public partial class App : Application
             OverlayService.Instance.Hide();
             HotkeyService.Instance.Dispose();
             TrayService.Instance.Dispose();
+            if (RestartRequested && _singleInstance != null)
+            {
+                _singleInstance.ReleaseMutex();
+            }
+
             _singleInstance?.Dispose();
+            if (RestartRequested)
+            {
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(Core.AppPaths.ExecutablePath, RestartArgument) { UseShellExecute = false })?.Dispose();
+            }
         }
         catch
         {

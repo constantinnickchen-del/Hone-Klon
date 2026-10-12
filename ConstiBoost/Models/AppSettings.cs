@@ -36,4 +36,5 @@ public sealed class AppSettings
     public bool FocusDisableThrottling { get; set; } = true;
     public bool FocusLowerOtherTabs { get; set; } = true;
     public bool FocusPauseSearch { get; set; }
+    public string Language { get; set; } = "auto";
 }

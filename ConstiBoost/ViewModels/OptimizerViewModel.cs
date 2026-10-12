@@ -50,7 +50,7 @@ public sealed class OptimizerViewModel : PageViewModel
     }
 
     public override string Key => "optimizer";
-    public override string Title => "Optimizer";
+    public override string Title => Localization.L.T("Optimizer");
     public override string Icon => "";
 
     public ObservableCollection<Optimization> Optimizations { get; }

@@ -68,7 +68,7 @@ public sealed class ThermalViewModel : PageViewModel
     }
 
     public override string Key => "thermal";
-    public override string Title => "Thermal";
+    public override string Title => Localization.L.T("Thermal");
     public override string Icon => "";
 
     public ICommand ScanCommand { get; }

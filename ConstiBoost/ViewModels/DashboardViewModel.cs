@@ -32,7 +32,7 @@ public sealed class DashboardViewModel : PageViewModel
     }
 
     public override string Key => "dashboard";
-    public override string Title => "Dashboard";
+    public override string Title => Localization.L.T("Dashboard");
     public override string Icon => "";
 
     public ICommand RescanCommand { get; }

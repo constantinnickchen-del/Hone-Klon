@@ -49,10 +49,28 @@ public sealed class SettingsViewModel : PageViewModel
     }
 
     public override string Key => "settings";
-    public override string Title => "Settings";
+    public override string Title => Localization.L.T("Settings");
     public override string Icon => "";
 
     public List<AccentOption> Accents { get; }
+
+    private readonly string _startLanguage = SettingsService.Instance.Current.Language;
+
+    public bool IsGerman { get => _settings.Current.Language == "de"; set { if (value) SetLanguage("de"); } }
+    public bool IsEnglish { get => _settings.Current.Language == "en"; set { if (value) SetLanguage("en"); } }
+    public bool IsAutoLanguage { get => _settings.Current.Language is not ("de" or "en"); set { if (value) SetLanguage("auto"); } }
+    public bool LanguageChanged => _settings.Current.Language != _startLanguage;
+    public ICommand RestartCommand => new RelayCommand(App.Restart);
+
+    private void SetLanguage(string language)
+    {
+        _settings.Current.Language = language;
+        _settings.Save();
+        OnPropertyChanged(nameof(IsGerman));
+        OnPropertyChanged(nameof(IsEnglish));
+        OnPropertyChanged(nameof(IsAutoLanguage));
+        OnPropertyChanged(nameof(LanguageChanged));
+    }
 
     public ICommand SelectAccentCommand { get; }
     public ICommand ShowWelcomeCommand { get; }

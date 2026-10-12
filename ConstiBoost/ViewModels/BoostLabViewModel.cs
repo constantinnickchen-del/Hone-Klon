@@ -40,7 +40,7 @@ public sealed class BoostLabViewModel : PageViewModel
     }
 
     public override string Key => "boostlab";
-    public override string Title => "Boost Lab";
+    public override string Title => Localization.L.T("Boost Lab");
     public override string Icon => "";
 
     public ObservableCollection<HardwareInsight> Insights { get; } = new();

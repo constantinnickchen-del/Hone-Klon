@@ -42,7 +42,7 @@ public sealed class BackupsViewModel : PageViewModel
     }
 
     public override string Key => "backups";
-    public override string Title => "Backups";
+    public override string Title => Localization.L.T("Backups");
     public override string Icon => "";
 
     public ObservableCollection<BackupItem> Items { get; } = new();

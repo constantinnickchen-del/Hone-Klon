@@ -38,7 +38,7 @@ public sealed class FpsBoostViewModel : PageViewModel
     }
 
     public override string Key => "fpsboost";
-    public override string Title => "FPS Boost";
+    public override string Title => Localization.L.T("FPS Boost");
     public override string Icon => "";
 
     public IReadOnlyList<FpsBoostFeature> Features { get; }

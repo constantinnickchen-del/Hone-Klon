@@ -55,7 +55,7 @@ public sealed class GamesViewModel : PageViewModel
     }
 
     public override string Key => "games";
-    public override string Title => "Games";
+    public override string Title => Localization.L.T("Games");
     public override string Icon => "";
 
     public ObservableCollection<GameInfo> Games { get; } = new();

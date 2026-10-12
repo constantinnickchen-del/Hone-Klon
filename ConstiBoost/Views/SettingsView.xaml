@@ -5,6 +5,21 @@
         <StackPanel Margin="0,0,0,32" MaxWidth="900" HorizontalAlignment="Left">
             <TextBlock Text="Settings" Style="{StaticResource Text.H1}" Margin="0,0,0,20" />
 
+            <Border Style="{StaticResource Card}" Margin="0,0,0,12" BorderBrush="{DynamicResource AccentBrush}">
+                <StackPanel>
+                    <TextBlock Text="🌍 Language / Sprache" Style="{StaticResource Text.H3}" />
+                    <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                        <RadioButton Style="{StaticResource Segment}" GroupName="Language" Content="🇩🇪 Deutsch" IsChecked="{Binding IsGerman}" />
+                        <RadioButton Style="{StaticResource Segment}" GroupName="Language" Content="🇬🇧 English" IsChecked="{Binding IsEnglish}" />
+                        <RadioButton Style="{StaticResource Segment}" GroupName="Language" Content="Automatic (Windows language)" IsChecked="{Binding IsAutoLanguage}" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,10,0,0" Visibility="{Binding LanguageChanged, Converter={StaticResource BoolToVis}}">
+                        <TextBlock Text="The new language is used after a restart of ConstiBoost." Style="{StaticResource Text.Body}" VerticalAlignment="Center" Margin="0,0,12,0" />
+                        <Button Style="{StaticResource AccentButton}" Content="RESTART NOW" Command="{Binding RestartCommand}" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
             <Border Style="{StaticResource Card}" Margin="0,0,0,12">
                 <StackPanel>
                     <TextBlock Text="Theme" Style="{StaticResource Text.H3}" />

@@ -13,6 +13,7 @@ public sealed class NotificationService
 
     public void Show(string message, NotificationKind kind = NotificationKind.Info)
     {
+        message = Localization.L.T(message);
         if (!SettingsService.Instance.Current.Notifications && kind is NotificationKind.Info or NotificationKind.Success)
         {
             return;

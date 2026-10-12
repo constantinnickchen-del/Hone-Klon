@@ -78,7 +78,7 @@ public sealed class FortniteViewModel : PageViewModel
     }
 
     public override string Key => "fortnite";
-    public override string Title => "Fortnite";
+    public override string Title => Localization.L.T("Fortnite");
     public override string Icon => "";
 
     public ObservableCollection<PresetViewModel> Presets { get; }

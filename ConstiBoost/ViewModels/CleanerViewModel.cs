@@ -37,7 +37,7 @@ public sealed class CleanerViewModel : PageViewModel
     }
 
     public override string Key => "cleaner";
-    public override string Title => "Cleaner";
+    public override string Title => Localization.L.T("Cleaner");
     public override string Icon => "";
 
     public ObservableCollection<CleanupCategory> Categories { get; }

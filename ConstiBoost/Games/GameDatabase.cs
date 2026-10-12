@@ -27,7 +27,8 @@ public static class GameDatabase
         new("valorant", "VALORANT", 90, 140, 320, Standard, "VALORANT is CPU-heavy – close background apps; 'Limit FPS' helps temperatures a lot."),
         new("cs2", "Counter-Strike 2", 45, 70, 260, Standard, "Use FSR (Performance) on integrated graphics and 'Low' shader detail."),
         new("lol", "League of Legends", 90, 140, 260, Standard, "Very light game – an FPS cap of 60–144 keeps the laptop much cooler."),
-        new("minecraft", "Minecraft", 60, 110, 240, Standard, "Lower render distance (8–12 chunks); Sodium/OptiFine help Java Edition a lot."),
+        new("minecraft", "Minecraft: Java Edition", 60, 110, 240, Standard, "Lower render distance (8–12 chunks); Sodium/OptiFine help Java Edition a lot. Give Java 2–4 GB RAM in the launcher – more does not help."),
+        new("minecraftbedrock", "Minecraft (Bedrock)", 70, 120, 260, Standard, "Bedrock runs much smoother than Java on integrated graphics. Lower render distance and turn off 'Fancy graphics' and 'Beautiful skies'."),
         new("roblox", "Roblox", 60, 100, 240, Standard, "Use graphics level 1–4 manually instead of 'Automatic'."),
         new("rocketleague", "Rocket League", 60, 90, 250, Standard, "Use 'Performance' render quality and lower 3D resolution slightly."),
         new("gta5", "Grand Theft Auto V", 38, 52, 140, Standard, "Lower 'Grass' and 'Population density' first – they are CPU/GPU heavy."),
@@ -50,7 +51,7 @@ public static class GameDatabase
     private static readonly (Regex pattern, string key)[] Matchers =
     {
         (R(@"^Fortnite$"), "fortnite"), (R(@"VALORANT"), "valorant"), (R(@"Counter-Strike 2|^CS2$"), "cs2"), (R(@"League of Legends"), "lol"),
-        (R(@"Minecraft"), "minecraft"), (R(@"Roblox"), "roblox"), (R(@"Rocket League"), "rocketleague"), (R(@"Grand Theft Auto V|GTA V"), "gta5"),
+        (R(@"Minecraft.*(Bedrock|for Windows|Preview|Education)|Minecraft \(Bedrock"), "minecraftbedrock"), (R(@"Minecraft"), "minecraft"), (R(@"Roblox"), "roblox"), (R(@"Rocket League"), "rocketleague"), (R(@"Grand Theft Auto V|GTA V"), "gta5"),
         (R(@"Apex Legends"), "apex"), (R(@"Overwatch"), "overwatch"), (R(@"Call of Duty|Warzone"), "warzone"), (R(@"Genshin"), "genshin"),
         (R(@"PUBG"), "pubg"), (R(@"Dota 2"), "dota2"), (R(@"Fall Guys"), "fallguys"), (R(@"Rainbow Six"), "r6"), (R(@"EA SPORTS FC|FIFA \d"), "eafc"),
         (R(@"The Sims 4"), "sims4"), (R(@"ELDEN RING"), "eldenring"), (R(@"Cyberpunk 2077"), "cyberpunk"), (R(@"Among Us"), "amongus"), (R(@"Brawlhalla"), "brawlhalla"),

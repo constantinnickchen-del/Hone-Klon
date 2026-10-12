@@ -43,6 +43,15 @@ public static class LastPlayedService
             }
 
             Consider(game, UnrealLogTime(game), "game log");
+            if (game.PackageFullName != null)
+            {
+                Consider(game, PackageDataTime(game.PackageFullName), "app data");
+            }
+
+            if (game.ProfileKey == "minecraftbedrock" || (game.Source is GameSource.Store or GameSource.Xbox && game.Name.Contains("Minecraft", StringComparison.OrdinalIgnoreCase) && !game.Name.Contains("Launcher", StringComparison.OrdinalIgnoreCase)))
+            {
+                Consider(game, MinecraftScanner.BedrockLastPlayed(), "Minecraft worlds");
+            }
         }
     }
 
@@ -52,6 +61,27 @@ public static class LastPlayedService
         {
             game.LastPlayed = t;
             game.LastPlayedSource = source;
+        }
+    }
+
+    /// <summary>Store apps update %LOCALAPPDATA%\Packages\&lt;family&gt;\Settings\settings.dat when they run.</summary>
+    private static DateTime? PackageDataTime(string fullName)
+    {
+        try
+        {
+            string[] parts = fullName.Split('_');
+            if (parts.Length < 5)
+            {
+                return null;
+            }
+
+            string dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Packages", $"{parts[0]}_{parts[^1]}");
+            string settings = Path.Combine(dir, "Settings", "settings.dat");
+            return File.Exists(settings) ? File.GetLastWriteTime(settings) : null;
+        }
+        catch
+        {
+            return null;
         }
     }
 

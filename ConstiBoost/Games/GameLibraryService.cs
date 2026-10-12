@@ -40,7 +40,24 @@ public static class GameLibraryService
         var games = new List<GameInfo>();
         Try(() => games.AddRange(ScanSteam()), "Steam");
         Try(() => games.AddRange(ScanEpic()), "Epic");
+        var packages = new List<StorePackage>();
+        Try(() => packages = StoreGamesScanner.ReadPackages(), "AppX repository");
+        Try(() => games.AddRange(StoreGamesScanner.Scan(packages)), "Microsoft Store / Xbox");
+        Try(() =>
+        {
+            if (MinecraftScanner.ScanJava(packages) is { } java)
+            {
+                games.Add(java);
+            }
+        }, "Minecraft Java");
         Try(() => games.AddRange(ScanUninstallRegistry(games)), "Uninstall registry");
+        Try(() =>
+        {
+            // Games Windows' Game Bar knows about that no launcher reported (skip anything inside known games).
+            var roots = games.SelectMany(x => x.ProcessRoots).Select(r => NormalizePath(r) + "\\").ToList();
+            games.AddRange(StoreGamesScanner.ScanGameBarList().Where(gb =>
+                gb.MainExecutable != null && !roots.Any(r => gb.MainExecutable.StartsWith(r, StringComparison.OrdinalIgnoreCase))));
+        }, "Game Bar list");
 
         // Deduplicate by install path
         return games

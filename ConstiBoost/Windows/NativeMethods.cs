@@ -158,4 +158,7 @@ internal static class NativeMethods
     public static extern int GetWindowTextLength(IntPtr hWnd);
 
     public const uint GW_OWNER = 4;
+
+    [DllImport("shlwapi.dll", CharSet = CharSet.Unicode, ExactSpelling = true)]
+    public static extern int SHLoadIndirectString(string source, System.Text.StringBuilder output, int outputSize, IntPtr reserved);
 }

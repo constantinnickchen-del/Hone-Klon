@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using ConstiBoost.Core;
 
 namespace ConstiBoost.Games;
@@ -9,6 +10,9 @@ public enum GameSource
     Steam,
     Epic,
     Installed, // Windows "Apps & features" entry (GOG, EA, Ubisoft, Riot, Battle.net, standalone…)
+    Store,     // Microsoft Store app package
+    Xbox,      // Xbox app / Game Pass (GDK, XboxGames folder)
+    Minecraft, // Minecraft: Java Edition (Minecraft Launcher)
 }
 
 /// <summary>One installed game. Everything here is read from launcher files or the Windows registry.</summary>
@@ -28,6 +32,9 @@ public sealed class GameInfo : ObservableObject
     {
         GameSource.Steam => "Steam",
         GameSource.Epic => "Epic Games",
+        GameSource.Store => "Microsoft Store",
+        GameSource.Xbox => "Xbox app",
+        GameSource.Minecraft => "Minecraft Launcher",
         _ => string.IsNullOrWhiteSpace(Publisher) ? "Installed" : Publisher,
     };
 
@@ -40,6 +47,16 @@ public sealed class GameInfo : ObservableObject
     public string? EpicLaunchId { get; init; }
     public string? UninstallString { get; init; }
     public string? EpicLaunchExecutable { get; init; }
+
+    /// <summary>Store/Xbox package (for launch via shell:AppsFolder and uninstall via Remove-AppxPackage).</summary>
+    public string? PackageFullName { get; init; }
+    public string? AppUserModelId { get; init; }
+    public string? LaunchUri { get; init; }
+
+    /// <summary>Folders the game's processes run from (install folder + e.g. the Java runtime for Minecraft).</summary>
+    public List<string> ExtraProcessRoots { get; init; } = new();
+
+    public IEnumerable<string> ProcessRoots => new[] { InstallPath }.Concat(ExtraProcessRoots).Where(p => !string.IsNullOrWhiteSpace(p));
 
     /// <summary>Key into the FPS estimation database (null = no estimate data).</summary>
     public string? ProfileKey { get; init; }

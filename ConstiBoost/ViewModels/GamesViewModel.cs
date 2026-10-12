@@ -82,7 +82,7 @@ public sealed class GamesViewModel : PageViewModel
 
     public string SummaryText => Games.Count == 0
         ? "No games found yet."
-        : $"{Games.Count} games · {Formatting.Bytes(Games.Sum(g => g.SizeBytes ?? 0))} on disk · Steam {Games.Count(g => g.Source == GameSource.Steam)} · Epic {Games.Count(g => g.Source == GameSource.Epic)} · other {Games.Count(g => g.Source == GameSource.Installed)}";
+        : $"{Games.Count} games · {Formatting.Bytes(Games.Sum(g => g.SizeBytes ?? 0))} on disk · Steam {Games.Count(g => g.Source == GameSource.Steam)} · Epic {Games.Count(g => g.Source == GameSource.Epic)} · Store/Xbox {Games.Count(g => g.Source is GameSource.Store or GameSource.Xbox)} · other {Games.Count(g => g.Source is GameSource.Installed or GameSource.Minecraft)}";
 
     public string FocusText => GameFocusService.Instance.State is { } s ? $"🎯 Focus active: {s.GameName} (since {s.Started:HH:mm})" : string.Empty;
 
@@ -189,7 +189,7 @@ public sealed class GamesViewModel : PageViewModel
 
         var running = await Task.Run(() =>
         {
-            var roots = games.Select(g => (g, root: GameLibraryService.NormalizePath(g.InstallPath) + "\\")).ToList();
+            var roots = games.SelectMany(g => g.ProcessRoots.Select(r => (g, root: GameLibraryService.NormalizePath(r) + "\\"))).ToList();
             var ids = new HashSet<string>();
             foreach (var p in System.Diagnostics.Process.GetProcesses())
             {
@@ -505,7 +505,9 @@ public sealed class GameDetailViewModel : ObservableObject
         foreach (var g in groups.Where(g => g.Path is null || !g.Path.StartsWith(gameRoot, StringComparison.OrdinalIgnoreCase)))
         {
             bool launcherForThisGame = (Game.Source == GameSource.Steam && g.ProcessName.StartsWith("steam", StringComparison.OrdinalIgnoreCase)) ||
-                                       (Game.Source == GameSource.Epic && g.ProcessName.StartsWith("EpicGames", StringComparison.OrdinalIgnoreCase));
+                                       (Game.Source == GameSource.Epic && g.ProcessName.StartsWith("EpicGames", StringComparison.OrdinalIgnoreCase)) ||
+                                       (Game.Source == GameSource.Minecraft && g.ProcessName.Contains("Minecraft", StringComparison.OrdinalIgnoreCase)) ||
+                                       (Game.Source == GameSource.Xbox && g.ProcessName.StartsWith("XboxPcApp", StringComparison.OrdinalIgnoreCase));
             g.IsSelected = g.IsKnownBackgroundApp && !launcherForThisGame && !BackgroundAppsService.KeepPriority.Contains(g.ProcessName) &&
                            !BackgroundAppsService.BrowserProcesses.Contains(g.ProcessName);
             Apps.Add(g);

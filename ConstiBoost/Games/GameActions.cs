@@ -14,6 +14,16 @@ public static class GameActions
     {
         try
         {
+            if (game.LaunchUri != null || game.AppUserModelId != null)
+            {
+                var start = game.AppUserModelId != null
+                    ? new ProcessStartInfo("explorer.exe", $"shell:AppsFolder\\{game.AppUserModelId}") { UseShellExecute = true }
+                    : new ProcessStartInfo(game.LaunchUri!) { UseShellExecute = true };
+                Process.Start(start);
+                ActionLog.Success("Launch game: " + game.Name, null, game.SourceText);
+                return OperationResult.Ok($"{game.Name} is starting…");
+            }
+
             string target = game.Source switch
             {
                 GameSource.Steam => $"steam://rungameid/{game.SteamAppId}",
@@ -44,8 +54,34 @@ public static class GameActions
     {
         try
         {
+            if (game.PackageFullName != null)
+            {
+                if (!Regex.IsMatch(game.PackageFullName, @"^[A-Za-z0-9._~\-]+$"))
+                {
+                    return OperationResult.Fail("Unexpected package name – uninstall it via Windows Settings > Apps.");
+                }
+
+                // Documented PowerShell cmdlet, current user only, no admin rights.
+                Process.Start(new ProcessStartInfo("powershell.exe", $"-NoProfile -NonInteractive -WindowStyle Hidden -Command \"Remove-AppxPackage -Package '{game.PackageFullName}'\"")
+                {
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                });
+                ActionLog.Success("Uninstall game: " + game.Name, "Installed", "Remove-AppxPackage started");
+                return OperationResult.Ok($"{game.Name} is being removed. This can take a moment – press RESCAN afterwards.");
+            }
+
+            if (game.Source == GameSource.Minecraft)
+            {
+                Process.Start(new ProcessStartInfo("ms-settings:appsfeatures") { UseShellExecute = true });
+                return OperationResult.Ok("Windows Settings > Apps opens – uninstall 'Minecraft Launcher' there. Your worlds in %APPDATA%\\.minecraft are kept.");
+            }
+
             switch (game.Source)
             {
+                case GameSource.Xbox:
+                    Process.Start(new ProcessStartInfo("ms-settings:appsfeatures") { UseShellExecute = true });
+                    return OperationResult.Ok("Windows Settings > Apps opens – uninstall the game there (or in the Xbox app).");
                 case GameSource.Steam:
                     Process.Start(new ProcessStartInfo($"steam://uninstall/{game.SteamAppId}") { UseShellExecute = true });
                     break;

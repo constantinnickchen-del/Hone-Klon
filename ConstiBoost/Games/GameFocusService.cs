@@ -29,6 +29,7 @@ public sealed class FocusState
     public string GameId { get; set; } = string.Empty;
     public string GameName { get; set; } = string.Empty;
     public string InstallPath { get; set; } = string.Empty;
+    public List<string> ProcessRoots { get; set; } = new();
     public bool BoostGamePriority { get; set; }
     public RegistryValueSnapshot? GpuPreference { get; set; }
     public RegistryValueSnapshot? Notifications { get; set; }
@@ -96,7 +97,7 @@ public sealed class GameFocusService : ObservableObject
             messages.AddRange(await StopAsync(false));
         }
 
-        var state = new FocusState { GameId = game.Id, GameName = game.Name, InstallPath = game.InstallPath, BoostGamePriority = options.BoostGamePriority, Started = DateTime.Now };
+        var state = new FocusState { GameId = game.Id, GameName = game.Name, InstallPath = game.InstallPath, ProcessRoots = game.ProcessRoots.ToList(), BoostGamePriority = options.BoostGamePriority, Started = DateTime.Now };
         _state = state;
         Persist();
 
@@ -204,14 +205,14 @@ public sealed class GameFocusService : ObservableObject
     }
 
     /// <summary>Returns the PIDs of processes running from the game folder.</summary>
-    public static List<Process> FindGameProcesses(string installPath)
+    public static List<Process> FindGameProcesses(IEnumerable<string> processRoots)
     {
-        string root = GameLibraryService.NormalizePath(installPath) + "\\";
+        var roots = processRoots.Select(r => GameLibraryService.NormalizePath(r) + "\\").ToList();
         var found = new List<Process>();
         foreach (var p in Process.GetProcesses())
         {
             string? path = ProcessSafety.TryGetPath(p.Id);
-            if (path != null && path.StartsWith(root, StringComparison.OrdinalIgnoreCase))
+            if (path != null && roots.Any(root => path.StartsWith(root, StringComparison.OrdinalIgnoreCase)))
             {
                 found.Add(p);
             }
@@ -234,7 +235,7 @@ public sealed class GameFocusService : ObservableObject
 
         try
         {
-            var processes = FindGameProcesses(state.InstallPath);
+            var processes = FindGameProcesses(state.ProcessRoots.Count > 0 ? state.ProcessRoots : new List<string> { state.InstallPath });
             if (processes.Count > 0)
             {
                 LastPlayedService.RecordSession(state.GameId);

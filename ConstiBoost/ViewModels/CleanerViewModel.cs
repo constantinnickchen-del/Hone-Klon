@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using ConstiBoost.Core;
+using ConstiBoost.Localization;
 using ConstiBoost.Logging;
 using ConstiBoost.Models;
 using ConstiBoost.Services;
@@ -14,7 +15,7 @@ namespace ConstiBoost.ViewModels;
 public sealed class CleanerViewModel : PageViewModel
 {
     private bool _isBusy;
-    private string _statusText = "Scan to see how much space can be freed.";
+    private string _statusText = L.T("Scan to see how much space can be freed.");
     private string _browserWarning = string.Empty;
     private bool _scannedOnce;
 
@@ -56,8 +57,8 @@ public sealed class CleanerViewModel : PageViewModel
         {
             long bytes = Categories.Where(c => c.IsSelected && c.IsScanned).Sum(c => c.SizeBytes);
             return Categories.Any(c => c.IsScanned)
-                ? $"This will remove approximately {Formatting.Megabytes(bytes)}."
-                : "Scan first to see the size.";
+                ? L.F("This will remove approximately {0}.", Formatting.Megabytes(bytes))
+                : L.T("Scan first to see the size.");
         }
     }
 
@@ -72,7 +73,7 @@ public sealed class CleanerViewModel : PageViewModel
     private async Task ScanAsync()
     {
         IsBusy = true;
-        StatusText = "Scanning…";
+        StatusText = L.T("Scanning…");
         try
         {
             var fresh = CleanerService.GetCategories().ToDictionary(c => c.Id);
@@ -96,15 +97,15 @@ public sealed class CleanerViewModel : PageViewModel
                 category.FileCount = files;
                 category.IsScanned = true;
                 category.Note = category.AdminPaths.Count > 0 && !WinSys.SystemInfo.IsAdministrator
-                    ? "Some folders need administrator permission (UAC) – sizes of protected files may be incomplete."
+                    ? L.T("Some folders need administrator permission (UAC) – sizes of protected files may be incomplete.")
                     : string.Empty;
             }
 
             var browsers = CleanerService.RunningBrowsers();
             BrowserWarning = browsers.Count > 0
-                ? $"Browser running ({string.Join(", ", browsers)}): close it before cleaning the browser cache, otherwise files in use are skipped."
+                ? L.F("Browser running ({0}): close it before cleaning the browser cache, otherwise files in use are skipped.", string.Join(", ", browsers))
                 : string.Empty;
-            StatusText = $"Scan finished at {DateTime.Now:HH:mm}.";
+            StatusText = L.F("Scan finished at {0:HH:mm}.", DateTime.Now);
             _scannedOnce = true;
         }
         finally
@@ -118,7 +119,7 @@ public sealed class CleanerViewModel : PageViewModel
     {
         var selected = Categories.Where(c => c.IsSelected && c.IsScanned).ToList();
         var details = selected.Select(c => $"{c.Name}: {c.SizeText}").ToList();
-        details.Add("Never touched: Documents, Pictures, Desktop, Downloads, game saves, cookies and passwords.");
+        details.Add(L.T("Never touched: Documents, Pictures, Desktop, Downloads, game saves, cookies and passwords."));
         if (!DialogService.Confirm("Clean now?", EstimateText, details, "CLEAN"))
         {
             return;
@@ -132,7 +133,7 @@ public sealed class CleanerViewModel : PageViewModel
             double adminMinAge = 0;
             foreach (var category in selected)
             {
-                StatusText = $"Cleaning {category.Name}…";
+                StatusText = L.F("Cleaning {0}…", category.Name);
                 var result = await Task.Run(() =>
                 {
                     long freed = 0;
@@ -151,13 +152,13 @@ public sealed class CleanerViewModel : PageViewModel
 
                 adminPaths.AddRange(category.AdminPaths.Where(System.IO.Directory.Exists));
                 adminMinAge = Math.Max(adminMinAge, category.MinAgeHours);
-                Results.Add($"✓ {category.Name}: {Formatting.Bytes(result.FreedBytes)} removed ({result.DeletedFiles} files, {result.SkippedFiles} skipped/in use)");
+                Results.Add(L.F("✓ {0}: {1} removed ({2} files, {3} skipped/in use)", category.Name, Formatting.Bytes(result.FreedBytes), result.DeletedFiles, result.SkippedFiles));
                 ActionLog.Success("Cleaner: " + category.Name, category.SizeText, $"{Formatting.Bytes(result.FreedBytes)} freed");
             }
 
             if (adminPaths.Count > 0)
             {
-                StatusText = "Cleaning protected folders (administrator permission)…";
+                StatusText = L.T("Cleaning protected folders (administrator permission)…");
                 var elevated = await ElevationService.RunAsync(new ElevatedTask
                 {
                     Operation = ElevatedOperations.CleanPaths,
@@ -166,12 +167,12 @@ public sealed class CleanerViewModel : PageViewModel
                 });
                 if (elevated.Success)
                 {
-                    Results.Add($"✓ Protected folders: {Formatting.Bytes(elevated.FreedBytes)} removed ({elevated.DeletedFiles} files, {elevated.SkippedFiles} skipped)");
+                    Results.Add(L.F("✓ Protected folders: {0} removed ({1} files, {2} skipped)", Formatting.Bytes(elevated.FreedBytes), elevated.DeletedFiles, elevated.SkippedFiles));
                     ActionLog.Success("Cleaner: protected folders", null, $"{Formatting.Bytes(elevated.FreedBytes)} freed");
                 }
                 else
                 {
-                    Results.Add("✕ Protected folders skipped: " + elevated.Message);
+                    Results.Add(L.T("✕ Protected folders skipped: ") + L.T(elevated.Message));
                     ActionLog.Failed("Cleaner: protected folders", null, null, elevated.Message);
                 }
             }
@@ -181,7 +182,7 @@ public sealed class CleanerViewModel : PageViewModel
         catch (Exception ex)
         {
             AppLog.Error("Cleaner failed", ex);
-            Results.Add("✕ Cleaning couldn't be completed. Details were written to the log.");
+            Results.Add(L.T("✕ Cleaning couldn't be completed. Details were written to the log."));
         }
         finally
         {

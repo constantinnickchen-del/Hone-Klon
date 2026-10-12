@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Media;
+using ConstiBoost.Localization;
 using ConstiBoost.Models;
 
 namespace ConstiBoost.UI;
@@ -77,9 +78,9 @@ public sealed class StatusToBrushConverter : IValueConverter
             ImpactLevel.High => "Good",
             ImpactLevel.Medium => "Warn",
             ImpactLevel.Low => "Neutral",
-            string s when s.Equals("Optimal", StringComparison.OrdinalIgnoreCase) || s.Equals("SUCCESS", StringComparison.OrdinalIgnoreCase) => "Good",
-            string s when s.Equals("Can be improved", StringComparison.OrdinalIgnoreCase) || s.Equals("Your choice", StringComparison.OrdinalIgnoreCase) => "Warn",
-            string s when s.Equals("FAILED", StringComparison.OrdinalIgnoreCase) => "Bad",
+            string s when Is(s, "Optimal") || Is(s, "SUCCESS") => "Good",
+            string s when Is(s, "Can be improved") || Is(s, "Your choice") => "Warn",
+            string s when Is(s, "FAILED") => "Bad",
             _ => "Neutral",
         };
 
@@ -92,6 +93,10 @@ public sealed class StatusToBrushConverter : IValueConverter
     }
 
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => Binding.DoNothing;
+
+    /// <summary>Matches the English status word and its translation (status texts may be shown translated).</summary>
+    private static bool Is(string value, string english) =>
+        value.Equals(english, StringComparison.OrdinalIgnoreCase) || value.Equals(L.T(english), StringComparison.OrdinalIgnoreCase);
 }
 
 public sealed class PercentToWidthConverter : IMultiValueConverter

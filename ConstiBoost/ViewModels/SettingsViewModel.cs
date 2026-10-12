@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Input;
 using ConstiBoost.Core;
+using ConstiBoost.Localization;
 using ConstiBoost.Models;
 using ConstiBoost.Services;
 
@@ -190,7 +191,7 @@ public sealed class SettingsViewModel : PageViewModel
     public ICommand CheckUpdatesCommand => new AsyncRelayCommand(() => UpdateService.Instance.CheckAsync(true));
     public ICommand InstallUpdateCommand => new AsyncRelayCommand(async () =>
     {
-        if (UpdateService.Instance.Available is { } u && DialogService.Confirm($"Install ConstiBoost {u.Tag}?", "The installer is downloaded from GitHub Releases and started. ConstiBoost closes and restarts after the update. Your settings, backups and logs are kept.", string.IsNullOrWhiteSpace(u.Notes) ? null : new[] { u.Notes }, "UPDATE"))
+        if (UpdateService.Instance.Available is { } u && DialogService.Confirm(L.F("Install ConstiBoost {0}?", u.Tag), "The installer is downloaded from GitHub Releases and started. ConstiBoost closes and restarts after the update. Your settings, backups and logs are kept.", string.IsNullOrWhiteSpace(u.Notes) ? null : new[] { u.Notes }, "UPDATE"))
         {
             await UpdateService.Instance.InstallAsync(new Progress<string>(t => NotificationService.Instance.Show(t, Models.NotificationKind.Info)));
         }
@@ -198,7 +199,7 @@ public sealed class SettingsViewModel : PageViewModel
 
     // ---------- Maintenance ----------
     public bool WeeklyMaintenance { get => _settings.Current.WeeklyMaintenance; set { _settings.Current.WeeklyMaintenance = value; _settings.Save(); OnPropertyChanged(); } }
-    public string LastMaintenanceText => _settings.Current.LastMaintenance is DateTime d ? $"Last run: {d:dd.MM.yyyy HH:mm}" : "Never run";
+    public string LastMaintenanceText => _settings.Current.LastMaintenance is DateTime d ? L.F("Last run: {0:dd.MM.yyyy HH:mm}", d) : L.T("Never run");
     public ICommand RunMaintenanceCommand => new AsyncRelayCommand(async () =>
     {
         await MaintenanceService.Instance.RunAsync(false);
@@ -207,7 +208,7 @@ public sealed class SettingsViewModel : PageViewModel
 
     public string DataFolder => AppPaths.Root;
 
-    public string VersionText => $"ConstiBoost {UpdateService.CurrentVersion.ToString(3)} PRO · local · no accounts · no telemetry";
+    public string VersionText => L.F("ConstiBoost {0} PRO · local · no accounts · no telemetry", UpdateService.CurrentVersion.ToString(3));
 
     private void Save()
     {

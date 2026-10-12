@@ -4,6 +4,7 @@ using System.Linq;
 using System.Windows.Input;
 using System.Windows.Threading;
 using ConstiBoost.Core;
+using ConstiBoost.Localization;
 using ConstiBoost.Models;
 using ConstiBoost.Services;
 using ConstiBoost.WinSys;
@@ -73,7 +74,7 @@ public sealed class MainViewModel : ObservableObject
     public ICommand NavigateCommand { get; }
     public ICommand DismissToastCommand { get; }
 
-    public string AdminText => SystemInfo.IsAdministrator ? "Administrator" : "Standard user · UAC on demand";
+    public string AdminText => L.T(SystemInfo.IsAdministrator ? "Administrator" : "Standard user · UAC on demand");
 
     public PageViewModel CurrentPage
     {

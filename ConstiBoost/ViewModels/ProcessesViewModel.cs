@@ -7,6 +7,7 @@ using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Threading;
 using ConstiBoost.Core;
+using ConstiBoost.Localization;
 using ConstiBoost.Models;
 using ConstiBoost.Services;
 using ConstiBoost.WinSys;
@@ -92,7 +93,7 @@ public sealed class ProcessesViewModel : ObservableObject
             }
 
             CollectionViewSource.GetDefaultView(Rows)?.Refresh();
-            Summary = $"{Rows.Count} processes · updates every 2 s while this tab is open";
+            Summary = L.F("{0} processes · updates every 2 s while this tab is open", Rows.Count);
         }
         catch (Exception ex)
         {
@@ -114,13 +115,13 @@ public sealed class ProcessesViewModel : ObservableObject
 
         if (row.Protection == ProcessProtection.Critical)
         {
-            DialogService.Info("Protected process", $"{row.Name} is a critical Windows or security process. ConstiBoost never closes it.");
+            DialogService.Info("Protected process", L.F("{0} is a critical Windows or security process. ConstiBoost never closes it.", row.Name));
             return;
         }
 
         string message = row.Protection == ProcessProtection.Caution
-            ? $"{row.Name} is an important app (e.g. explorer.exe runs the taskbar and desktop). Closing it can make the taskbar disappear until it restarts. Continue?"
-            : $"Close {row.Name} (PID {row.Pid})? Unsaved work in this app may be lost.";
+            ? L.F("{0} is an important app (e.g. explorer.exe runs the taskbar and desktop). Closing it can make the taskbar disappear until it restarts. Continue?", row.Name)
+            : L.F("Close {0} (PID {1})? Unsaved work in this app may be lost.", row.Name, row.Pid);
         if (!DialogService.Confirm("Close process?", message, null, "CLOSE PROCESS", danger: true))
         {
             return;

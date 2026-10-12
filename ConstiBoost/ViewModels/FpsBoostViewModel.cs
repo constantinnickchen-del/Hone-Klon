@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 using ConstiBoost.Core;
 using ConstiBoost.FpsBoost;
+using ConstiBoost.Localization;
 using ConstiBoost.Models;
 using ConstiBoost.Services;
 
@@ -16,12 +17,12 @@ public sealed class FpsBoostViewModel : PageViewModel
 {
     private bool _isBusy;
     private bool _loaded;
-    private string _summary = "Checking your system…";
+    private string _summary = L.T("Checking your system…");
 
     public FpsBoostViewModel()
     {
         Features = FpsBoostCatalog.Create();
-        Groups = Features.GroupBy(f => f.Category).Select(g => new BoostGroup(g.Key, g.ToList())).ToList();
+        Groups = Features.GroupBy(f => f.Category).Select(g => new BoostGroup(L.T(g.Key), g.ToList())).ToList();
         CheckAllCommand = new AsyncRelayCommand(CheckAllAsync, () => !IsBusy);
         ApplyAllCommand = new AsyncRelayCommand(ApplyAllAsync, () => !IsBusy);
         OpenGamesCommand = new RelayCommand(() => MainViewModel.Instance?.Navigate("games"));
@@ -61,7 +62,7 @@ public sealed class FpsBoostViewModel : PageViewModel
     private async Task CheckAllAsync()
     {
         IsBusy = true;
-        Summary = "Checking your system…";
+        Summary = L.T("Checking your system…");
         try
         {
             if (ScanService.Instance.Last is null)
@@ -90,7 +91,7 @@ public sealed class FpsBoostViewModel : PageViewModel
         int improvable = Features.Count(f => f.ShowApply);
         int hints = Features.Count(f => f.Status == CheckStatus.Warning && !f.ChangesSettings);
         int unavailable = Features.Count(f => f.Status == CheckStatus.Unavailable);
-        Summary = $"{good} of {Features.Count} optimal · {improvable} can be applied · {hints} hint(s) to check · {unavailable} not available on this PC";
+        Summary = L.F("{0} of {1} optimal · {2} can be applied · {3} hint(s) to check · {4} not available on this PC", good, Features.Count, improvable, hints, unavailable);
     }
 
     private async Task ApplyAllAsync()
@@ -103,9 +104,9 @@ public sealed class FpsBoostViewModel : PageViewModel
         }
 
         var details = todo.Select(f => $"{f.Icon} {f.Name} – {f.Detail}").ToList();
-        details.Add("Every change gets a backup and can be undone per feature (UNDO) or in Backups.");
-        details.Add("Not included (your choice, apply them individually): gaming resolution, refresh rate, update sharing.");
-        if (!DialogService.Confirm($"Apply {todo.Count} FPS boosts?", "ConstiBoost will change these settings:", details, "APPLY ALL"))
+        details.Add(L.T("Every change gets a backup and can be undone per feature (UNDO) or in Backups."));
+        details.Add(L.T("Not included (your choice, apply them individually): gaming resolution, refresh rate, update sharing."));
+        if (!DialogService.Confirm(L.F("Apply {0} FPS boosts?", todo.Count), "ConstiBoost will change these settings:", details, "APPLY ALL"))
         {
             return;
         }
@@ -124,7 +125,7 @@ public sealed class FpsBoostViewModel : PageViewModel
                 }
                 else
                 {
-                    failed.Add($"{f.Name}: {r.Message}");
+                    failed.Add($"{f.Name}: {L.T(r.Message)}");
                 }
             }
         }
@@ -134,7 +135,7 @@ public sealed class FpsBoostViewModel : PageViewModel
             UpdateSummary();
         }
 
-        NotificationService.Instance.Show(failed.Count == 0 ? $"⚡ {ok} FPS boosts applied." : $"{ok} applied, {failed.Count} not: " + string.Join("; ", failed),
+        NotificationService.Instance.Show(failed.Count == 0 ? L.F("⚡ {0} FPS boosts applied.", ok) : L.F("{0} applied, {1} not: ", ok, failed.Count) + string.Join("; ", failed),
             failed.Count == 0 ? NotificationKind.Success : NotificationKind.Warning);
     }
 }

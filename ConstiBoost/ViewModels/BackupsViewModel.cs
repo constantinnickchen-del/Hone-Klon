@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 using ConstiBoost.Backup;
 using ConstiBoost.Core;
+using ConstiBoost.Localization;
 using ConstiBoost.Logging;
 using ConstiBoost.Models;
 using ConstiBoost.Services;
@@ -18,12 +19,12 @@ public sealed class BackupItem
 
     public BackupSession Session { get; }
     public string Id => Session.Manifest.Id;
-    public string Title => Session.Manifest.Title;
+    public string Title => L.T(Session.Manifest.Title);
     public string DateText => Session.Manifest.CreatedAt.ToString("dd.MM.yyyy HH:mm:ss");
     public int Count => Session.Manifest.Entries.Count;
-    public string CountText => $"{Count} saved value(s)";
+    public string CountText => L.F("{0} saved value(s)", Count);
     public bool IsRestored => Session.Manifest.RestoredAt.HasValue;
-    public string RestoredText => Session.Manifest.RestoredAt is DateTime d ? $"Restored {d:dd.MM.yyyy HH:mm}" : string.Empty;
+    public string RestoredText => Session.Manifest.RestoredAt is DateTime d ? L.F("Restored {0:dd.MM.yyyy HH:mm}", d) : string.Empty;
     public string[] Entries => Session.Manifest.Entries.Select(e => e.Summary).ToArray();
 }
 
@@ -83,7 +84,7 @@ public sealed class BackupsViewModel : PageViewModel
             return;
         }
 
-        if (!DialogService.Confirm("Restore backup?", $"All values saved in \"{item.Title}\" ({item.DateText}) will be written back:", item.Entries, "RESTORE"))
+        if (!DialogService.Confirm("Restore backup?", L.F("All values saved in \"{0}\" ({1}) will be written back:", item.Title, item.DateText), item.Entries, "RESTORE"))
         {
             return;
         }
@@ -94,11 +95,11 @@ public sealed class BackupsViewModel : PageViewModel
             var report = await BackupService.Instance.RestoreAsync(item.Session);
             if (report.Failed == 0)
             {
-                NotificationService.Instance.Show($"Backup restored ({report.Restored} value(s)).", NotificationKind.Success);
+                NotificationService.Instance.Show(L.F("Backup restored ({0} value(s)).", report.Restored), NotificationKind.Success);
             }
             else
             {
-                DialogService.Info("Restore partially failed", $"{report.Restored} restored, {report.Failed} failed.", report.Messages);
+                DialogService.Info("Restore partially failed", L.F("{0} restored, {1} failed.", report.Restored, report.Failed), report.Messages);
             }
 
             await ScanService.Instance.ScanAsync();
@@ -112,7 +113,7 @@ public sealed class BackupsViewModel : PageViewModel
 
     private void Delete(BackupItem? item)
     {
-        if (item is null || !DialogService.Confirm("Delete backup?", $"\"{item.Title}\" ({item.DateText}) will be deleted. You can no longer restore these values.", null, "DELETE", danger: true))
+        if (item is null || !DialogService.Confirm("Delete backup?", L.F("\"{0}\" ({1}) will be deleted. You can no longer restore these values.", item.Title, item.DateText), null, "DELETE", danger: true))
         {
             return;
         }

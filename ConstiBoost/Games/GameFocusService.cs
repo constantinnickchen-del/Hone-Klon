@@ -22,7 +22,8 @@ public sealed record FocusOptions(
     bool BoostGamePriority,
     bool HighPerformanceGpu,
     bool MuteNotifications,
-    int? FortniteFpsCap);
+    int? FortniteFpsCap,
+    bool BoostBrowserTab = false);
 
 public sealed class FocusState
 {
@@ -31,6 +32,7 @@ public sealed class FocusState
     public string InstallPath { get; set; } = string.Empty;
     public List<string> ProcessRoots { get; set; } = new();
     public bool BoostGamePriority { get; set; }
+    public bool BoostBrowserTab { get; set; }
     public RegistryValueSnapshot? GpuPreference { get; set; }
     public RegistryValueSnapshot? Notifications { get; set; }
     public DateTime Started { get; set; }
@@ -50,6 +52,8 @@ public sealed class GameFocusService : ObservableObject
 
     private readonly DispatcherTimer _watcher = new() { Interval = TimeSpan.FromSeconds(3) };
     private readonly HashSet<int> _boosted = new();
+    private readonly Dictionary<int, TimeSpan> _cpuTimes = new();
+    private int? _boostedRenderer;
     private FocusState? _state;
 
     public static GameFocusService Instance { get; } = new();
@@ -97,7 +101,7 @@ public sealed class GameFocusService : ObservableObject
             messages.AddRange(await StopAsync(false));
         }
 
-        var state = new FocusState { GameId = game.Id, GameName = game.Name, InstallPath = game.InstallPath, ProcessRoots = game.ProcessRoots.ToList(), BoostGamePriority = options.BoostGamePriority, Started = DateTime.Now };
+        var state = new FocusState { GameId = game.Id, GameName = game.Name, InstallPath = game.InstallPath, ProcessRoots = game.ProcessRoots.ToList(), BoostGamePriority = options.BoostGamePriority, BoostBrowserTab = options.BoostBrowserTab && game.IsBrowser, Started = DateTime.Now };
         _state = state;
         Persist();
 
@@ -174,6 +178,8 @@ public sealed class GameFocusService : ObservableObject
         }
 
         _boosted.Clear();
+        _cpuTimes.Clear();
+        _boostedRenderer = null;
         foreach (var snapshot in new[] { state.GpuPreference, state.Notifications })
         {
             if (snapshot is null)
@@ -241,6 +247,12 @@ public sealed class GameFocusService : ObservableObject
                 LastPlayedService.RecordSession(state.GameId);
             }
 
+            if (state.BoostBrowserTab)
+            {
+                BoostBrowser(processes);
+                return;
+            }
+
             foreach (var p in processes)
             {
                 using (p)
@@ -270,6 +282,129 @@ public sealed class GameFocusService : ObservableObject
         catch (Exception ex)
         {
             AppLog.Warn("Focus watcher: " + ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// Browser games: instead of raising every browser process (all tabs, extensions…),
+    /// only the GPU process and the renderer that currently uses the most CPU (= the game
+    /// tab) get Above-normal priority. Everything is reverted on Stop.
+    /// </summary>
+    private void BoostBrowser(List<Process> processes)
+    {
+        try
+        {
+            var commandLines = BrowserProcessInfo.CommandLines(processes.Select(p => p.Id));
+            int? gpu = null;
+            int? topRenderer = null;
+            double topDelta = 0;
+            var seen = new HashSet<int>();
+            foreach (var p in processes)
+            {
+                seen.Add(p.Id);
+                commandLines.TryGetValue(p.Id, out string? cmd);
+                cmd ??= string.Empty;
+                if (cmd.Contains("--type=gpu-process", StringComparison.OrdinalIgnoreCase))
+                {
+                    gpu = p.Id;
+                    continue;
+                }
+
+                if (!cmd.Contains("--type=renderer", StringComparison.OrdinalIgnoreCase)
+                    && !cmd.Contains("-contentproc", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                TimeSpan cpu;
+                try
+                {
+                    cpu = p.TotalProcessorTime;
+                }
+                catch
+                {
+                    continue;
+                }
+
+                if (_cpuTimes.TryGetValue(p.Id, out var last))
+                {
+                    double delta = (cpu - last).TotalMilliseconds;
+                    if (delta > topDelta)
+                    {
+                        topDelta = delta;
+                        topRenderer = p.Id;
+                    }
+                }
+
+                _cpuTimes[p.Id] = cpu;
+            }
+
+            foreach (int stale in _cpuTimes.Keys.Where(k => !seen.Contains(k)).ToList())
+            {
+                _cpuTimes.Remove(stale);
+            }
+
+            if (gpu is int g)
+            {
+                Raise(processes.First(p => p.Id == g), "browser GPU process");
+            }
+
+            // Only switch the boosted tab when the new one clearly works (>15 % of one core).
+            if (topRenderer is int r && topDelta > 450 && r != _boostedRenderer)
+            {
+                if (_boostedRenderer is int old && _boosted.Remove(old))
+                {
+                    Lower(old);
+                }
+
+                Raise(processes.First(p => p.Id == r), "game tab");
+                _boostedRenderer = r;
+            }
+        }
+        finally
+        {
+            foreach (var p in processes)
+            {
+                p.Dispose();
+            }
+        }
+    }
+
+    private void Raise(Process p, string role)
+    {
+        if (_boosted.Contains(p.Id))
+        {
+            return;
+        }
+
+        try
+        {
+            if (p.PriorityClass == ProcessPriorityClass.Normal)
+            {
+                p.PriorityClass = ProcessPriorityClass.AboveNormal;
+                ActionLog.Success($"Game Focus: priority {p.ProcessName} ({role})", "Normal", "AboveNormal");
+                _boosted.Add(p.Id);
+            }
+        }
+        catch
+        {
+            // protected – nothing to do
+        }
+    }
+
+    private static void Lower(int pid)
+    {
+        try
+        {
+            using var p = Process.GetProcessById(pid);
+            if (p.PriorityClass == ProcessPriorityClass.AboveNormal)
+            {
+                p.PriorityClass = ProcessPriorityClass.Normal;
+            }
+        }
+        catch
+        {
+            // ended
         }
     }
 

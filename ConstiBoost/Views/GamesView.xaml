@@ -34,6 +34,41 @@
                     <Run Text="{Binding Game.InstallPath, Mode=OneWay}" /><Run Text="  ·  " /><Run Text="{Binding Game.MainExecutable, Mode=OneWay}" />
                 </TextBlock>
 
+                <!-- Browser Performance Launch -->
+                <Border Style="{StaticResource InnerCard}" Padding="18" Margin="0,16,0,0" BorderBrush="{DynamicResource AccentBrush}" BorderThickness="1"
+                        Visibility="{Binding CanPerformanceLaunch, Converter={StaticResource BoolToVis}}">
+                    <StackPanel>
+                        <DockPanel>
+                            <Button DockPanel.Dock="Right" Style="{StaticResource AccentButton}" Content="⚡ PERFORMANCE LAUNCH" Command="{Binding PerformanceLaunchCommand}" VerticalAlignment="Top" />
+                            <StackPanel Margin="0,0,12,0">
+                                <TextBlock Text="⚡ PERFORMANCE LAUNCH (AUTOMATIC LOW SETTINGS)" Style="{StaticResource Text.Caption}" />
+                                <TextBlock Style="{StaticResource Text.Body}" FontSize="12" Margin="0,4,0,0" TextWrapping="Wrap"
+                                           Text="Opens the game in its own clean browser window with everything set for FPS automatically: fewer pixels to render (render size), GPU acceleration forced on, no extensions, high-performance GPU, and optionally Game Focus. Your normal browser profile stays untouched – log in to the game once in this window, it is remembered." />
+                            </StackPanel>
+                        </DockPanel>
+                        <DockPanel Margin="0,12,0,0">
+                            <TextBlock DockPanel.Dock="Left" Text="Game address" Style="{StaticResource Text.Body}" Width="110" VerticalAlignment="Center" />
+                            <TextBox Text="{Binding LaunchUrl, UpdateSourceTrigger=PropertyChanged}" Padding="8,6" FontSize="13"
+                                     Background="{DynamicResource InputBrush}" Foreground="{DynamicResource TextPrimaryBrush}" BorderBrush="{DynamicResource CardBorderBrush}"
+                                     CaretBrush="{DynamicResource TextPrimaryBrush}" />
+                        </DockPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                            <TextBlock Text="Render size" Style="{StaticResource Text.Body}" Width="110" VerticalAlignment="Center" />
+                            <RadioButton Style="{StaticResource Segment}" GroupName="RenderScale" Content="100 %" Padding="10,5" Margin="0,0,6,0" Command="{Binding SelectRenderScaleCommand}" CommandParameter="100" IsChecked="{Binding IsScale100, Mode=OneTime}" />
+                            <RadioButton Style="{StaticResource Segment}" GroupName="RenderScale" Content="85 %" Padding="10,5" Margin="0,0,6,0" Command="{Binding SelectRenderScaleCommand}" CommandParameter="85" IsChecked="{Binding IsScale85, Mode=OneTime}" />
+                            <RadioButton Style="{StaticResource Segment}" GroupName="RenderScale" Content="75 % (recommended)" Padding="10,5" Margin="0,0,6,0" Command="{Binding SelectRenderScaleCommand}" CommandParameter="75" IsChecked="{Binding IsScale75, Mode=OneTime}" />
+                            <RadioButton Style="{StaticResource Segment}" GroupName="RenderScale" Content="60 % (max FPS)" Padding="10,5" Command="{Binding SelectRenderScaleCommand}" CommandParameter="60" IsChecked="{Binding IsScale60, Mode=OneTime}" />
+                        </StackPanel>
+                        <TextBlock Text="{Binding RenderScaleText}" Style="{StaticResource Text.Caption}" Margin="110,4,0,0" TextWrapping="Wrap" />
+                        <CheckBox IsChecked="{Binding LaunchStartsFocus}" Margin="0,10,0,0" Foreground="{DynamicResource TextPrimaryBrush}"
+                                  Content="Also start 🎯 Game Focus (close background apps, Max FPS power mode, boost the game tab + browser GPU process)" />
+                        <CheckBox IsChecked="{Binding UnlockFps}" Margin="0,6,0,0" Foreground="{DynamicResource TextPrimaryBrush}"
+                                  Content="Unlock FPS above the display refresh rate (VSync off – more FPS on the counter, more heat, possible tearing)" />
+                        <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,10,0,0"
+                                   Text="Honest note: the graphics menu inside a website belongs to the website – no external program can switch it. If the game has its own options (quality, shadows, draw distance), set them to the lowest once; they are then remembered in the ConstiBoost browser window." />
+                    </StackPanel>
+                </Border>
+
                 <!-- Browser game boost -->
                 <Border Style="{StaticResource InnerCard}" Padding="18" Margin="0,16,0,0" Visibility="{Binding IsBrowser, Converter={StaticResource BoolToVis}}">
                     <StackPanel>
@@ -53,9 +88,47 @@
                         <TextBlock Style="{StaticResource Text.Body}" Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap" Margin="0,4,0,0" Text="3. Play in a smaller window instead of fullscreen: many web games render at window size – a smaller window means fewer pixels and often clearly more FPS on integrated graphics. Ctrl + minus (browser zoom out) can have the same effect." />
                         <TextBlock Style="{StaticResource Text.Body}" Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap" Margin="0,4,0,0" Text="4. Turn off the browser's energy saver / efficiency mode while playing and keep the laptop plugged in." />
                         <TextBlock Style="{StaticResource Text.Body}" Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap" Margin="0,4,0,0" Text="5. Lower the game's own graphics options if it has any (resolution, draw distance, shadows)." />
-                        <TextBlock Style="{StaticResource Text.Body}" Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap" Margin="0,4,0,0" Text="6. 🎯 FOCUS ON THIS GAME: closes background apps, Gaming Mode MAX FPS, mutes notifications and keeps this browser at normal priority (other browsers are lowered)." />
+                        <TextBlock Style="{StaticResource Text.Body}" Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap" Margin="0,4,0,0" Text="6. 🎯 FOCUS ON THIS GAME: closes background apps, Gaming Mode MAX FPS, mutes notifications and gives the game tab and the browser GPU process 'Above normal' priority (other tabs and browsers are not boosted)." />
+                        <TextBlock Style="{StaticResource Text.Body}" Foreground="{DynamicResource WarnBrush}" TextWrapping="Wrap" Margin="0,4,0,0" Visibility="{Binding IsFirefox, Converter={StaticResource BoolToVis}}"
+                                   Text="Firefox: the automatic Performance Launch is unavailable (needs Chrome, Edge, Brave or Opera). Chromium browsers usually run WebGL games faster on AMD graphics." />
                         <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,10,0,0"
                                    Text="Safety: unofficial websites that host commercial games are often unlicensed and full of ads/pop-ups. Don't download or run files from them and don't enter passwords. ConstiBoost never reads browser data (history, cookies, passwords)." />
+                    </StackPanel>
+                </Border>
+
+                <!-- Bottleneck check -->
+                <Border Style="{StaticResource InnerCard}" Padding="18" Margin="0,16,0,0">
+                    <StackPanel>
+                        <DockPanel>
+                            <Button DockPanel.Dock="Right" Style="{StaticResource AccentButton}" Content="🔍 ANALYZE (12 s)" Command="{Binding AnalyzeBottleneckCommand}" VerticalAlignment="Top" />
+                            <StackPanel Margin="0,0,12,0">
+                                <TextBlock Text="🔍 WHY IS MY GPU NOT AT 100 %?" Style="{StaticResource Text.Caption}" />
+                                <TextBlock Style="{StaticResource Text.Body}" FontSize="12" Margin="0,4,0,0" TextWrapping="Wrap"
+                                           Text="Start the game, click ANALYZE and keep playing for 12 seconds. ConstiBoost measures the real load of every CPU thread, the GPU, temperature and clock and tells you what limits your FPS – and what actually helps. Read-only, nothing is changed." />
+                            </StackPanel>
+                        </DockPanel>
+                        <ProgressBar IsIndeterminate="True" Margin="0,8,0,0" Visibility="{Binding IsAnalyzing, Converter={StaticResource BoolToVis}}" />
+                        <TextBlock Text="{Binding BottleneckStatus}" Style="{StaticResource Text.Body}" Foreground="{DynamicResource AccentBrush}" Margin="0,8,0,0" TextWrapping="Wrap"
+                                   Visibility="{Binding BottleneckStatus, Converter={StaticResource NullToVis}}" />
+                        <ItemsControl ItemsSource="{Binding Bottleneck.Findings}" Margin="0,6,0,0">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Background="{DynamicResource CardBrush}" CornerRadius="8" Padding="12" Margin="0,6,0,0">
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding Title}" Foreground="{DynamicResource TextPrimaryBrush}" FontWeight="SemiBold" FontSize="14" />
+                                            <TextBlock Text="{Binding Explanation}" Style="{StaticResource Text.Body}" Margin="0,4,0,6" TextWrapping="Wrap" />
+                                            <ItemsControl ItemsSource="{Binding Fixes}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <TextBlock Text="{Binding StringFormat='→ {0}'}" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="12" Margin="0,2,0,0" TextWrapping="Wrap" />
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
                     </StackPanel>
                 </Border>
 

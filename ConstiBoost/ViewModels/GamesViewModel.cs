@@ -327,6 +327,15 @@ public sealed class GameDetailViewModel : ObservableObject
         }
 
         LaunchCommand = new RelayCommand(() => Report(GameActions.Launch(Game)));
+        AnalyzeBottleneckCommand = new AsyncRelayCommand(AnalyzeBottleneckAsync, () => !IsAnalyzing);
+        PerformanceLaunchCommand = new AsyncRelayCommand(PerformanceLaunchAsync, () => !IsBusy);
+        SelectRenderScaleCommand = new RelayCommand(p =>
+        {
+            if (int.TryParse(p as string, out int v))
+            {
+                RenderScale = v;
+            }
+        });
         UninstallCommand = new RelayCommand(Uninstall);
         OpenFolderCommand = new RelayCommand(() => GameActions.OpenFolder(Game));
         FocusCommand = new AsyncRelayCommand(FocusAsync, () => !IsBusy);
@@ -367,6 +376,109 @@ public sealed class GameDetailViewModel : ObservableObject
     }
 
     public ICommand LaunchCommand { get; }
+    public ICommand AnalyzeBottleneckCommand { get; }
+    public ICommand PerformanceLaunchCommand { get; }
+    public ICommand SelectRenderScaleCommand { get; }
+
+    // ---------- Bottleneck check ----------
+    private bool _isAnalyzing;
+    private string _bottleneckStatus = string.Empty;
+    private BottleneckReport? _bottleneck;
+
+    public bool IsAnalyzing { get => _isAnalyzing; private set { if (SetProperty(ref _isAnalyzing, value)) CommandManager.InvalidateRequerySuggested(); } }
+    public string BottleneckStatus { get => _bottleneckStatus; private set => SetProperty(ref _bottleneckStatus, value); }
+    public BottleneckReport? Bottleneck { get => _bottleneck; private set { if (SetProperty(ref _bottleneck, value)) OnPropertyChanged(nameof(HasBottleneck)); } }
+    public bool HasBottleneck => _bottleneck != null;
+
+    private async Task AnalyzeBottleneckAsync()
+    {
+        IsAnalyzing = true;
+        Bottleneck = null;
+        try
+        {
+            var progress = new Progress<string>(t => BottleneckStatus = t);
+            var report = await BottleneckService.AnalyzeAsync(12, progress, System.Threading.CancellationToken.None);
+            Bottleneck = report;
+            BottleneckStatus = report.Findings.Count == 0
+                ? report.Summary + "\nNo clear limit found – run it again while you actively play."
+                : report.Summary;
+        }
+        catch (Exception ex)
+        {
+            BottleneckStatus = "Analysis failed: " + Safe.Describe(ex);
+        }
+        finally
+        {
+            IsAnalyzing = false;
+        }
+    }
+
+    // ---------- Browser Performance Launch ----------
+    public bool CanPerformanceLaunch => BrowserLaunchService.IsSupported(Game);
+    public bool IsFirefox => Game.IsBrowser && !CanPerformanceLaunch;
+
+    public string LaunchUrl
+    {
+        get => SettingsService.Instance.Current.BrowserLaunchUrl;
+        set { SettingsService.Instance.Current.BrowserLaunchUrl = value; OnPropertyChanged(); }
+    }
+
+    public int RenderScale
+    {
+        get => SettingsService.Instance.Current.BrowserRenderScale;
+        set
+        {
+            SettingsService.Instance.Current.BrowserRenderScale = value;
+            SettingsService.Instance.Save();
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(RenderScaleText));
+        }
+    }
+
+    public bool IsScale100 => RenderScale >= 100;
+    public bool IsScale85 => RenderScale == 85;
+    public bool IsScale75 => RenderScale == 75;
+    public bool IsScale60 => RenderScale == 60;
+
+    public string RenderScaleText
+    {
+        get
+        {
+            int s = RenderScale;
+            double pixels = s / 100.0 * (s / 100.0) * 100;
+            return s >= 100 ? "Full window (maximized) – most pixels, lowest FPS." : $"Window {s} % of the screen → ~{pixels:0} % of the pixels to render. Press F11 in the window for borderless full screen only if you want 100 % again.";
+        }
+    }
+
+    public bool UnlockFps
+    {
+        get => SettingsService.Instance.Current.BrowserUnlockFps;
+        set { SettingsService.Instance.Current.BrowserUnlockFps = value; SettingsService.Instance.Save(); OnPropertyChanged(); }
+    }
+
+    public bool LaunchStartsFocus
+    {
+        get => SettingsService.Instance.Current.BrowserLaunchStartsFocus;
+        set { SettingsService.Instance.Current.BrowserLaunchStartsFocus = value; SettingsService.Instance.Save(); OnPropertyChanged(); }
+    }
+
+    private async Task PerformanceLaunchAsync()
+    {
+        if (!BrowserLaunchService.TryNormalizeUrl(LaunchUrl, out string url))
+        {
+            NotificationService.Instance.Show("Please enter the web address of the game first (e.g. https://…).", NotificationKind.Warning);
+            return;
+        }
+
+        LaunchUrl = url;
+        SettingsService.Instance.Save();
+        if (LaunchStartsFocus && !IsFocused)
+        {
+            await FocusAsync();
+        }
+
+        Report(BrowserLaunchService.Launch(Game, new BrowserLaunchOptions(url, RenderScale, UnlockFps)));
+    }
     public ICommand UninstallCommand { get; }
     public ICommand OpenFolderCommand { get; }
     public ICommand FocusCommand { get; }
@@ -939,6 +1051,7 @@ public sealed class GameDetailViewModel : ObservableObject
             if (LowerPriority) details.Add("Lower priority of browsers/launchers still running");
             if (BoostPriority) details.Add($"{Game.Name}: priority 'Above normal' while it runs (anti-cheat may block this – harmless)");
             if (GpuPreference && Game.MainExecutable != null) details.Add($"Windows graphics preference 'High performance' for {Path.GetFileName(Game.MainExecutable)}");
+            if (Game.IsBrowser) details.Add("Browser: priority 'Above normal' only for the browser GPU process and the game tab (busiest tab) – other tabs stay normal");
             if (MuteNotifications) details.Add("Mute Windows notification banners");
             if (CapFps && Game.IsFortnite) details.Add($"Fortnite frame rate limit {FpsCap} FPS (only while Fortnite is closed)");
             details.Add("Everything is restored when you press STOP FOCUS.");
@@ -947,7 +1060,7 @@ public sealed class GameDetailViewModel : ObservableObject
                 return;
             }
 
-            var messages = await GameFocusService.Instance.StartAsync(Game, new FocusOptions(_focusProfile, apps, LowerPriority, BoostPriority, GpuPreference, MuteNotifications, CapFps ? FpsCap : null));
+            var messages = await GameFocusService.Instance.StartAsync(Game, new FocusOptions(_focusProfile, apps, LowerPriority, BoostPriority, GpuPreference, MuteNotifications, CapFps ? FpsCap : null, Game.IsBrowser));
             NotificationService.Instance.Show(messages.Count == 0 ? $"🎯 Focus on {Game.Name} active. Have fun!" : "Focus active with notes: " + string.Join("; ", messages),
                 messages.Count == 0 ? NotificationKind.Success : NotificationKind.Warning);
             await LoadAppsAsync();

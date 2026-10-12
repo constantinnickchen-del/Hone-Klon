@@ -29,4 +29,8 @@ public sealed class AppSettings
     public bool WeeklyMaintenance { get; set; }
     public DateTime? LastMaintenance { get; set; }
     public GamingProfile GamingProfile { get; set; } = GamingProfile.MaxFps;
+    public string BrowserLaunchUrl { get; set; } = string.Empty;
+    public int BrowserRenderScale { get; set; } = 75;
+    public bool BrowserUnlockFps { get; set; }
+    public bool BrowserLaunchStartsFocus { get; set; } = true;
 }

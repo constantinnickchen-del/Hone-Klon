@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows;
 using ConstiBoost.Core;
+using ConstiBoost.Localization;
 using ConstiBoost.Models;
 using ConstiBoost.Services;
 
@@ -21,7 +22,7 @@ public sealed class HardwareViewModel : PageViewModel
     private string _gpuNow = "–";
     private string _ramNow = "–";
     private string _ramDetail = string.Empty;
-    private string _thermalNow = "Temperature unavailable";
+    private string _thermalNow = L.T("Temperature unavailable");
     private string _thermalZone = string.Empty;
     private IReadOnlyList<double> _cpuHistory = Array.Empty<double>();
     private IReadOnlyList<double> _gpuHistory = Array.Empty<double>();
@@ -63,8 +64,8 @@ public sealed class HardwareViewModel : PageViewModel
     public string RamDetail { get => _ramDetail; private set => SetProperty(ref _ramDetail, value); }
     public string ThermalNow { get => _thermalNow; private set => SetProperty(ref _thermalNow, value); }
 
-    private string _cpuTempNow = "Temperature unavailable";
-    private string _gpuTempNow = "Temperature unavailable";
+    private string _cpuTempNow = L.T("Temperature unavailable");
+    private string _gpuTempNow = L.T("Temperature unavailable");
 
     public string CpuTempNow { get => _cpuTempNow; private set => SetProperty(ref _cpuTempNow, value); }
     public string GpuTempNow { get => _gpuTempNow; private set => SetProperty(ref _gpuTempNow, value); }
@@ -73,7 +74,7 @@ public sealed class HardwareViewModel : PageViewModel
     public IReadOnlyList<double> GpuHistory { get => _gpuHistory; private set => SetProperty(ref _gpuHistory, value); }
     public IReadOnlyList<double> RamHistory { get => _ramHistory; private set => SetProperty(ref _ramHistory, value); }
 
-    public string FpsText => "Unavailable – no supported FPS source. ConstiBoost does not inject into games (anti-cheat safe) and never estimates FPS.";
+    public string FpsText => L.T("Unavailable – no supported FPS source. ConstiBoost does not inject into games (anti-cheat safe) and never estimates FPS.");
 
     public override void OnNavigatedTo()
     {
@@ -137,24 +138,24 @@ public sealed class HardwareViewModel : PageViewModel
 
         var hw = scan.Hardware;
         Details.Clear();
-        Details.Add(new("Device", $"{hw.Manufacturer} {hw.Model}"));
+        Details.Add(new(L.T("Device"), $"{hw.Manufacturer} {hw.Model}"));
         Details.Add(new("CPU", hw.CpuName));
-        Details.Add(new("Cores / Threads", $"{hw.CpuCores?.ToString() ?? "?"} / {hw.CpuThreads?.ToString() ?? "?"}"));
-        Details.Add(new("Max clock", hw.CpuMaxClockMhz is int c ? $"{c} MHz" : Formatting.Unavailable));
+        Details.Add(new(L.T("Cores / Threads"), $"{hw.CpuCores?.ToString() ?? "?"} / {hw.CpuThreads?.ToString() ?? "?"}"));
+        Details.Add(new(L.T("Max clock"), hw.CpuMaxClockMhz is int c ? $"{c} MHz" : L.T(Formatting.Unavailable)));
         foreach (var gpu in hw.Gpus)
         {
-            Details.Add(new(gpu.IsIntegrated ? "GPU (integrated)" : "GPU", gpu.Name));
-            Details.Add(new("  Driver", gpu.DriverVersion));
+            Details.Add(new(gpu.IsIntegrated ? L.T("GPU (integrated)") : "GPU", gpu.Name));
+            Details.Add(new(L.T("  Driver"), gpu.DriverVersion));
             if (gpu.HorizontalResolution.HasValue)
             {
-                Details.Add(new("  Display", $"{gpu.HorizontalResolution}×{gpu.VerticalResolution} @ {gpu.RefreshRate?.ToString() ?? "?"} Hz"));
+                Details.Add(new(L.T("  Display"), $"{gpu.HorizontalResolution}×{gpu.VerticalResolution} @ {gpu.RefreshRate?.ToString() ?? "?"} Hz"));
             }
         }
 
-        Details.Add(new("RAM", hw.TotalRamBytes is long r ? Formatting.Bytes(r) : Formatting.Unavailable));
-        Details.Add(new("RAM speed", hw.RamSpeedMhz is int s ? $"{s} MT/s ({hw.RamModules} module(s){(hw.RamModules == 1 ? " – single channel" : string.Empty)})" : Formatting.Unavailable));
+        Details.Add(new("RAM", hw.TotalRamBytes is long r ? Formatting.Bytes(r) : L.T(Formatting.Unavailable)));
+        Details.Add(new(L.T("RAM speed"), hw.RamSpeedMhz is int s ? L.F("{0} MT/s ({1} module(s){2})", s, hw.RamModules, hw.RamModules == 1 ? L.T(" – single channel") : string.Empty) : L.T(Formatting.Unavailable)));
         Details.Add(new("Windows", $"{hw.WindowsName} {hw.WindowsVersion}"));
-        Details.Add(new("Power", hw.HasBattery ? $"Battery {hw.BatteryPercent?.ToString() ?? "?"} % · {(hw.OnAcPower == true ? "plugged in" : hw.OnAcPower == false ? "on battery" : "unknown")}" : "Desktop / no battery"));
+        Details.Add(new(L.T("Power"), hw.HasBattery ? L.F("Battery {0} % · {1}", hw.BatteryPercent?.ToString() ?? "?", L.T(hw.OnAcPower == true ? "plugged in" : hw.OnAcPower == false ? "on battery" : "unknown")) : L.T("Desktop / no battery")));
         Drives.Clear();
         foreach (var d in hw.Drives)
         {
@@ -173,15 +174,15 @@ public sealed class HardwareViewModel : PageViewModel
             GpuHistory = _gpu.ToArray();
             RamHistory = _ram.ToArray();
             CpuNow = Formatting.Percent(s.CpuPercent);
-            GpuNow = MonitorService.Instance.GpuAvailable ? Formatting.Percent(s.GpuPercent) : Formatting.Unavailable;
+            GpuNow = MonitorService.Instance.GpuAvailable ? Formatting.Percent(s.GpuPercent) : L.T(Formatting.Unavailable);
             RamNow = Formatting.Percent(s.RamPercent);
-            RamDetail = s.RamTotalBytes > 0 ? $"{Formatting.Bytes(s.RamUsedBytes)} of {Formatting.Bytes(s.RamTotalBytes)}" : string.Empty;
-            CpuTempNow = s.Sensors.CpuTemperature is double ct ? $"{ct:0} °C ({s.Sensors.Provider})" : "Temperature unavailable";
-            GpuTempNow = s.Sensors.GpuTemperature is double gt ? $"{gt:0} °C ({s.Sensors.Provider})" : "Temperature unavailable";
-            ThermalNow = s.Thermal is null ? "Temperature unavailable" : $"{Math.Round(s.Thermal.Celsius)} °C";
+            RamDetail = s.RamTotalBytes > 0 ? L.F("{0} of {1}", Formatting.Bytes(s.RamUsedBytes), Formatting.Bytes(s.RamTotalBytes)) : string.Empty;
+            CpuTempNow = s.Sensors.CpuTemperature is double ct ? $"{ct:0} °C ({s.Sensors.Provider})" : L.T("Temperature unavailable");
+            GpuTempNow = s.Sensors.GpuTemperature is double gt ? $"{gt:0} °C ({s.Sensors.Provider})" : L.T("Temperature unavailable");
+            ThermalNow = s.Thermal is null ? L.T("Temperature unavailable") : $"{Math.Round(s.Thermal.Celsius)} °C";
             ThermalZone = s.Thermal is null
-                ? "No readable sensor. CPU/GPU die temperatures need vendor drivers, which ConstiBoost does not install."
-                : $"ACPI thermal zone {s.Thermal.Zone} – a firmware sensor, not necessarily the CPU die.";
+                ? L.T("No readable sensor. CPU/GPU die temperatures need vendor drivers, which ConstiBoost does not install.")
+                : L.F("ACPI thermal zone {0} – a firmware sensor, not necessarily the CPU die.", s.Thermal.Zone);
         });
     }
 

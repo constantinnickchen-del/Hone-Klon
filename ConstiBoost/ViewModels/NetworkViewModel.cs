@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 using System.Windows.Threading;
 using ConstiBoost.Core;
+using ConstiBoost.Localization;
 using ConstiBoost.Hardware;
 using ConstiBoost.Models;
 using ConstiBoost.Services;
@@ -80,7 +81,7 @@ public sealed class NetworkViewModel : ObservableObject
 
     private async Task BufferbloatAsync()
     {
-        if (!DialogService.Confirm("Test latency under load?", $"ConstiBoost pings 1.1.1.1, then downloads up to 50 MB of random test data from {NetworkService.SpeedTestHost} while pinging again. This shows whether your ping spikes when the connection is busy (bufferbloat). No personal data is sent.", null, "START TEST"))
+        if (!DialogService.Confirm("Test latency under load?", L.F("ConstiBoost pings 1.1.1.1, then downloads up to 50 MB of random test data from {0} while pinging again. This shows whether your ping spikes when the connection is busy (bufferbloat). No personal data is sent.", NetworkService.SpeedTestHost), null, "START TEST"))
         {
             return;
         }
@@ -88,10 +89,10 @@ public sealed class NetworkViewModel : ObservableObject
         IsTesting = true;
         try
         {
-            BloatText = "Testing… (about 10 seconds)";
+            BloatText = L.T("Testing… (about 10 seconds)");
             var r = await GamerNetworkService.TestBufferbloatAsync(CancellationToken.None);
             BloatGrade = r.Grade;
-            BloatText = $"Idle ping {r.IdleMs?.ToString("0") ?? "–"} ms · under load {r.LoadedMs?.ToString("0") ?? "–"} ms. {r.Explanation}";
+            BloatText = L.F("Idle ping {0} ms · under load {1} ms. ", r.IdleMs?.ToString("0") ?? "–", r.LoadedMs?.ToString("0") ?? "–") + L.T(r.Explanation);
         }
         finally
         {
@@ -117,8 +118,8 @@ public sealed class NetworkViewModel : ObservableObject
         }
     }
 
-    public string PrimaryName => _primary is null ? "No active connection" : $"{_primary.Name} · {_primary.ConnectionType}";
-    public string PrimaryDetails => _primary is null ? string.Empty : $"{_primary.Description} · Link {_primary.LinkSpeed} · IP {_primary.IPv4}";
+    public string PrimaryName => _primary is null ? L.T("No active connection") : $"{_primary.Name} · {_primary.ConnectionType}";
+    public string PrimaryDetails => _primary is null ? string.Empty : L.F("{0} · Link {1} · IP {2}", _primary.Description, _primary.LinkSpeed, _primary.IPv4);
 
     public void Activate()
     {
@@ -200,7 +201,7 @@ public sealed class NetworkViewModel : ObservableObject
             {
                 foreach (var dns in _primary.DnsServers.Take(2))
                 {
-                    DnsResults.Add(await NetworkService.TestDnsAsync(dns, "Current DNS"));
+                    DnsResults.Add(await NetworkService.TestDnsAsync(dns, L.T("Current DNS")));
                 }
             }
 
@@ -217,7 +218,7 @@ public sealed class NetworkViewModel : ObservableObject
     private async Task SpeedTestAsync()
     {
         if (!DialogService.Confirm("Run speed test?",
-                $"The test downloads ~25 MB and uploads ~8 MB of random test data from/to {NetworkService.SpeedTestHost} (Cloudflare). No personal or system data is sent. Mobile data may be used.",
+                L.F("The test downloads ~25 MB and uploads ~8 MB of random test data from/to {0} (Cloudflare). No personal or system data is sent. Mobile data may be used.", NetworkService.SpeedTestHost),
                 null, "START TEST"))
         {
             return;
@@ -227,11 +228,11 @@ public sealed class NetworkViewModel : ObservableObject
         _cts = new CancellationTokenSource(TimeSpan.FromSeconds(60));
         try
         {
-            SpeedStatus = "Testing…";
+            SpeedStatus = L.T("Testing…");
             var (down, up, error) = await NetworkService.SpeedTestAsync(_cts.Token);
             SpeedDown = down.HasValue ? NetworkService.FormatBits(down.Value) : "–";
             SpeedUp = up.HasValue ? NetworkService.FormatBits(up.Value) : "–";
-            SpeedStatus = error ?? $"Measured at {DateTime.Now:HH:mm}. Results vary with Wi-Fi signal and network load.";
+            SpeedStatus = error != null ? L.T(error) : L.F("Measured at {0:HH:mm}. Results vary with Wi-Fi signal and network load.", DateTime.Now);
             if (error != null)
             {
                 NotificationService.Instance.Show(error, NotificationKind.Warning);

@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 using ConstiBoost.Backup;
 using ConstiBoost.Core;
+using ConstiBoost.Localization;
 using ConstiBoost.Logging;
 using ConstiBoost.Models;
 using ConstiBoost.Optimizers;
@@ -59,9 +60,9 @@ public sealed class BoostLabViewModel : PageViewModel
     public string ProgressText { get => _progress; private set => SetProperty(ref _progress, value); }
 
     public int BottleneckCount => Insights.Count(i => i.Status is CheckStatus.Bad or CheckStatus.Warning);
-    public string HeadlineText => !_loaded ? "Analyzing what limits your FPS…"
-        : BottleneckCount == 0 ? "No major bottlenecks found – your PC is configured well for its hardware."
-        : $"{BottleneckCount} thing(s) found that can hold your FPS back.";
+    public string HeadlineText => !_loaded ? L.T("Analyzing what limits your FPS…")
+        : BottleneckCount == 0 ? L.T("No major bottlenecks found – your PC is configured well for its hardware.")
+        : L.F("{0} thing(s) found that can hold your FPS back.", BottleneckCount);
     public string ProfileText => ScanService.Instance.Last?.Profile.Description ?? string.Empty;
 
     public override void OnNavigatedTo()
@@ -75,13 +76,13 @@ public sealed class BoostLabViewModel : PageViewModel
     private async Task LoadAsync()
     {
         IsBusy = true;
-        ProgressText = "Reading hardware…";
+        ProgressText = L.T("Reading hardware…");
         try
         {
             var scan = ScanService.Instance.Last ?? await ScanService.Instance.ScanAsync();
             _context = new OptimizationContext { Hardware = scan.Hardware, Profile = scan.Profile };
             var gameDrives = MainViewModel.Instance?.Games.Games.Select(g => Path.GetPathRoot(g.InstallPath) ?? string.Empty).Where(d => d.Length > 0).Distinct().ToList() ?? new List<string>();
-            ProgressText = "Checking memory, drivers, storage and display…";
+            ProgressText = L.T("Checking memory, drivers, storage and display…");
             var insights = await Task.Run(() => HardwareInsightsService.Analyze(scan.Hardware, gameDrives));
             var upgrades = await Task.Run(() => HardwareInsightsService.UpgradeAdvice(scan.Hardware, gameDrives));
             var layout = await Task.Run(Hardware.MemoryInfo.Read);
@@ -92,7 +93,7 @@ public sealed class BoostLabViewModel : PageViewModel
             }
 
             MemoryModules.Clear();
-            MemoryModules.Add($"Memory slots: {layout.Slots?.ToString() ?? "unknown"} · installed modules: {layout.Modules.Count}" + (layout.FreeSlots is int free ? $" · free: {free}" : string.Empty));
+            MemoryModules.Add(L.F("Memory slots: {0} · installed modules: {1}", layout.Slots?.ToString() ?? L.T("unknown"), layout.Modules.Count) + (layout.FreeSlots is int free ? L.F(" · free: {0}", free) : string.Empty));
             foreach (var m in layout.Modules)
             {
                 MemoryModules.Add($"{m.Slot}: {m.CapacityBytes / 1024 / 1024 / 1024} GB {m.Type} {m.SpeedMts?.ToString() ?? "?"} MT/s {m.FormFactor} {m.Manufacturer} {m.PartNumber}".Trim());
@@ -103,7 +104,7 @@ public sealed class BoostLabViewModel : PageViewModel
                 Insights.Add(i);
             }
 
-            ProgressText = "Checking Windows settings…";
+            ProgressText = L.T("Checking Windows settings…");
             await Task.Run(() =>
             {
                 foreach (var o in Pack)
@@ -135,7 +136,7 @@ public sealed class BoostLabViewModel : PageViewModel
     {
         var selected = Pack.Where(p => p.IsSelected && p.IsAvailable).ToList();
         var details = selected.Select(o => $"{o.Name}: {o.CurrentState} → {o.RecommendedState}").ToList();
-        details.Add("A backup of every changed setting is created first (Backups → RESTORE).");
+        details.Add(L.T("A backup of every changed setting is created first (Backups → RESTORE)."));
         if (!DialogService.Confirm("Apply the Low-End Boost Pack?", "These safe Windows changes will be made:", details, "APPLY BOOST PACK"))
         {
             return;
@@ -148,9 +149,9 @@ public sealed class BoostLabViewModel : PageViewModel
             var backup = BackupSession.Create("Low-End Boost Pack");
             foreach (var o in selected)
             {
-                ProgressText = $"Applying: {o.Name}…";
+                ProgressText = L.F("Applying: {0}…", o.Name);
                 var r = await o.ApplyAsync(backup, _context);
-                Results.Add((r.Success ? "✓ " : "✕ ") + $"{o.Name} – {r.Message}");
+                Results.Add((r.Success ? "✓ " : "✕ ") + $"{o.Name} – {L.T(r.Message)}");
                 o.IsSelected = false;
             }
 

@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using ConstiBoost.Core;
+using ConstiBoost.Localization;
 using ConstiBoost.Models;
 using ConstiBoost.Services;
 
@@ -18,7 +19,7 @@ public sealed class DashboardViewModel : PageViewModel
     private string _cpuUsage = "–";
     private string _gpuUsage = "–";
     private string _ramUsage = "–";
-    private string _thermalText = "Unavailable";
+    private string _thermalText = L.T("Unavailable");
     private bool _subscribed;
 
     public DashboardViewModel()
@@ -53,12 +54,12 @@ public sealed class DashboardViewModel : PageViewModel
 
     public string CpuName => _scan?.Hardware.CpuName ?? "–";
     public string CpuDetails => _scan is null ? string.Empty
-        : $"{_scan.Hardware.CpuCores?.ToString() ?? "?"} cores · {_scan.Hardware.CpuThreads?.ToString() ?? "?"} threads";
+        : L.F("{0} cores · {1} threads", _scan.Hardware.CpuCores?.ToString() ?? "?", _scan.Hardware.CpuThreads?.ToString() ?? "?");
     public string GpuName => _scan?.Hardware.PrimaryGpuName ?? "–";
     public string GpuDetails => _scan is null ? string.Empty
-        : (_scan.Profile.HasDedicatedGpu ? "Dedicated graphics" : _scan.Hardware.Gpus.Any(g => g.IsIntegrated) ? "Integrated graphics" : "Graphics");
-    public string RamText => _scan?.Hardware.TotalRamBytes is long r ? $"{Math.Round(r / 1024d / 1024 / 1024)} GB" : Formatting.Unavailable;
-    public string RamDetails => _scan?.Hardware.RamSpeedMhz is int s ? $"{s} MT/s · {_scan.Hardware.RamModules} module(s)" : string.Empty;
+        : L.T(_scan.Profile.HasDedicatedGpu ? "Dedicated graphics" : _scan.Hardware.Gpus.Any(g => g.IsIntegrated) ? "Integrated graphics" : "Graphics");
+    public string RamText => _scan?.Hardware.TotalRamBytes is long r ? $"{Math.Round(r / 1024d / 1024 / 1024)} GB" : L.T(Formatting.Unavailable);
+    public string RamDetails => _scan?.Hardware.RamSpeedMhz is int s ? L.F("{0} MT/s · {1} module(s)", s, _scan.Hardware.RamModules) : string.Empty;
     public string WindowsName => _scan?.Hardware.WindowsName ?? "–";
     public string WindowsVersion => _scan?.Hardware.WindowsVersion ?? string.Empty;
     public string DeviceTitle => _scan?.Profile.Title ?? string.Empty;
@@ -70,9 +71,9 @@ public sealed class DashboardViewModel : PageViewModel
     public PerformanceStatus Status => _scan?.Status ?? PerformanceStatus.CouldBeImproved;
     public string StatusText => Status switch
     {
-        PerformanceStatus.Good => "Good",
-        PerformanceStatus.CouldBeImproved => "Could be improved",
-        _ => "Needs attention",
+        PerformanceStatus.Good => L.T("Good"),
+        PerformanceStatus.CouldBeImproved => L.T("Could be improved"),
+        _ => L.T("Needs attention"),
     };
     public string StatusEmoji => Status switch
     {
@@ -81,19 +82,19 @@ public sealed class DashboardViewModel : PageViewModel
         _ => "🔴",
     };
 
-    public string PowerText => _scan is null ? "–" : _scan.State.PowerPlanName + (_scan.State.PowerModeName is "–" or "Unavailable" ? string.Empty : " · " + _scan.State.PowerModeName);
-    public string GameModeText => _scan?.State.GameModeEnabled switch { true => "ON", false => "OFF", _ => "Unavailable" };
-    public string GameBarText => _scan?.State.GameDvrEnabled switch { true => "Captures ON", false => "Captures OFF", _ => "Unavailable" };
+    public string PowerText => _scan is null ? "–" : L.T(_scan.State.PowerPlanName) + (_scan.State.PowerModeName is "–" or "Unavailable" ? string.Empty : " · " + L.T(_scan.State.PowerModeName));
+    public string GameModeText => L.T(_scan?.State.GameModeEnabled switch { true => "ON", false => "OFF", _ => "Unavailable" });
+    public string GameBarText => L.T(_scan?.State.GameDvrEnabled switch { true => "Captures ON", false => "Captures OFF", _ => "Unavailable" });
     public string HagsText => _scan?.State.HagsText ?? "–";
-    public string StartupText => _scan is null ? "–" : $"{_scan.State.EnabledStartupApps} enabled";
+    public string StartupText => _scan is null ? "–" : L.F("{0} enabled", _scan.State.EnabledStartupApps);
 
     public string CpuUsage { get => _cpuUsage; private set => SetProperty(ref _cpuUsage, value); }
     public string GpuUsage { get => _gpuUsage; private set => SetProperty(ref _gpuUsage, value); }
     public string RamUsage { get => _ramUsage; private set => SetProperty(ref _ramUsage, value); }
     public string ThermalText { get => _thermalText; private set => SetProperty(ref _thermalText, value); }
 
-    private string _cpuTempText = "Unavailable";
-    private string _gpuTempText = "Unavailable";
+    private string _cpuTempText = L.T("Unavailable");
+    private string _gpuTempText = L.T("Unavailable");
     private string _tempSourceText = string.Empty;
 
     public string CpuTempText { get => _cpuTempText; private set => SetProperty(ref _cpuTempText, value); }
@@ -134,12 +135,12 @@ public sealed class DashboardViewModel : PageViewModel
         Application.Current?.Dispatcher.BeginInvoke(() =>
         {
             CpuUsage = Formatting.Percent(s.CpuPercent);
-            GpuUsage = MonitorService.Instance.GpuAvailable ? Formatting.Percent(s.GpuPercent) : Formatting.Unavailable;
+            GpuUsage = MonitorService.Instance.GpuAvailable ? Formatting.Percent(s.GpuPercent) : L.T(Formatting.Unavailable);
             RamUsage = Formatting.Percent(s.RamPercent);
-            ThermalText = s.Thermal is null ? "Unavailable" : $"{Math.Round(s.Thermal.Celsius)} °C";
-            CpuTempText = s.Sensors.CpuTemperature is double c ? $"{c:0} °C" : "Unavailable";
-            GpuTempText = s.Sensors.GpuTemperature is double g ? $"{g:0} °C" : "Unavailable";
-            TempSourceText = s.Sensors.Provider is { } p ? $"CPU/GPU values read from {p}." : string.Empty;
+            ThermalText = s.Thermal is null ? L.T("Unavailable") : $"{Math.Round(s.Thermal.Celsius)} °C";
+            CpuTempText = s.Sensors.CpuTemperature is double c ? $"{c:0} °C" : L.T("Unavailable");
+            GpuTempText = s.Sensors.GpuTemperature is double g ? $"{g:0} °C" : L.T("Unavailable");
+            TempSourceText = s.Sensors.Provider is { } p ? L.F("CPU/GPU values read from {0}.", p) : string.Empty;
         });
     }
 

@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 using ConstiBoost.Backup;
 using ConstiBoost.Core;
+using ConstiBoost.Localization;
 using ConstiBoost.Models;
 using ConstiBoost.Services;
 
@@ -34,7 +35,7 @@ public sealed class StartupViewModel : PageViewModel
 
     public bool IsLoading { get => _isLoading; private set => SetProperty(ref _isLoading, value); }
 
-    public string SummaryText => $"{Entries.Count(e => e.IsEnabled)} of {Entries.Count} startup apps enabled · {Entries.Count(e => e.IsProtected)} protected";
+    public string SummaryText => L.F("{0} of {1} startup apps enabled · {2} protected", Entries.Count(e => e.IsEnabled), Entries.Count, Entries.Count(e => e.IsProtected));
 
     public override void OnNavigatedTo() => _ = LoadAsync();
 
@@ -72,7 +73,7 @@ public sealed class StartupViewModel : PageViewModel
         entry.IsEnabled = !requested;
         if (entry.IsProtected)
         {
-            NotificationService.Instance.Show($"{entry.Name} is protected: {entry.ProtectionReason}", NotificationKind.Warning);
+            NotificationService.Instance.Show(L.F("{0} is protected: {1}", entry.Name, L.T(entry.ProtectionReason)), NotificationKind.Warning);
             return;
         }
 

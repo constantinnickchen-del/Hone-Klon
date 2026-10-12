@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using ConstiBoost.Core;
+using ConstiBoost.Localization;
 using ConstiBoost.Hardware;
 using ConstiBoost.Logging;
 
@@ -63,7 +64,7 @@ public sealed class BenchmarkViewModel : ObservableObject
             var progress = new Progress<(int percent, string step)>(p =>
             {
                 Progress = p.percent;
-                Step = p.step;
+                Step = L.T(p.step);
             });
             var result = await BenchmarkService.RunAsync(label, progress, CancellationToken.None);
             History.Add(result);
@@ -84,7 +85,7 @@ public sealed class BenchmarkViewModel : ObservableObject
         catch (Exception ex)
         {
             AppLog.Error("Benchmark failed", ex);
-            Step = "The benchmark couldn't be completed.";
+            Step = L.T("The benchmark couldn't be completed.");
         }
         finally
         {
@@ -122,7 +123,7 @@ public sealed class BenchmarkViewModel : ObservableObject
             better = relative < 0.03 ? null : (d > 0) == higherIsBetter;
         }
 
-        Comparison.Add(new ComparisonRow(metric, before.ToString(format), after?.ToString(format) ?? "–", diff, better));
+        Comparison.Add(new ComparisonRow(L.T(metric), before.ToString(format), after?.ToString(format) ?? "–", diff, better));
     }
 
     private static string Pct(double before, double after) =>

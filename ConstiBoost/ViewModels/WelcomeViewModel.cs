@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using ConstiBoost.Core;
+using ConstiBoost.Localization;
 using ConstiBoost.Models;
 using ConstiBoost.Optimizers;
 using ConstiBoost.Services;
@@ -63,7 +64,7 @@ public sealed class WelcomeViewModel : ObservableObject
         Step = 1;
         var progress = new Progress<string>(t => ProgressText = t);
         var result = await ScanService.Instance.ScanAsync(progress);
-        ProgressText = "Looking for optimizations…";
+        ProgressText = L.T("Looking for optimizations…");
 
         var context = new OptimizationContext { Hardware = result.Hardware, Profile = result.Profile };
         var optimizations = OptimizationCatalog.CreateAll();
@@ -83,7 +84,7 @@ public sealed class WelcomeViewModel : ObservableObject
 
         if (Recommendations.Count == 0)
         {
-            Recommendations.Add("No important changes needed – your PC is already well configured.");
+            Recommendations.Add(L.T("No important changes needed – your PC is already well configured."));
         }
 
         Score = result.Score;

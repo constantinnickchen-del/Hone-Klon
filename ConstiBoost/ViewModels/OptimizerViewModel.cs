@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 using ConstiBoost.Backup;
 using ConstiBoost.Core;
+using ConstiBoost.Localization;
 using ConstiBoost.Hardware;
 using ConstiBoost.Logging;
 using ConstiBoost.Models;
@@ -87,13 +88,13 @@ public sealed class OptimizerViewModel : PageViewModel
     public string ProgressText { get => _progressText; private set => SetProperty(ref _progressText, value); }
 
     public string ScoreChangeText => _scoreBefore.HasValue && _scoreAfter.HasValue
-        ? $"Gaming Readiness: {_scoreBefore}/100 → {_scoreAfter}/100"
+        ? L.F("Gaming Readiness: {0}/100 → {1}/100", _scoreBefore, _scoreAfter)
         : string.Empty;
 
-    public string GameModeState => GameFeatures.GameModeEnabled ? "ON" : "OFF";
-    public string GameBarState => GameFeatures.GameDvrEnabled ? "ON (captures enabled)" : "Captures OFF";
-    public string GameBarControllerState => GameFeatures.GameBarControllerEnabled ? "ON" : "OFF";
-    public string HagsState => GameFeatures.HagsEnabled switch { true => "ON", false => "OFF", _ => "Unavailable" };
+    public string GameModeState => L.T(GameFeatures.GameModeEnabled ? "ON" : "OFF");
+    public string GameBarState => L.T(GameFeatures.GameDvrEnabled ? "ON (captures enabled)" : "Captures OFF");
+    public string GameBarControllerState => L.T(GameFeatures.GameBarControllerEnabled ? "ON" : "OFF");
+    public string HagsState => L.T(GameFeatures.HagsEnabled switch { true => "ON", false => "OFF", _ => "Unavailable" });
 
     private bool _pendingOneClick;
 
@@ -133,7 +134,7 @@ public sealed class OptimizerViewModel : PageViewModel
 
         Phase = OptimizerPhase.Analyzing;
         Results.Clear();
-        ProgressText = "Analyzing your system…";
+        ProgressText = L.T("Analyzing your system…");
         try
         {
             var scan = ScanService.Instance.Last ?? await ScanService.Instance.ScanAsync();
@@ -158,8 +159,8 @@ public sealed class OptimizerViewModel : PageViewModel
             }
 
             Summary = Found.Count == 0
-                ? "Your system is already well configured. Nothing important to change."
-                : $"Optimization found: {Found.Count} item(s). Recommended items are pre-selected – review them below.";
+                ? L.T("Your system is already well configured. Nothing important to change.")
+                : L.F("Optimization found: {0} item(s). Recommended items are pre-selected – review them below.", Found.Count);
             _analyzedOnce = true;
             Phase = oneClick && Found.Count > 0 ? OptimizerPhase.Review : OptimizerPhase.Idle;
             if (oneClick && Found.Count == 0)
@@ -170,7 +171,7 @@ public sealed class OptimizerViewModel : PageViewModel
         catch (Exception ex)
         {
             AppLog.Error("Analyze failed", ex);
-            Summary = "The analysis couldn't be completed. Details were written to the log.";
+            Summary = L.T("The analysis couldn't be completed. Details were written to the log.");
             Phase = OptimizerPhase.Idle;
         }
 
@@ -198,9 +199,9 @@ public sealed class OptimizerViewModel : PageViewModel
 
         var details = selected.Select(o =>
             $"{o.Name}: {o.CurrentState} → {o.RecommendedState}" +
-            (o.RequiresAdmin ? "  [administrator permission]" : string.Empty) +
-            (o.IsReversible ? string.Empty : "  [deletes temp/cache files]")).ToList();
-        details.Add("A backup of every changed setting is created first.");
+            (o.RequiresAdmin ? L.T("  [administrator permission]") : string.Empty) +
+            (o.IsReversible ? string.Empty : L.T("  [deletes temp/cache files]"))).ToList();
+        details.Add(L.T("A backup of every changed setting is created first."));
         if (!DialogService.Confirm("Apply optimizations?", "ConstiBoost will make the following changes:", details, "APPLY OPTIMIZATIONS"))
         {
             return;
@@ -214,39 +215,39 @@ public sealed class OptimizerViewModel : PageViewModel
             bool systemChanges = selected.Any(o => o.IsReversible);
             if (SettingsService.Instance.Current.CreateRestorePointBeforeMajorChanges && systemChanges && (selected.Count >= 3 || selected.Any(o => o.RequiresAdmin)))
             {
-                ProgressText = "Creating Windows restore point (UAC)…";
+                ProgressText = L.T("Creating Windows restore point (UAC)…");
                 var rp = await RestorePointService.CreateAsync("ConstiBoost – before optimization");
-                if (!rp.Success && !DialogService.Confirm("Restore point not created", rp.Message + "\n\nContinue with the ConstiBoost backup only?", null, "CONTINUE"))
+                if (!rp.Success && !DialogService.Confirm("Restore point not created", L.T(rp.Message) + "\n\n" + L.T("Continue with the ConstiBoost backup only?"), null, "CONTINUE"))
                 {
                     Phase = OptimizerPhase.Review;
                     return;
                 }
             }
 
-            ProgressText = "Creating backup…";
+            ProgressText = L.T("Creating backup…");
             var backup = BackupSession.Create("Optimize my PC");
             int ok = 0;
             foreach (var o in selected)
             {
-                ProgressText = $"Applying: {o.Name}…";
+                ProgressText = L.F("Applying: {0}…", o.Name);
                 var result = await o.ApplyAsync(backup, _context);
                 if (result.Success)
                 {
                     ok++;
-                    Results.Add($"✓ {o.Name} – {result.Message}");
+                    Results.Add($"✓ {o.Name} – {L.T(result.Message)}");
                 }
                 else
                 {
-                    Results.Add($"✕ {o.Name} – {result.Message}" + (result.TechnicalDetails is null ? string.Empty : $" ({result.TechnicalDetails})"));
+                    Results.Add($"✕ {o.Name} – {L.T(result.Message)}" + (result.TechnicalDetails is null ? string.Empty : $" ({result.TechnicalDetails})"));
                 }
 
                 o.IsSelected = false;
             }
 
-            ProgressText = "Re-checking Gaming Readiness…";
+            ProgressText = L.T("Re-checking Gaming Readiness…");
             var scan = await ScanService.Instance.ScanAsync();
             _scoreAfter = scan.Score;
-            Summary = $"{ok} of {selected.Count} optimization(s) applied. Backup: {backup.Manifest.Id}";
+            Summary = L.F("{0} of {1} optimization(s) applied. Backup: {2}", ok, selected.Count, backup.Manifest.Id);
             NotificationService.Instance.Show(Summary, ok == selected.Count ? NotificationKind.Success : NotificationKind.Warning);
             OnPropertyChanged(nameof(ScoreChangeText));
 
@@ -261,7 +262,7 @@ public sealed class OptimizerViewModel : PageViewModel
         catch (Exception ex)
         {
             AppLog.Error("Apply failed", ex);
-            Results.Add("✕ This optimization couldn't be applied. Details were written to the log.");
+            Results.Add(L.T("✕ This optimization couldn't be applied. Details were written to the log."));
         }
         finally
         {
@@ -276,12 +277,12 @@ public sealed class OptimizerViewModel : PageViewModel
     {
         var services = new (string name, string purpose)[]
         {
-            ("GamingServices", "Microsoft Store / Xbox app games"),
-            ("GamingServicesNet", "Xbox networking for Store games"),
-            ("XblAuthManager", "Xbox Live sign-in"),
-            ("XblGameSave", "Xbox cloud saves"),
-            ("XboxNetApiSvc", "Xbox Live multiplayer networking"),
-            ("XboxGipSvc", "Xbox accessories (controllers)"),
+            ("GamingServices", L.T("Microsoft Store / Xbox app games")),
+            ("GamingServicesNet", L.T("Xbox networking for Store games")),
+            ("XblAuthManager", L.T("Xbox Live sign-in")),
+            ("XblGameSave", L.T("Xbox cloud saves")),
+            ("XboxNetApiSvc", L.T("Xbox Live multiplayer networking")),
+            ("XboxGipSvc", L.T("Xbox accessories (controllers)")),
         };
         var list = new List<ServiceStatus>();
         foreach (var (name, purpose) in services)
@@ -289,15 +290,15 @@ public sealed class OptimizerViewModel : PageViewModel
             try
             {
                 using var sc = new ServiceController(name);
-                list.Add(new ServiceStatus(sc.DisplayName, sc.Status.ToString(), purpose));
+                list.Add(new ServiceStatus(sc.DisplayName, L.T(sc.Status.ToString()), purpose));
             }
             catch (InvalidOperationException)
             {
-                list.Add(new ServiceStatus(name, "Not installed", purpose));
+                list.Add(new ServiceStatus(name, L.T("Not installed"), purpose));
             }
             catch (Exception ex)
             {
-                list.Add(new ServiceStatus(name, "Unavailable (" + ex.Message + ")", purpose));
+                list.Add(new ServiceStatus(name, L.T("Unavailable") + " (" + ex.Message + ")", purpose));
             }
         }
 
@@ -319,7 +320,7 @@ public sealed class OptimizerViewModel : PageViewModel
         }
         catch (Exception ex)
         {
-            NotificationService.Instance.Show("Windows settings couldn't be opened: " + ex.Message, NotificationKind.Error);
+            NotificationService.Instance.Show(L.F("Windows settings couldn't be opened: {0}", ex.Message), NotificationKind.Error);
         }
     }
 }

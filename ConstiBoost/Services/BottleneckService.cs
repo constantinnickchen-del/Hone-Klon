@@ -5,6 +5,7 @@ using System.Linq;
 using System.Management;
 using System.Threading;
 using System.Threading.Tasks;
+using ConstiBoost.Games;
 using ConstiBoost.Hardware;
 using ConstiBoost.Logging;
 using ConstiBoost.WinSys;
@@ -19,6 +20,8 @@ public enum BottleneckKind
     Thermal,
     Battery,
     NotLoaded,
+    SoftwareRendering,
+    OldDriver,
 }
 
 public sealed record BottleneckFinding(BottleneckKind Kind, string Title, string Explanation, IReadOnlyList<string> Fixes);
@@ -32,7 +35,9 @@ public sealed record BottleneckReport(
     double? Fps,
     int? RefreshRate,
     bool OnBattery,
-    IReadOnlyList<BottleneckFinding> Findings)
+    IReadOnlyList<BottleneckFinding> Findings,
+    double? GameGpu = null,
+    double? GameCpuCores = null)
 {
     public string Summary
     {
@@ -68,6 +73,16 @@ public sealed record BottleneckReport(
                 parts.Add("on battery");
             }
 
+            if (GameGpu is double gg)
+            {
+                parts.Add($"game GPU {gg:0} %");
+            }
+
+            if (GameCpuCores is double cc)
+            {
+                parts.Add($"game CPU {cc * 100:0} % of one thread");
+            }
+
             return string.Join(" · ", parts);
         }
     }
@@ -80,8 +95,13 @@ public sealed record BottleneckReport(
 /// </summary>
 public static class BottleneckService
 {
-    public static async Task<BottleneckReport> AnalyzeAsync(int seconds, IProgress<string> progress, CancellationToken token)
+    public static async Task<BottleneckReport> AnalyzeAsync(int seconds, IProgress<string> progress, CancellationToken token, GameInfo? game = null)
     {
+        var gameGpu = new List<double>();
+        var gameCpuStart = new Dictionary<int, TimeSpan>();
+        var gameCpuEnd = new Dictionary<int, TimeSpan>();
+        int? browserGpuPid = null;
+        var stopwatch = Stopwatch.StartNew();
         var gpuValues = new List<double>();
         var temps = new List<double>();
         var clocks = new List<double>();
@@ -136,6 +156,20 @@ public static class BottleneckService
             {
                 var cores = new PerCoreSampler();
                 cores.Sample();
+                var perProcessGpu = new GpuUsageSampler();
+                perProcessGpu.Sample();
+                if (game != null)
+                {
+                    ReadCpuTimes(game, gameCpuStart);
+                    if (game.IsBrowser)
+                    {
+                        browserGpuPid = BrowserProcessInfo.CommandLines(gameCpuStart.Keys)
+                            .Where(kv => kv.Value.Contains("--type=gpu-process", StringComparison.OrdinalIgnoreCase))
+                            .Select(kv => (int?)kv.Key).FirstOrDefault();
+                    }
+                }
+
+                stopwatch.Restart();
                 for (int i = 0; i < seconds; i++)
                 {
                     token.ThrowIfCancellationRequested();
@@ -146,6 +180,19 @@ public static class BottleneckService
                     {
                         coreSamples.Add(values);
                     }
+
+                    if (game != null && perProcessGpu.IsAvailable)
+                    {
+                        perProcessGpu.Sample();
+                        var pids = gameCpuStart.Keys;
+                        double usage = perProcessGpu.PerProcess.Where(kv => pids.Contains(kv.Key)).Select(kv => kv.Value).DefaultIfEmpty(0).Max();
+                        gameGpu.Add(usage);
+                    }
+                }
+
+                if (game != null)
+                {
+                    ReadCpuTimes(game, gameCpuEnd);
                 }
             }, token);
         }
@@ -178,10 +225,34 @@ public static class BottleneckService
             fps = fpsValues.Count > 0 ? fpsValues.Average() : null;
         }
 
+        double elapsedMs = Math.Max(1, stopwatch.Elapsed.TotalMilliseconds);
+        double? gameGpuAvg = gameGpu.Count > 0 ? gameGpu.Average() : null;
+        double? gameCpuCores = null;
+        double? gpuProcessCores = null;
+        if (game != null && gameCpuEnd.Count > 0)
+        {
+            double total = 0;
+            foreach (var (pid, end) in gameCpuEnd)
+            {
+                if (gameCpuStart.TryGetValue(pid, out var start))
+                {
+                    double delta = (end - start).TotalMilliseconds / elapsedMs;
+                    total += delta;
+                    if (pid == browserGpuPid)
+                    {
+                        gpuProcessCores = delta;
+                    }
+                }
+            }
+
+            gameCpuCores = total;
+        }
+
         int? refresh = ReadRefreshRate();
         bool onBattery = Safe(() => System.Windows.Forms.SystemInformation.PowerStatus.PowerLineStatus == System.Windows.Forms.PowerLineStatus.Offline);
         var findings = Evaluate(gpu, cpuAvg, busiest, tMax, fps, refresh, onBattery);
-        var report = new BottleneckReport(gpu, cpuAvg, busiest, tMax, mhzAvg, fps, refresh, onBattery, findings);
+        AddGameFindings(findings, game, gameGpuAvg, gameCpuCores, gpuProcessCores);
+        var report = new BottleneckReport(gpu, cpuAvg, busiest, tMax, mhzAvg, fps, refresh, onBattery, findings, gameGpuAvg, gameCpuCores);
         AppLog.Info("Bottleneck analysis: " + report.Summary + " → " + string.Join(", ", findings.Select(f => f.Kind)));
         return report;
     }
@@ -262,6 +333,67 @@ public static class BottleneckService
         }
 
         return list;
+    }
+
+    private static void ReadCpuTimes(GameInfo game, Dictionary<int, TimeSpan> target)
+    {
+        foreach (var p in GameFocusService.FindGameProcesses(game.ProcessRoots))
+        {
+            using (p)
+            {
+                try
+                {
+                    target[p.Id] = p.TotalProcessorTime;
+                }
+                catch
+                {
+                    // protected / ended
+                }
+            }
+        }
+    }
+
+    private static void AddGameFindings(List<BottleneckFinding> list, GameInfo? game, double? gameGpu, double? gameCpuCores, double? gpuProcessCores)
+    {
+        if (game is null)
+        {
+            return;
+        }
+
+        if (game.IsBrowser && gameGpu is double gg && gg < 12 && (gameCpuCores ?? 0) > 0.5)
+        {
+            string gpuProc = gpuProcessCores is double gp ? $" The browser's GPU process alone uses {gp * 100:0} % of a CPU thread." : string.Empty;
+            list.Insert(0, new BottleneckFinding(BottleneckKind.SoftwareRendering, "⚠ The web game is rendered by the CPU, not the graphics chip",
+                $"The browser uses only ~{gg:0} % of the GPU but ~{gameCpuCores * 100:0} % of a CPU thread.{gpuProc} This is the typical sign of software rendering (WebGL without hardware acceleration) – it causes single-digit FPS. Fixing this brings by far the biggest gain.",
+                new[]
+                {
+                    "Browser settings → System → 'Use graphics acceleration when available' ON, then restart the browser.",
+                    "Open the flags page shown in the Browser Game Boost card: 'Override software rendering list' → Enabled → Relaunch.",
+                    "Use ⚡ PERFORMANCE LAUNCH with 'restart browser' – it starts the browser with the GPU block list disabled.",
+                    "Update the AMD graphics driver (AMD Adrenalin / amd.com) – old OEM drivers are often blocked by browsers.",
+                    "Check the GPU page (chrome://gpu): 'WebGL: Hardware accelerated' must be shown.",
+                }));
+        }
+        else if (game.IsBrowser && gameCpuCores is double cores && cores >= 0.85 && gameGpu is double g2 && g2 < 70)
+        {
+            list.Insert(0, new BottleneckFinding(BottleneckKind.CpuSingleThread, "The web game is limited by its JavaScript/WebAssembly thread",
+                $"The browser uses ~{cores * 100:0} % of a CPU thread and the GPU only ~{g2:0} %. Web ports of PC games run their game logic on ONE browser thread – that thread is the limit, not the graphics. Fewer pixels help only a little here.",
+                new[]
+                {
+                    "Charger in + Game Focus 'Max FPS' (highest CPU boost clock).",
+                    "Close every other tab and window – they compete for the same CPU.",
+                    "In the game's own options: lower draw distance, traffic/pedestrian density, shadows (if it has them).",
+                    "Try another Chromium browser (Edge/Chrome) – JavaScript speed differs between browsers and versions.",
+                }));
+        }
+
+        var driver = ScanService.Instance.Last?.Hardware.Gpus.FirstOrDefault()?.DriverDate;
+        if (driver is DateTime date && date < DateTime.Now.AddMonths(-18))
+        {
+            list.Add(new BottleneckFinding(BottleneckKind.OldDriver, "Old graphics driver",
+                $"Your graphics driver is from {date:MMMM yyyy}. Old drivers are slower in games and browsers often block WebGL acceleration on them.",
+                new[] { "Install the current AMD Software: Adrenalin Edition (amd.com → Drivers → Ryzen 7 5700U / Radeon Graphics). A restore point is created by the installer." }));
+        }
     }
 
     private static int? ReadRefreshRate()

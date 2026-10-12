@@ -43,7 +43,7 @@
                             <StackPanel Margin="0,0,12,0">
                                 <TextBlock Text="⚡ PERFORMANCE LAUNCH (AUTOMATIC LOW SETTINGS)" Style="{StaticResource Text.Caption}" />
                                 <TextBlock Style="{StaticResource Text.Body}" FontSize="12" Margin="0,4,0,0" TextWrapping="Wrap"
-                                           Text="Opens the game in its own clean browser window with everything set for FPS automatically: fewer pixels to render (render size), GPU acceleration forced on, no extensions, high-performance GPU, and optionally Game Focus. Your normal browser profile stays untouched – log in to the game once in this window, it is remembered." />
+                                           Text="Opens the game in YOUR normal browser (ad blocker and extensions keep working) with everything set for FPS: GPU block list off, GPU rasterization, high-performance GPU, smaller render window and optionally Game Focus. If the browser is running, ConstiBoost asks to restart it once – your tabs come back automatically." />
                             </StackPanel>
                         </DockPanel>
                         <DockPanel Margin="0,12,0,0">
@@ -62,10 +62,12 @@
                         <TextBlock Text="{Binding RenderScaleText}" Style="{StaticResource Text.Caption}" Margin="110,4,0,0" TextWrapping="Wrap" />
                         <CheckBox IsChecked="{Binding LaunchStartsFocus}" Margin="0,10,0,0" Foreground="{DynamicResource TextPrimaryBrush}"
                                   Content="Also start 🎯 Game Focus (close background apps, Max FPS power mode, boost the game tab + browser GPU process)" />
+                        <CheckBox IsChecked="{Binding UseSeparateProfile}" Margin="0,6,0,0" Foreground="{DynamicResource TextPrimaryBrush}"
+                                  Content="Use a separate clean ConstiBoost browser profile instead (no extensions, no restart of your normal browser needed)" />
                         <CheckBox IsChecked="{Binding UnlockFps}" Margin="0,6,0,0" Foreground="{DynamicResource TextPrimaryBrush}"
                                   Content="Unlock FPS above the display refresh rate (VSync off – more FPS on the counter, more heat, possible tearing)" />
                         <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,10,0,0"
-                                   Text="Honest note: the graphics menu inside a website belongs to the website – no external program can switch it. If the game has its own options (quality, shadows, draw distance), set them to the lowest once; they are then remembered in the ConstiBoost browser window." />
+                                   Text="Honest note: the graphics menu inside a website belongs to the website – no external program can switch it. If the game has its own options (quality, shadows, draw distance), set them to the lowest once; the website remembers them." />
                     </StackPanel>
                 </Border>
 
@@ -84,6 +86,18 @@
                             <TextBlock Style="{StaticResource Text.Body}" FontSize="12" VerticalAlignment="Center" Margin="0,0,10,0"><Run Text="Check: " /><Run Text="{Binding GpuUrl, Mode=OneWay}" /><Run Text=" → 'WebGL: Hardware accelerated' should be shown" /></TextBlock>
                             <Button Style="{StaticResource GhostButton}" Content="Copy address" Command="{Binding CopyGpuUrlCommand}" Padding="4,2" />
                         </StackPanel>
+                        <TextBlock Style="{StaticResource Text.Body}" Foreground="{DynamicResource TextPrimaryBrush}" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,4,0,0"
+                                   Text="Only 5-10 FPS? Then WebGL very likely runs on the CPU. Run 🔍 ANALYZE below while playing – it detects this. Permanent fix in your normal browser (open the page, set the option, click Relaunch):" />
+                        <ItemsControl ItemsSource="{Binding FlagPages}" Margin="16,4,0,8">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <DockPanel Margin="0,2">
+                                        <Button DockPanel.Dock="Right" Style="{StaticResource GhostButton}" Content="Copy address" Command="{Binding CopyCommand}" Padding="4,2" VerticalAlignment="Top" />
+                                        <TextBlock Style="{StaticResource Text.Body}" FontSize="12" TextWrapping="Wrap" Margin="0,0,10,0"><Run Text="{Binding Url, Mode=OneWay}" Foreground="{DynamicResource TextPrimaryBrush}" /><Run Text="  " /><Run Text="{Binding What, Mode=OneWay}" /></TextBlock>
+                                    </DockPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
                         <TextBlock Style="{StaticResource Text.Body}" Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap" Text="2. Close all other tabs and windows – every open tab costs CPU and memory (videos and streams especially)." />
                         <TextBlock Style="{StaticResource Text.Body}" Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap" Margin="0,4,0,0" Text="3. Play in a smaller window instead of fullscreen: many web games render at window size – a smaller window means fewer pixels and often clearly more FPS on integrated graphics. Ctrl + minus (browser zoom out) can have the same effect." />
                         <TextBlock Style="{StaticResource Text.Body}" Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap" Margin="0,4,0,0" Text="4. Turn off the browser's energy saver / efficiency mode while playing and keep the laptop plugged in." />

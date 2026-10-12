@@ -12,7 +12,7 @@
     <AssemblyName>ConstiBoost</AssemblyName>
     <ApplicationManifest>App\app.manifest</ApplicationManifest>
     <ApplicationIcon>Resources\ConstiBoost.ico</ApplicationIcon>
-    <Version>2.3.0</Version>
+    <Version>2.3.1</Version>
     <Product>ConstiBoost</Product>
     <Description>Local, transparent and reversible Windows gaming performance optimizer.</Description>
     <Copyright>ConstiBoost</Copyright>

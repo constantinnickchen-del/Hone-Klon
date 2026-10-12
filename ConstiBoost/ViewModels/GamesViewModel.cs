@@ -277,6 +277,8 @@ public sealed class GamesViewModel : PageViewModel
 }
 
 /// <summary>Expanded game: estimates, focus options and actions.</summary>
+public sealed record FlagPage(string Url, string What, ICommand CopyCommand);
+
 public sealed class GameDetailViewModel : ObservableObject
 {
     private readonly GameProfile? _profile;
@@ -397,7 +399,7 @@ public sealed class GameDetailViewModel : ObservableObject
         try
         {
             var progress = new Progress<string>(t => BottleneckStatus = t);
-            var report = await BottleneckService.AnalyzeAsync(12, progress, System.Threading.CancellationToken.None);
+            var report = await BottleneckService.AnalyzeAsync(12, progress, System.Threading.CancellationToken.None, Game);
             Bottleneck = report;
             BottleneckStatus = report.Findings.Count == 0
                 ? report.Summary + "\nNo clear limit found – run it again while you actively play."
@@ -456,6 +458,16 @@ public sealed class GameDetailViewModel : ObservableObject
         set { SettingsService.Instance.Current.BrowserUnlockFps = value; SettingsService.Instance.Save(); OnPropertyChanged(); }
     }
 
+    public bool UseSeparateProfile
+    {
+        get => SettingsService.Instance.Current.BrowserSeparateProfile;
+        set { SettingsService.Instance.Current.BrowserSeparateProfile = value; SettingsService.Instance.Save(); OnPropertyChanged(); }
+    }
+
+    public IReadOnlyList<FlagPage> FlagPages => BrowserLaunchService.IsSupported(Game)
+        ? BrowserLaunchService.GpuFlagPages(Game).Select(f => new FlagPage(f.Url, f.What, new RelayCommand(() => CopyToClipboard(f.Url)))).ToList()
+        : new List<FlagPage>();
+
     public bool LaunchStartsFocus
     {
         get => SettingsService.Instance.Current.BrowserLaunchStartsFocus;
@@ -472,12 +484,43 @@ public sealed class GameDetailViewModel : ObservableObject
 
         LaunchUrl = url;
         SettingsService.Instance.Save();
+        bool separate = UseSeparateProfile;
+        bool fresh = !BrowserLaunchService.IsRunning(Game, separate);
+        if (!fresh)
+        {
+            var details = new List<string>
+            {
+                "GPU start flags (GPU block list off, GPU rasterization, high-performance GPU, render size) only work when the browser starts.",
+                "ConstiBoost closes the browser windows normally (like clicking X – nothing is force-killed).",
+                "The browser then reopens with your previous tabs (--restore-last-session) and the game in a new window.",
+                "Save anything you are typing in the browser first.",
+                "Choose 'Cancel' to just open the game in the running browser without the flags.",
+            };
+            if (DialogService.Confirm($"Restart {Game.Publisher} for full GPU speed?", "The browser is running, so the speed flags cannot be applied right now.", details, "RESTART BROWSER"))
+            {
+                IsBusy = true;
+                try
+                {
+                    fresh = await BrowserLaunchService.CloseGracefullyAsync(Game, separate);
+                }
+                finally
+                {
+                    IsBusy = false;
+                }
+
+                if (!fresh)
+                {
+                    NotificationService.Instance.Show($"{Game.Publisher} is still running in the background (browser settings → System → 'Continue running background apps' OFF helps). The game was opened without the start flags.", NotificationKind.Warning);
+                }
+            }
+        }
+
         if (LaunchStartsFocus && !IsFocused)
         {
             await FocusAsync();
         }
 
-        Report(BrowserLaunchService.Launch(Game, new BrowserLaunchOptions(url, RenderScale, UnlockFps)));
+        Report(BrowserLaunchService.Launch(Game, new BrowserLaunchOptions(url, RenderScale, UnlockFps, separate), fresh));
     }
     public ICommand UninstallCommand { get; }
     public ICommand OpenFolderCommand { get; }

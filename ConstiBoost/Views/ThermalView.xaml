@@ -218,7 +218,7 @@
                                 <TextBlock Grid.Row="8" Text="Potential improvements:" Style="{StaticResource Text.Body}" />
                                 <TextBlock Grid.Row="8" Grid.Column="1" Text="{Binding Potential}" Style="{StaticResource Text.Value}" Foreground="{Binding PotentialLevel, Converter={StaticResource StatusBrush}}" />
                             </Grid>
-                            <TextBlock Text="{Binding ScanSource, StringFormat='Temperature source: {0}'}" Style="{StaticResource Text.Caption}" Margin="0,10,0,0" TextWrapping="Wrap" />
+                            <TextBlock Text="{Binding ScanSource, Converter={StaticResource Tr}, ConverterParameter='Temperature source: {0}'}" Style="{StaticResource Text.Caption}" Margin="0,10,0,0" TextWrapping="Wrap" />
                             <Button Style="{StaticResource AccentButton}" Content="APPLY SAFE OPTIMIZATIONS" Command="{Binding OptimizeCommand}" HorizontalAlignment="Left" Margin="0,16,0,0" />
                         </StackPanel>
                     </Border>
@@ -338,7 +338,7 @@
                                             </StackPanel>
                                         </Grid>
                                         <TextBlock Text="{Binding ImpactNote}" Style="{StaticResource Text.Body}" FontSize="12" Margin="0,8,0,0" />
-                                        <TextBlock Text="{Binding Tradeoff, StringFormat='Trade-off: {0}'}" Style="{StaticResource Text.Body}" FontSize="12" Foreground="{DynamicResource WarnBrush}"
+                                        <TextBlock Text="{Binding Tradeoff, Converter={StaticResource Tr}, ConverterParameter='Trade-off: {0}'}" Style="{StaticResource Text.Body}" FontSize="12" Foreground="{DynamicResource WarnBrush}"
                                                    Visibility="{Binding Tradeoff, Converter={StaticResource NullToVis}}" />
                                         <TextBlock Text="{Binding ResultText}" FontWeight="SemiBold" Margin="0,6,0,0" TextWrapping="Wrap"
                                                    Foreground="{Binding ResultSuccess, Converter={StaticResource StatusBrush}}" Visibility="{Binding ResultText, Converter={StaticResource NullToVis}}" />
@@ -391,7 +391,7 @@
                     <TextBlock Style="{StaticResource Text.Body}" Margin="0,4,0,0" Text="Measures the real temperature and CPU load every second for 60 seconds. Nothing is simulated." />
                     <TextBlock Text="{Binding PreTest}" Style="{StaticResource Text.Body}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,8,0,0" Visibility="{Binding PreTest, Converter={StaticResource NullToVis}}" />
                     <StackPanel Visibility="{Binding TestRunning, Converter={StaticResource BoolToVis}}" Margin="0,10,0,0">
-                        <TextBlock Text="{Binding TestSeconds, StringFormat='Monitoring… {0}/60 s'}" Style="{StaticResource Text.Body}" />
+                        <TextBlock Text="{Binding TestSeconds, Converter={StaticResource Tr}, ConverterParameter='Monitoring… {0}/60 s'}" Style="{StaticResource Text.Body}" />
                         <ProgressBar Value="{Binding TestSeconds, Mode=OneWay}" Maximum="60" Margin="0,6,0,0" />
                     </StackPanel>
                     <UniformGrid Columns="6" Margin="0,14,0,0" Visibility="{Binding HasTest, Converter={StaticResource BoolToVis}}">

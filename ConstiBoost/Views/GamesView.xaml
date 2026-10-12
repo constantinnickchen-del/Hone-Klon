@@ -171,7 +171,7 @@
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
                         </StackPanel>
-                        <TextBlock Text="{Binding MeasuredPreset, StringFormat='Selected: {0}'}" Style="{StaticResource Text.Caption}" Margin="0,2,0,0" />
+                        <TextBlock Text="{Binding MeasuredPreset, Converter={StaticResource Tr}, ConverterParameter='Selected: {0}'}" Style="{StaticResource Text.Caption}" Margin="0,2,0,0" />
                         <TextBlock Text="{Binding MeasureText}" Style="{StaticResource Text.Body}" Foreground="{DynamicResource AccentBrush}" Margin="0,8,0,0" Visibility="{Binding MeasureText, Converter={StaticResource NullToVis}}" />
                         <ProgressBar IsIndeterminate="True" Margin="0,6,0,0" Visibility="{Binding IsMeasuring, Converter={StaticResource BoolToVis}}" />
                         <Grid Margin="0,12,0,0" Visibility="{Binding HasResult, Converter={StaticResource BoolToVis}}">
@@ -258,7 +258,7 @@
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
                         <CheckBox IsChecked="{Binding EditorCapFps}" Margin="0,4,0,0">
-                            <TextBlock Text="{Binding FpsCap, StringFormat='Also cap FPS at {0} (if the game supports it in this file)'}" />
+                            <TextBlock Text="{Binding FpsCap, Converter={StaticResource Tr}, ConverterParameter='Also cap FPS at {0} (if the game supports it in this file)'}" />
                         </CheckBox>
                         <TextBlock Text="{Binding EditorFile}" Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,8,0,0" />
                     </StackPanel>
@@ -353,7 +353,7 @@
                             <CheckBox Content="Mute notification banners" IsChecked="{Binding MuteNotifications}" Margin="0,0,0,8" />
                             <CheckBox Content="Lower priority of browsers/launchers" IsChecked="{Binding LowerPriority}" Margin="0,0,0,8" />
                             <CheckBox IsChecked="{Binding CapFps}" Margin="0,0,0,8" Visibility="{Binding IsFortnite, Converter={StaticResource BoolToVis}}">
-                                <TextBlock Text="{Binding FpsCap, StringFormat='Cap Fortnite at {0} FPS (less heat)'}" />
+                                <TextBlock Text="{Binding FpsCap, Converter={StaticResource Tr}, ConverterParameter='Cap Fortnite at {0} FPS (less heat)'}" />
                             </CheckBox>
                             <TextBlock Text="CLOSE WHILE PLAYING" Style="{StaticResource Text.Caption}" Margin="0,8,0,6" />
                             <ItemsControl ItemsSource="{Binding Apps}">

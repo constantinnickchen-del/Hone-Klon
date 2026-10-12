@@ -54,7 +54,7 @@
                                                     <TextBlock Text="{Binding Description}" Style="{StaticResource Text.Body}" Margin="0,6,0,0" TextWrapping="Wrap" />
                                                     <TextBlock Text="{Binding Detail}" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="13" Margin="0,6,0,0" TextWrapping="Wrap"
                                                                Visibility="{Binding Detail, Converter={StaticResource NullToVis}}" />
-                                                    <TextBlock Text="{Binding Downside, StringFormat='Downside: {0}'}" Style="{StaticResource Text.Caption}" Margin="0,6,0,0" TextWrapping="Wrap" />
+                                                    <TextBlock Text="{Binding Downside, Converter={StaticResource Tr}, ConverterParameter='Downside: {0}'}" Style="{StaticResource Text.Caption}" Margin="0,6,0,0" TextWrapping="Wrap" />
                                                     <ItemsControl ItemsSource="{Binding Actions}" Margin="0,8,0,0">
                                                         <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                                                         <ItemsControl.ItemTemplate>

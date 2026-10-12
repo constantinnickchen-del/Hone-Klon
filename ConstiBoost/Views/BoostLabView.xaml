@@ -77,7 +77,7 @@
                                 </DockPanel>
                                 <TextBlock Text="{Binding WhatToGet, StringFormat='🛒 {0}'}" Style="{StaticResource Text.Body}" Foreground="{DynamicResource AccentBrush}" Margin="0,6,0,0" />
                                 <TextBlock Text="{Binding Why}" Style="{StaticResource Text.Body}" Margin="0,4,0,0" />
-                                <TextBlock Text="{Binding Effect, StringFormat='Effect: {0}'}" Style="{StaticResource Text.Body}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,4,0,0" />
+                                <TextBlock Text="{Binding Effect, Converter={StaticResource Tr}, ConverterParameter='Effect: {0}'}" Style="{StaticResource Text.Body}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,4,0,0" />
                             </StackPanel>
                         </Border>
                     </DataTemplate>

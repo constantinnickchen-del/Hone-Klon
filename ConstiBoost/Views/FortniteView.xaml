@@ -140,7 +140,7 @@
                                   ToolTip="Exclusive fullscreen usually gives the lowest input lag and most stable frame times." />
                         <CheckBox IsChecked="{Binding CapFps}" Margin="0,0,28,8"
                                   ToolTip="A frame cap at your display refresh rate gives more even frame times and lower temperatures on laptops.">
-                            <TextBlock Text="{Binding FpsCap, StringFormat='Cap FPS at {0} (display refresh rate)'}" />
+                            <TextBlock Text="{Binding FpsCap, Converter={StaticResource Tr}, ConverterParameter='Cap FPS at {0} (display refresh rate)'}" />
                         </CheckBox>
                     </WrapPanel>
                     <DockPanel Margin="0,10,0,0">
@@ -151,7 +151,7 @@
                     <ItemsControl ItemsSource="{Binding MissingKeys}" Margin="0,10,0,0">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding StringFormat='Not in your settings file – set it in-game: {0}'}" Style="{StaticResource Text.Body}" Foreground="{DynamicResource WarnBrush}" />
+                                <TextBlock Text="{Binding Converter={StaticResource Tr}, ConverterParameter='Not in your settings file – set it in-game: {0}'}" Style="{StaticResource Text.Body}" Foreground="{DynamicResource WarnBrush}" />
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>

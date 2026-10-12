@@ -24,6 +24,7 @@ public static class AutoTranslate
         EventManager.RegisterClassHandler(typeof(ContentControl), FrameworkElement.LoadedEvent, new RoutedEventHandler(OnContentLoaded));
         EventManager.RegisterClassHandler(typeof(HeaderedContentControl), FrameworkElement.LoadedEvent, new RoutedEventHandler(OnContentLoaded));
         EventManager.RegisterClassHandler(typeof(HeaderedItemsControl), FrameworkElement.LoadedEvent, new RoutedEventHandler(OnContentLoaded));
+        EventManager.RegisterClassHandler(typeof(DataGrid), FrameworkElement.LoadedEvent, new RoutedEventHandler(OnDataGridLoaded));
     }
 
     private static void OnTextBlockLoaded(object sender, RoutedEventArgs e)
@@ -45,6 +46,20 @@ public static class AutoTranslate
         }
 
         TranslateToolTip(tb);
+    }
+
+    private static void OnDataGridLoaded(object sender, RoutedEventArgs e)
+    {
+        if (sender is DataGrid grid)
+        {
+            foreach (var column in grid.Columns)
+            {
+                if (column.Header is string header)
+                {
+                    column.Header = L.T(header);
+                }
+            }
+        }
     }
 
     private static void TranslateInline(Inline inline)

@@ -62,8 +62,6 @@
                         <TextBlock Text="{Binding RenderScaleText}" Style="{StaticResource Text.Caption}" Margin="110,4,0,0" TextWrapping="Wrap" />
                         <CheckBox IsChecked="{Binding LaunchStartsFocus}" Margin="0,10,0,0" Foreground="{DynamicResource TextPrimaryBrush}"
                                   Content="Also start 🎯 Game Focus (close background apps, Max FPS power mode, boost the game tab + browser GPU process)" />
-                        <CheckBox IsChecked="{Binding UseSeparateProfile}" Margin="0,6,0,0" Foreground="{DynamicResource TextPrimaryBrush}"
-                                  Content="Use a separate clean ConstiBoost browser profile instead (no extensions, no restart of your normal browser needed)" />
                         <CheckBox IsChecked="{Binding UnlockFps}" Margin="0,6,0,0" Foreground="{DynamicResource TextPrimaryBrush}"
                                   Content="Unlock FPS above the display refresh rate (VSync off – more FPS on the counter, more heat, possible tearing)" />
                         <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,10,0,0"

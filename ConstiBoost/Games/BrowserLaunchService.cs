@@ -6,6 +6,7 @@ using System.Linq;
 using System.Management;
 using ConstiBoost.Core;
 using ConstiBoost.Logging;
+using ConstiBoost.WinSys;
 
 namespace ConstiBoost.Games;
 
@@ -45,7 +46,7 @@ public static class BrowserProcessInfo
     }
 }
 
-public sealed record BrowserLaunchOptions(string Url, int RenderScalePercent, bool UnlockFps, bool SeparateProfile);
+public sealed record BrowserLaunchOptions(string Url, int RenderScalePercent, bool UnlockFps);
 
 /// <summary>
 /// ⚡ Performance Launch for web games (Chrome, Edge, Brave, Opera).
@@ -161,13 +162,9 @@ public static class BrowserLaunchService
 
     public static List<string> BuildArguments(GameInfo game, BrowserLaunchOptions options, bool freshStart)
     {
+        // Never --user-data-dir / --profile-directory: the browser opens YOUR normal (last used) profile
+        // with your extensions, ad blocker and logins.
         var args = new List<string>();
-        if (options.SeparateProfile)
-        {
-            args.Add($"--user-data-dir=\"{ProfileDirectory(game)}\"");
-            args.Add("--no-first-run");
-            args.Add("--no-default-browser-check");
-        }
 
         if (freshStart)
         {
@@ -183,10 +180,7 @@ public static class BrowserLaunchService
                 args.Add("--disable-frame-rate-limit");
             }
 
-            if (!options.SeparateProfile)
-            {
-                args.Add("--restore-last-session");
-            }
+            args.Add("--restore-last-session");
 
             int scale = Math.Clamp(options.RenderScalePercent, 40, 100);
             if (scale >= 100)
@@ -223,25 +217,62 @@ public static class BrowserLaunchService
 
         try
         {
-            if (options.SeparateProfile)
+            RemoveOldSeparateProfile(game);
+            if (SystemInfo.IsAdministrator)
             {
-                Directory.CreateDirectory(ProfileDirectory(game));
+                // A browser started from an elevated app would run as administrator. Explorer hands the address
+                // to the default browser as the normal user instead (start flags cannot be passed this way).
+                using var shell = Process.Start(new ProcessStartInfo("explorer.exe", $"\"{url}\"") { UseShellExecute = false });
+                ActionLog.Success($"Performance Launch: {game.Name}", null, $"{url} · normal profile via Explorer (ConstiBoost runs as administrator)");
+                return OperationResult.Ok("Opened in your default browser (normal profile). ConstiBoost runs as administrator, so the GPU start flags were skipped – start ConstiBoost normally (without 'Run as administrator') to use them.");
             }
 
             var args = BuildArguments(game, options with { Url = url }, freshStart);
-            var psi = new ProcessStartInfo(game.MainExecutable, string.Join(" ", args)) { UseShellExecute = false };
+            string arguments = string.Join(" ", args);
+            AppLog.Info($"Performance Launch: {game.MainExecutable} {arguments}");
+            var psi = new ProcessStartInfo(game.MainExecutable, arguments) { UseShellExecute = false };
             using var _ = Process.Start(psi);
             ActionLog.Success($"Performance Launch: {game.Name}", null,
-                $"{url} · {(options.SeparateProfile ? "separate profile" : "normal profile")} · {(freshStart ? "GPU start flags active" : "browser was running – flags not applied")}");
+                $"{url} · normal profile · {(freshStart ? "GPU start flags active" : "browser was running – flags not applied")}");
             return freshStart
-                ? OperationResult.Ok(options.SeparateProfile
-                    ? "Started in the separate ConstiBoost window with GPU flags."
-                    : "Started in your normal browser (extensions/ad blocker active) with GPU flags. Your previous tabs were restored.")
+                ? OperationResult.Ok("Started in your normal browser (extensions/ad blocker and logins active) with GPU flags. Your previous tabs were restored.")
                 : OperationResult.Ok("Opened in your running browser. GPU start flags only apply after a browser restart.");
         }
         catch (Exception ex)
         {
             return OperationResult.Fail("Could not start the browser: " + Safe.Describe(ex));
+        }
+    }
+
+    /// <summary>
+    /// Earlier versions (2.3.0) could open games in a separate ConstiBoost browser profile. That profile is
+    /// ConstiBoost's own folder – it is removed when no browser uses it, so it can never be opened by mistake again.
+    /// </summary>
+    public static void RemoveOldSeparateProfile(GameInfo game)
+    {
+        string folder = ProfileDirectory(game);
+        if (!Directory.Exists(folder))
+        {
+            return;
+        }
+
+        if (RunningProcesses(game, true) is { Count: > 0 } running)
+        {
+            running.ForEach(p => p.Dispose());
+            return;
+        }
+
+        if (Safe.Try(() => Directory.Delete(folder, true), "Remove old ConstiBoost browser profile"))
+        {
+            ActionLog.Success("Removed the old separate ConstiBoost browser profile (not used anymore)", folder, "removed");
+            string root = Path.GetDirectoryName(folder)!;
+            Safe.Try(() =>
+            {
+                if (Directory.Exists(root) && !Directory.EnumerateFileSystemEntries(root).Any())
+                {
+                    Directory.Delete(root);
+                }
+            });
         }
     }
 

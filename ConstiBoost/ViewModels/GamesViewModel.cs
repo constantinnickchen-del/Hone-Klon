@@ -458,12 +458,6 @@ public sealed class GameDetailViewModel : ObservableObject
         set { SettingsService.Instance.Current.BrowserUnlockFps = value; SettingsService.Instance.Save(); OnPropertyChanged(); }
     }
 
-    public bool UseSeparateProfile
-    {
-        get => SettingsService.Instance.Current.BrowserSeparateProfile;
-        set { SettingsService.Instance.Current.BrowserSeparateProfile = value; SettingsService.Instance.Save(); OnPropertyChanged(); }
-    }
-
     public IReadOnlyList<FlagPage> FlagPages => BrowserLaunchService.IsSupported(Game)
         ? BrowserLaunchService.GpuFlagPages(Game).Select(f => new FlagPage(f.Url, f.What, new RelayCommand(() => CopyToClipboard(f.Url)))).ToList()
         : new List<FlagPage>();
@@ -484,8 +478,9 @@ public sealed class GameDetailViewModel : ObservableObject
 
         LaunchUrl = url;
         SettingsService.Instance.Save();
-        bool separate = UseSeparateProfile;
-        bool fresh = !BrowserLaunchService.IsRunning(Game, separate);
+        const bool separate = false; // always the normal browser profile
+        // As administrator the game is handed to the browser through Explorer (no restart needed / possible).
+        bool fresh = WinSys.SystemInfo.IsAdministrator || !BrowserLaunchService.IsRunning(Game, separate);
         if (!fresh)
         {
             var details = new List<string>
@@ -520,7 +515,7 @@ public sealed class GameDetailViewModel : ObservableObject
             await FocusAsync();
         }
 
-        Report(BrowserLaunchService.Launch(Game, new BrowserLaunchOptions(url, RenderScale, UnlockFps, separate), fresh));
+        Report(BrowserLaunchService.Launch(Game, new BrowserLaunchOptions(url, RenderScale, UnlockFps), fresh));
     }
     public ICommand UninstallCommand { get; }
     public ICommand OpenFolderCommand { get; }

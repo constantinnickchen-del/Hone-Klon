@@ -309,6 +309,12 @@ public sealed class GameDetailViewModel : ObservableObject
         _gpuPreference = (hw?.Gpus.Count ?? 1) > 1;
         _focusProfile = SettingsService.Instance.Current.GamingProfile;
         _capFps = game.IsFortnite && _focusProfile != GamingProfile.MaxFps;
+        if (game.IsBrowser)
+        {
+            _focusProfile = GamingProfile.MaxFps;
+            _boostPriority = false; // would also raise every background tab
+            _gpuPreference = true;
+        }
 
         if (AutoProfileService.Instance.Get(game.Id) is { } saved)
         {
@@ -341,6 +347,24 @@ public sealed class GameDetailViewModel : ObservableObject
 
     public FortniteViewModel? Fortnite => Game.IsFortnite ? MainViewModel.Instance?.Fortnite : null;
     public bool IsFortnite => Game.IsFortnite;
+    public bool IsBrowser => Game.IsBrowser;
+    public string AccelerationUrl => BrowserGamesScanner.AccelerationSettingsUrl(Game);
+    public string GpuUrl => BrowserGamesScanner.GpuInfoUrl(Game);
+    public ICommand CopyAccelerationUrlCommand => new RelayCommand(() => CopyToClipboard(AccelerationUrl));
+    public ICommand CopyGpuUrlCommand => new RelayCommand(() => CopyToClipboard(GpuUrl));
+
+    private static void CopyToClipboard(string text)
+    {
+        try
+        {
+            System.Windows.Clipboard.SetText(text.Split(' ')[0]);
+            NotificationService.Instance.Show($"Copied: {text.Split(' ')[0]} – paste it into the browser's address bar.", NotificationKind.Info);
+        }
+        catch
+        {
+            NotificationService.Instance.Show("Clipboard busy – type the address manually: " + text, NotificationKind.Warning);
+        }
+    }
 
     public ICommand LaunchCommand { get; }
     public ICommand UninstallCommand { get; }

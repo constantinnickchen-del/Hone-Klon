@@ -28,7 +28,7 @@ public sealed class GamingModeState
     public string? PreviousFortniteFrameLimit { get; set; }
 }
 
-public sealed record GamingModeOptions(GamingProfile Profile, bool LowerBackgroundPriority, int? FortniteFpsCap);
+public sealed record GamingModeOptions(GamingProfile Profile, bool LowerBackgroundPriority, int? FortniteFpsCap, IReadOnlyCollection<string>? KeepProcesses = null);
 
 public sealed class ClosedApp
 {
@@ -212,6 +212,11 @@ public sealed class GamingModeService : ObservableObject
                     try
                     {
                         string name = process.ProcessName;
+                        if (options.KeepProcesses?.Contains(name, StringComparer.OrdinalIgnoreCase) == true)
+                        {
+                            continue; // the game itself (e.g. the browser running a web game)
+                        }
+
                         if ((!BackgroundAppsService.KnownBackgroundApps.Contains(name) && !BackgroundAppsService.BrowserProcesses.Contains(name)) ||
                             BackgroundAppsService.KeepPriority.Contains(name))
                         {

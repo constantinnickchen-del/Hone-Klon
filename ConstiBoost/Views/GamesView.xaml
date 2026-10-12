@@ -27,11 +27,37 @@
                         <TextBlock Text="{Binding FocusButtonText}" />
                     </Button>
                     <Button Style="{StaticResource SecondaryButton}" Content="OPEN FOLDER" Command="{Binding OpenFolderCommand}" Margin="0,0,10,8" />
-                    <Button Style="{StaticResource DangerButton}" Content="UNINSTALL" Command="{Binding UninstallCommand}" Margin="0,0,10,8" />
+                    <Button Style="{StaticResource DangerButton}" Content="UNINSTALL" Command="{Binding UninstallCommand}" Margin="0,0,10,8"
+                            Visibility="{Binding Game.CanUninstall, Converter={StaticResource BoolToVis}}" />
                 </WrapPanel>
                 <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,2,0,0">
                     <Run Text="{Binding Game.InstallPath, Mode=OneWay}" /><Run Text="  ·  " /><Run Text="{Binding Game.MainExecutable, Mode=OneWay}" />
                 </TextBlock>
+
+                <!-- Browser game boost -->
+                <Border Style="{StaticResource InnerCard}" Padding="18" Margin="0,16,0,0" Visibility="{Binding IsBrowser, Converter={StaticResource BoolToVis}}">
+                    <StackPanel>
+                        <TextBlock Text="🌐 BROWSER GAME BOOST" Style="{StaticResource Text.Caption}" />
+                        <TextBlock Style="{StaticResource Text.Body}" Margin="0,6,0,10" TextWrapping="Wrap"
+                                   Text="Web games (WebGL) run inside the browser, so the browser is the game. Honest note: no tool can push FPS far beyond what the web port and your graphics allow – but these steps remove the most common brakes. Use 🎯 FOCUS below, then MEASURE to see the real effect." />
+                        <TextBlock Text="1. Hardware acceleration must be ON (without it the CPU renders the game – the #1 cause of lag)" Foreground="{DynamicResource TextPrimaryBrush}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                        <StackPanel Orientation="Horizontal" Margin="16,4,0,0">
+                            <TextBlock Text="{Binding AccelerationUrl}" Style="{StaticResource Text.Body}" VerticalAlignment="Center" Margin="0,0,10,0" />
+                            <Button Style="{StaticResource GhostButton}" Content="Copy address" Command="{Binding CopyAccelerationUrlCommand}" Padding="4,2" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="16,2,0,8">
+                            <TextBlock Style="{StaticResource Text.Body}" FontSize="12" VerticalAlignment="Center" Margin="0,0,10,0"><Run Text="Check: " /><Run Text="{Binding GpuUrl, Mode=OneWay}" /><Run Text=" → 'WebGL: Hardware accelerated' should be shown" /></TextBlock>
+                            <Button Style="{StaticResource GhostButton}" Content="Copy address" Command="{Binding CopyGpuUrlCommand}" Padding="4,2" />
+                        </StackPanel>
+                        <TextBlock Style="{StaticResource Text.Body}" Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap" Text="2. Close all other tabs and windows – every open tab costs CPU and memory (videos and streams especially)." />
+                        <TextBlock Style="{StaticResource Text.Body}" Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap" Margin="0,4,0,0" Text="3. Play in a smaller window instead of fullscreen: many web games render at window size – a smaller window means fewer pixels and often clearly more FPS on integrated graphics. Ctrl + minus (browser zoom out) can have the same effect." />
+                        <TextBlock Style="{StaticResource Text.Body}" Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap" Margin="0,4,0,0" Text="4. Turn off the browser's energy saver / efficiency mode while playing and keep the laptop plugged in." />
+                        <TextBlock Style="{StaticResource Text.Body}" Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap" Margin="0,4,0,0" Text="5. Lower the game's own graphics options if it has any (resolution, draw distance, shadows)." />
+                        <TextBlock Style="{StaticResource Text.Body}" Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap" Margin="0,4,0,0" Text="6. 🎯 FOCUS ON THIS GAME: closes background apps, Gaming Mode MAX FPS, mutes notifications and keeps this browser at normal priority (other browsers are lowered)." />
+                        <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,10,0,0"
+                                   Text="Safety: unofficial websites that host commercial games are often unlicensed and full of ads/pop-ups. Don't download or run files from them and don't enter passwords. ConstiBoost never reads browser data (history, cookies, passwords)." />
+                    </StackPanel>
+                </Border>
 
                 <!-- Real FPS measurement -->
                 <Border Style="{StaticResource InnerCard}" Padding="18" Margin="0,16,0,0">

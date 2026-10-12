@@ -14,6 +14,12 @@ public static class GameActions
     {
         try
         {
+            if (game.Source == GameSource.Browser && game.MainExecutable != null)
+            {
+                Process.Start(new ProcessStartInfo(game.MainExecutable) { UseShellExecute = true });
+                return OperationResult.Ok($"{game.Publisher} is starting – open your web game there.");
+            }
+
             if (game.LaunchUri != null || game.AppUserModelId != null)
             {
                 var start = game.AppUserModelId != null

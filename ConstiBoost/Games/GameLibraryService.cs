@@ -51,6 +51,7 @@ public static class GameLibraryService
             }
         }, "Minecraft Java");
         Try(() => games.AddRange(ScanUninstallRegistry(games)), "Uninstall registry");
+        Try(() => games.AddRange(BrowserGamesScanner.Scan()), "Browsers");
         Try(() =>
         {
             // Games Windows' Game Bar knows about that no launcher reported (skip anything inside known games).

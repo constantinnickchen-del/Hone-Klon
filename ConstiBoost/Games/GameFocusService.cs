@@ -136,7 +136,7 @@ public sealed class GameFocusService : ObservableObject
         if (!GamingModeService.Instance.IsActive)
         {
             messages.AddRange(await GamingModeService.Instance.ActivateAsync(options.AppsToClose,
-                new GamingModeOptions(options.Profile, options.LowerBackgroundPriority, game.IsFortnite ? options.FortniteFpsCap : null)));
+                new GamingModeOptions(options.Profile, options.LowerBackgroundPriority, game.IsFortnite ? options.FortniteFpsCap : null, game.ExecutableNames)));
         }
 
         game.IsFocused = true;

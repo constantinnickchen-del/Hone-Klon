@@ -13,6 +13,7 @@ public enum GameSource
     Store,     // Microsoft Store app package
     Xbox,      // Xbox app / Game Pass (GDK, XboxGames folder)
     Minecraft, // Minecraft: Java Edition (Minecraft Launcher)
+    Browser,   // Web / browser games (WebGL) – the browser is the "game"
 }
 
 /// <summary>One installed game. Everything here is read from launcher files or the Windows registry.</summary>
@@ -35,6 +36,7 @@ public sealed class GameInfo : ObservableObject
         GameSource.Store => "Microsoft Store",
         GameSource.Xbox => "Xbox app",
         GameSource.Minecraft => "Minecraft Launcher",
+        GameSource.Browser => "Browser games",
         _ => string.IsNullOrWhiteSpace(Publisher) ? "Installed" : Publisher,
     };
 
@@ -60,6 +62,10 @@ public sealed class GameInfo : ObservableObject
 
     /// <summary>Key into the FPS estimation database (null = no estimate data).</summary>
     public string? ProfileKey { get; init; }
+
+    public bool IsBrowser => Source == GameSource.Browser;
+
+    public bool CanUninstall => Source != GameSource.Browser;
 
     public bool IsFortnite => string.Equals(EpicAppName, "Fortnite", StringComparison.OrdinalIgnoreCase) ||
                               Name.Equals("Fortnite", StringComparison.OrdinalIgnoreCase);

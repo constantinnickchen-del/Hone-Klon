@@ -30,18 +30,37 @@ public partial class MainWindow : Window
             }
         };
         Closing += OnClosing;
+        SourceInitialized += (_, _) => HotkeyService.Instance.Attach(this);
     }
+
+    private bool _trayHintShown;
 
     private bool _closeConfirmed;
 
     private async void OnClosing(object? sender, CancelEventArgs e)
     {
-        if (_closeConfirmed || !GamingModeService.Instance.IsActive)
+        if (!_closeConfirmed && !TrayService.Instance.ExitRequested && SettingsService.Instance.Current.MinimizeToTray)
+        {
+            // Keep running quietly in the tray (auto profiles, hotkeys, Auto-Cool, overlay keep working).
+            e.Cancel = true;
+            Hide();
+            (DataContext as MainViewModel)?.Suspend();
+            if (!_trayHintShown)
+            {
+                _trayHintShown = true;
+                TrayService.Instance.ShowBalloon("ConstiBoost keeps running", "ConstiBoost is still running in the notification area. Right-click the tray icon → Exit to close it completely.");
+            }
+
+            return;
+        }
+
+        bool focus = Games.GameFocusService.Instance.IsActive;
+        if (_closeConfirmed || (!GamingModeService.Instance.IsActive && !focus))
         {
             return;
         }
 
-        if (!DialogService.Confirm("Gaming Mode is still active", "Stop Gaming Mode and restore your previous settings before closing? If you keep it, ConstiBoost will offer to stop it the next time it starts.", null, "STOP AND CLOSE"))
+        if (!DialogService.Confirm(focus ? "Game Focus is still active" : "Gaming Mode is still active", "Stop it and restore your previous settings before closing? If you keep it, ConstiBoost will offer to stop it the next time it starts.", null, "STOP AND CLOSE"))
         {
             return;
         }
@@ -49,7 +68,14 @@ public partial class MainWindow : Window
         e.Cancel = true; // restore asynchronously (may need a UAC prompt), then close
         try
         {
-            await GamingModeService.Instance.DeactivateAsync(SettingsService.Instance.Current.GamingModeRelaunchClosedApps);
+            if (focus)
+            {
+                await Games.GameFocusService.Instance.StopAsync();
+            }
+            else
+            {
+                await GamingModeService.Instance.DeactivateAsync(SettingsService.Instance.Current.GamingModeRelaunchClosedApps);
+            }
         }
         catch (Exception ex)
         {

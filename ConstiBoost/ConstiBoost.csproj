@@ -4,6 +4,7 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
     <Nullable>enable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
     <LangVersion>latest</LangVersion>
@@ -11,7 +12,7 @@
     <AssemblyName>ConstiBoost</AssemblyName>
     <ApplicationManifest>App\app.manifest</ApplicationManifest>
     <ApplicationIcon>Resources\ConstiBoost.ico</ApplicationIcon>
-    <Version>2.0.0</Version>
+    <Version>2.2.0</Version>
     <Product>ConstiBoost</Product>
     <Description>Local, transparent and reversible Windows gaming performance optimizer.</Description>
     <Copyright>ConstiBoost</Copyright>
@@ -20,7 +21,7 @@
     <InvariantGlobalization>false</InvariantGlobalization>
     <EnableDefaultApplicationDefinition>false</EnableDefaultApplicationDefinition>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
-    <NoWarn>$(NoWarn);CA1416</NoWarn>
+    <NoWarn>$(NoWarn);CA1416;WFAC010</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)' == 'Release'">

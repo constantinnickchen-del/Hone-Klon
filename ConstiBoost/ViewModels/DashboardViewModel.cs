@@ -39,6 +39,8 @@ public sealed class DashboardViewModel : PageViewModel
     public ICommand OptimizeCommand { get; }
     public ICommand FortniteCommand { get; }
     public ICommand BoostLabCommand { get; }
+    public ICommand OverlayCommand => new RelayCommand(() => OverlayService.Instance.Toggle());
+    public ICommand ReportCommand => new RelayCommand(ReportCardService.CreateAndShow);
     public ICommand ThermalCommand { get; }
 
     public GamingModeViewModel GamingMode => GamingModeViewModel.Shared;

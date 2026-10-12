@@ -1,3 +1,5 @@
+using System;
+
 namespace ConstiBoost.Models;
 
 public sealed class AppSettings
@@ -19,5 +21,12 @@ public sealed class AppSettings
     public int AutoCoolTrigger { get; set; } = 88;
     public bool AutoCoolDuringGaming { get; set; }
     public bool AutoCoolLimitBoost { get; set; }
+    public bool MinimizeToTray { get; set; } = true;
+    public bool HotkeysEnabled { get; set; } = true;
+    public string OverlayCorner { get; set; } = "TopLeft";
+    public bool OverlayShowsFps { get; set; } = true;
+    public bool CheckForUpdates { get; set; } = true;
+    public bool WeeklyMaintenance { get; set; }
+    public DateTime? LastMaintenance { get; set; }
     public GamingProfile GamingProfile { get; set; } = GamingProfile.MaxFps;
 }

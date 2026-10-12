@@ -1,4 +1,4 @@
-# ⚡ ConstiBoost PRO 2.0
+# ⚡ ConstiBoost PRO 2.2
 
 **Lokaler, transparenter und reversibler FPS- & Performance-Optimizer für Windows 10/11** – mit Fokus auf Fortnite und Low-End-Systeme mit integrierter Grafik (z. B. Acer Aspire 3 15 · Ryzen 5 5000 · Radeon Graphics).
 
@@ -11,6 +11,16 @@ ConstiBoost verspricht **keine** „+300 FPS“. Jede Änderung zeigt *aktuellen
 ---
 
 ## Installation
+
+**Empfohlen:** `ConstiBoost-Setup-x.y.z.exe` aus den GitHub Releases (wird automatisch gebaut, sobald ein Tag `v*` gepusht wird – siehe `.github/workflows/release.yml`). Installiert pro Benutzer nach `%LOCALAPPDATA%\Programs\ConstiBoost`, ohne Adminrechte, mit Startmenü-Eintrag und optionalem Autostart.
+
+### Release erstellen (für Entwickler)
+```powershell
+git tag v2.2.0
+git push origin v2.2.0
+```
+Lokal: `dotnet publish ConstiBoost -c Release -r win-x64 --self-contained true -o publish\win-x64` und dann `iscc /DMyAppVersion=2.2.0 installer\ConstiBoost.iss` (Inno Setup 6).
+
 
 **Voraussetzungen:** Windows 10 (1809+) oder Windows 11, x64.
 
@@ -63,6 +73,17 @@ Das Projekt setzt `EnableWindowsTargeting=true`, daher lässt es sich auch auf L
 | **Fortnite Tools** | Jetzt in der Fortnite-Karte unter Games: Presets MAX FPS / BALANCED / QUALITY, aktuelle Config, Shader-Cache, Prozesspriorität |
 | **🧪 Boost Lab** | **Hardware-Insights**: Single-/Dual-Channel-RAM, RAM-Größe & -Takt, reservierter iGPU-Speicher (UMA), Grafiktreiber-Alter, HDD/SSD/NVMe der Spiele-Laufwerke, Bildwiederholrate, Akku/Netz, GPU-Leistungsklasse · **Low-End Boost Pack**: Energieprofil, Game Mode, Xbox-Aufnahme, Autostart, Transparenz, Animationen, **Desktop-Effekte (Best Performance)**, **Windows-Tipps & Vorschläge**, Store-Hintergrund-Apps, Temp-Dateien |
 | **🌡️ Thermal Monitor** | Live: CPU-/GPU-Temperatur, CPU-/GPU-Last, RAM, CPU-Takt, GPU-Takt, Lüfter, Energieprofil, Prozessanzahl · Stufen Cool/Normal/Warm/Hot/Critical (Richtwerte) · Verlauf (5 min Chart + Minutentabelle mit Phasen Idle/Gaming/Heavy) · 🔍 SCAN MY PC mit Ursachenerkennung (CPU-Last, Hintergrund, Energieprofil, Gaming, Kühlung) · ❄️ FIND WAYS TO LOWER TEMPERATURE · ❄️ OPTIMIZE TEMPERATURE mit Backup + Nachmessung (Before/After) · 🌡️ 60 SECOND THERMAL TEST · Thermal Health Score · Alerts · Cooling Check · Fan Check · Fortnite Thermal Mode · Ryzen-Erkennung (z. B. „AMD Ryzen 7 5700U detected.“, Zen 2) |
+| **📏 Echte FPS-Messung** | Liest die DirectX-Present-Events von Windows (ETW, gleicher Mechanismus wie Intel PresentMon) – keine Injection, Anti-Cheat-sicher. Avg-FPS, **1 % / 0,1 % Low**, Frametime, Ruckler-Zählung, FPS-Verlauf, Historie pro Spiel, **Vorher/Nachher**, gemessene Temperatur & CPU-Takt dazu. Kalibriert die FPS-Schätzung automatisch. Braucht einmal UAC (ETW-Session im abgeschotteten Helfer). DirectX 9–12; OpenGL/Vulkan noch nicht |
+| **🎚️ Guided FPS Tuner** (Fortnite) | Ziel-FPS wählen → messen → konkreter nächster Schritt (Performance Mode, Preset, 3D-Auflösung, FPS-Limit) → anwenden (mit Backup) → erneut messen |
+| **⚙️ Spiel-Grafik-Editoren** | Minecraft Java (`options.txt`) und generisch Unreal-Engine-Spiele (`GameUserSettings.ini`, z. B. VALORANT, PUBG): Presets LOW-END / BALANCED / QUALITY, FPS-Cap, nur vorhandene Keys, Backup, Spiel muss geschlossen sein |
+| **🤖 Auto-Focus** | Pro Spiel speicherbar: Spiel startet → Game Focus mit deinen Optionen an, Spiel endet → alles zurück |
+| **📊 FPS-Overlay** | Durchklickbares Always-on-top-Fenster: echte FPS, 1 %-Low, Temperatur, CPU/GPU/RAM (randloses Vollbild/Fenster) |
+| **⌨️ Tray & Hotkeys** | Läuft im Infobereich weiter · Strg+Alt+G Gaming Mode · Strg+Alt+O Overlay · Strg+Alt+C ConstiBoost öffnen/verstecken |
+| **🌐 Gamer-Netzwerk** | Ping zu allen Fortnite-Rechenzentren, **Bufferbloat-Test** (Ping unter Last, Note A+–F), WLAN-Signal/Band/Kanal/Standard mit Tipps |
+| **🛒 Upgrade-Berater** | Liest RAM-Steckplätze, Module (Typ, Takt, Teilenummer) und Laufwerkstyp aus Windows → konkrete Empfehlung (z. B. zweites gleiches SO-DIMM für Dual-Channel) |
+| **📸 PC-Report** | Teilbare Bild-Karte (PNG + Zwischenablage) mit Score, Hardware, größtem Engpass, bestem Upgrade und echter FPS-Messung |
+| **🧹 Wöchentliche Wartung** | Optional, nie während des Spielens: alte Temp-Dateien/Crash-Reports, Autostart-, Speicherplatz- und Treiber-Check |
+| **⬆️ Updates & Installer** | Update-Check über GitHub Releases (abschaltbar), Installation per Klick · Inno-Setup-Installer (ohne Adminrechte) · GitHub Actions bauen Installer + portable ZIPs bei Tag `v*` |
 | **❄️ Auto-Cool & Thermal Settings** | Einstellbare Alarmschwellen (High/Critical/Dauer), Quick-/Deep-Scan, optionaler **Auto-Cool-Wächter**: bleibt die Temperatur 60 s über dem Trigger, wird auf „Ausgewogen“ (optional CPU-Boost aus) geschaltet und nach 2 min Abkühlung automatisch zurückgesetzt – ohne UAC-Popups, pausiert bei Gaming Mode/Focus |
 | **🎮 Cool Gaming Mode** | Profile **MAX FPS** (Best performance), **BALANCED** (Balanced, Boost an, optionaler Fortnite-FPS-Cap), **COOL** (Balanced + max. Prozessorzustand 99 % = CPU-Boost aus) · Vergleich der Profile anhand echter Thermal-Tests (Temperatur vs. CPU-Takt) |
 | **Cleaner** | Temporary Files, Windows Temporary Files (UAC), Shader Cache, Crash Reports, Browser Cache – mit „This will remove approximately XX MB.“ |
@@ -132,6 +153,10 @@ SUCCESS
 | „Administrator permission was declined (UAC)“ | Aktion erneut ausführen und die UAC-Abfrage bestätigen. Normale Funktionen brauchen keine Adminrechte. |
 | GPU-Auslastung „Unavailable“ | Die Windows-Leistungsindikatoren „GPU Engine“ fehlen/sind defekt. In einer Admin-Konsole `lodctr /R` ausführen und neu starten. Grafiktreiber aktualisieren. |
 | Temperaturen „Unavailable“ / nur ACPI | HWiNFO starten → Settings → „Shared Memory Support“ aktivieren (oder LibreHardwareMonitor starten). ConstiBoost erkennt das innerhalb von ~20 s automatisch. |
+| FPS-Messung zeigt „No frames detected“ | Spiel nutzt OpenGL/Vulkan (z. B. Minecraft Java) – wird noch nicht unterstützt. Bei DirectX-Spielen: UAC bestätigen und das Spiel im Vordergrund laufen lassen. |
+| Overlay im Spiel nicht sichtbar | Im Spiel „Randloses Vollbild“/„Fenstermodus (Vollbild)“ wählen – exklusives Vollbild kann Fenster überdecken. |
+| Hotkeys reagieren nicht | Ein anderes Programm nutzt dieselbe Kombination – Status steht in Settings → Tray, hotkeys & overlay. |
+| Update-Check: „No public release found“ | Das Repository ist privat oder es gibt noch kein Release – während der Entwicklung normal. |
 | Lüfter „Fan speed unavailable on this device.“ | Viele Laptops (auch Acer Aspire) melden die Lüfterdrehzahl nicht an Windows – das ist normal. |
 | COOL-Profil fragt nach Adminrechten | Windows erlaubt das Ändern des max. Prozessorzustands je nach System nur mit UAC. Ablehnen ist unkritisch – dann bleibt der Boost an. |
 | Wiederherstellungspunkt wird nicht erstellt | Computerschutz für Laufwerk C: aktivieren (`SystemPropertiesProtection.exe`). Windows erlaubt standardmäßig nur einen Punkt pro 24 h. |
@@ -183,6 +208,7 @@ ConstiBoost/
 | 11 Benchmark | `Hardware/BenchmarkService.cs`, `ViewModels/BenchmarkViewModel.cs` | RUN BEFORE → optimieren → RUN AFTER → Difference |
 | 13 Thermal System | `Hardware/Sensors/*` (HWiNFO, LibreHardwareMonitor, ACPI), `Hardware/CpuFrequencySampler.cs`, `Hardware/GpuMemoryReader.cs`, `Hardware/CpuDatabase.cs`, `Services/ThermalMonitorService.cs`, `Services/ThermalAnalysisService.cs`, `Services/ThermalTestService.cs`, `Services/PowerTweakService.cs`, `ViewModels/ThermalViewModel.cs`, `Views/ThermalView.xaml` | Thermal → SCAN MY PC; Werte mit HWiNFO vergleichen; 60-s-Test in MAX FPS und COOL während Fortnite → Vergleichstabelle |
 | 14 PRO 2.0 | `Games/*` (Bibliothek, VDF-Parser, Last-Played, FPS-Schätzer, Game Focus), `Hardware/GpuDatabase.cs`, `Hardware/StorageInfo.cs`, `Services/HardwareInsightsService.cs`, `Services/AutoCoolService.cs`, `Optimizers/LowEndOptimizations.cs`, `ViewModels/GamesViewModel.cs`, `ViewModels/BoostLabViewModel.cs`, `Views/GamesView.xaml`, `Views/BoostLabView.xaml` | Games: Spiel aufklappen → Schätzung prüfen → FOCUS → Spiel starten → STOP FOCUS; Boost Lab: Insights prüfen → APPLY BOOST PACK → Backups → RESTORE |
+| 15 PRO 2.2 | `Windows/EtwPresentCapture.cs`, `Services/FrameCaptureRunner.cs`, `Services/FpsCaptureService.cs`, `Games/AutoProfileService.cs`, `Games/GameConfigEditors.cs`, `Services/TrayService.cs`, `Services/HotkeyService.cs`, `Services/OverlayService.cs`, `Hardware/GamerNetworkService.cs`, `Hardware/MemoryInfo.cs`, `Services/ReportCardService.cs`, `Services/MaintenanceService.cs`, `Services/UpdateService.cs`, `installer/ConstiBoost.iss`, `.github/workflows/*` | Games → Fortnite → MEASURE 60 s (UAC) → spielen → Ergebnis; Tuner-Schritt anwenden → erneut messen; Auto-Focus an → Spiel starten; Strg+Alt+O im Spiel; Network → PING SERVERS / TEST |
 | 12 Polishing | Animationen (Seitenwechsel, Score-Ring, Toggles), Toasts, Pause bei Minimierung, Gaming-Mode-Abfrage beim Schließen | – |
 
 ## Lizenz / Haftung

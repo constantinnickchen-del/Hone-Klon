@@ -34,6 +34,8 @@ public sealed class NetworkViewModel : ObservableObject
         PingCommand = new AsyncRelayCommand(PingAsync, () => !IsTesting);
         DnsCommand = new AsyncRelayCommand(DnsAsync, () => !IsTesting);
         SpeedTestCommand = new AsyncRelayCommand(SpeedTestAsync, () => !IsTesting);
+        ServerPingCommand = new AsyncRelayCommand(ServerPingAsync, () => !IsTesting);
+        BufferbloatCommand = new AsyncRelayCommand(BufferbloatAsync, () => !IsTesting);
     }
 
     public ObservableCollection<AdapterInfo> Adapters { get; } = new();
@@ -44,6 +46,58 @@ public sealed class NetworkViewModel : ObservableObject
     public ICommand PingCommand { get; }
     public ICommand DnsCommand { get; }
     public ICommand SpeedTestCommand { get; }
+    public ICommand ServerPingCommand { get; }
+    public ICommand BufferbloatCommand { get; }
+
+    public ObservableCollection<PingResult> ServerPings { get; } = new();
+
+    private WifiInfo? _wifi;
+    private string _bloatGrade = "–";
+    private string _bloatText = string.Empty;
+
+    public WifiInfo? Wifi { get => _wifi; private set { SetProperty(ref _wifi, value); OnPropertyChanged(nameof(HasWifi)); } }
+    public bool HasWifi => _wifi != null;
+    public string BloatGrade { get => _bloatGrade; private set => SetProperty(ref _bloatGrade, value); }
+    public string BloatText { get => _bloatText; private set => SetProperty(ref _bloatText, value); }
+
+    private async Task ServerPingAsync()
+    {
+        IsTesting = true;
+        try
+        {
+            ServerPings.Clear();
+            foreach (var (region, host) in GamerNetworkService.FortniteServers)
+            {
+                var r = await NetworkService.PingAsync(host, 4);
+                ServerPings.Add(r with { Target = $"Fortnite {region}" });
+            }
+        }
+        finally
+        {
+            IsTesting = false;
+        }
+    }
+
+    private async Task BufferbloatAsync()
+    {
+        if (!DialogService.Confirm("Test latency under load?", $"ConstiBoost pings 1.1.1.1, then downloads up to 50 MB of random test data from {NetworkService.SpeedTestHost} while pinging again. This shows whether your ping spikes when the connection is busy (bufferbloat). No personal data is sent.", null, "START TEST"))
+        {
+            return;
+        }
+
+        IsTesting = true;
+        try
+        {
+            BloatText = "Testing… (about 10 seconds)";
+            var r = await GamerNetworkService.TestBufferbloatAsync(CancellationToken.None);
+            BloatGrade = r.Grade;
+            BloatText = $"Idle ping {r.IdleMs?.ToString("0") ?? "–"} ms · under load {r.LoadedMs?.ToString("0") ?? "–"} ms. {r.Explanation}";
+        }
+        finally
+        {
+            IsTesting = false;
+        }
+    }
 
     public string LiveDown { get => _liveDown; private set => SetProperty(ref _liveDown, value); }
     public string LiveUp { get => _liveUp; private set => SetProperty(ref _liveUp, value); }
@@ -69,6 +123,7 @@ public sealed class NetworkViewModel : ObservableObject
     public void Activate()
     {
         LoadAdapters();
+        _ = Task.Run(GamerNetworkService.ReadWifi).ContinueWith(t => System.Windows.Application.Current?.Dispatcher.BeginInvoke(() => Wifi = t.Result));
         _timer.Start();
     }
 

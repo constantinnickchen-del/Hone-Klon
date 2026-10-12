@@ -1,0 +1,54 @@
+name: Release
+
+# Push a tag like v2.2.0 to build the installer and publish a GitHub Release.
+# ConstiBoost's built-in update check reads the latest release of this repository.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Version from tag
+        id: version
+        shell: pwsh
+        run: |
+          $v = "${{ github.ref_name }}".TrimStart('v')
+          if (-not ($v -match '^\d+\.\d+\.\d+$')) { $v = "2.2.0" }
+          "value=$v" >> $env:GITHUB_OUTPUT
+
+      - name: Publish (self-contained, for the installer)
+        run: dotnet publish ConstiBoost/ConstiBoost.csproj -c Release -r win-x64 --self-contained true -p:Version=${{ steps.version.outputs.value }} -o publish/win-x64
+
+      - name: Publish (small, needs .NET 8 Desktop Runtime)
+        run: dotnet publish ConstiBoost/ConstiBoost.csproj -c Release -r win-x64 --self-contained false -p:Version=${{ steps.version.outputs.value }} -o publish/small
+
+      - name: Install Inno Setup
+        run: choco install innosetup --no-progress -y
+
+      - name: Build installer
+        shell: pwsh
+        run: |
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" /DMyAppVersion=${{ steps.version.outputs.value }} /DSourceDir=..\publish\win-x64 installer\ConstiBoost.iss
+
+      - name: Portable zips
+        shell: pwsh
+        run: |
+          Compress-Archive -Path publish/win-x64/* -DestinationPath dist/ConstiBoost-${{ steps.version.outputs.value }}-portable-win-x64.zip
+          Compress-Archive -Path publish/small/ConstiBoost.exe -DestinationPath dist/ConstiBoost-${{ steps.version.outputs.value }}-small-win-x64.zip
+
+      - name: GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          generate_release_notes: true

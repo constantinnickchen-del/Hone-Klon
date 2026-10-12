@@ -17,7 +17,7 @@ using ConstiBoost.WinSys;
 
 namespace ConstiBoost.ViewModels;
 
-public sealed record ComparisonLine(string Profile, string AvgTemp, string MaxTemp, string AvgClock, string AvgLoad, string Time);
+public sealed record ComparisonLine(string Profile, string AvgTemp, string MaxTemp, string AvgClock, string AvgLoad, string Time, string Fps = "–");
 
 /// <summary>🌡️ Thermal Monitor: live values, diagnosis, safe thermal optimization, tests and cooling advice.</summary>
 public sealed class ThermalViewModel : PageViewModel
@@ -610,9 +610,12 @@ public sealed class ThermalViewModel : PageViewModel
         }
     }
 
+    public void RefreshComparison() => LoadComparison();
+
     /// <summary>Compares the latest measured test per profile. Only real measurements – FPS are not available.</summary>
     private void LoadComparison()
     {
+        ComparisonStatements.Clear();
         var latest = ThermalTestService.Load()
             .GroupBy(r => r.Profile)
             .Select(g => g.OrderByDescending(r => r.Time).First())
@@ -625,7 +628,25 @@ public sealed class ThermalViewModel : PageViewModel
                 r.AverageCpuMhz is double mhz ? $"{mhz / 1000:0.00} GHz" : "n/a", P(r.AverageCpuLoad), r.Time.ToString("dd.MM. HH:mm")));
         }
 
-        ComparisonStatements.Clear();
+        // Real FPS measurements (Games → MEASURE REAL FPS) per Gaming Mode profile, with the temperature measured at the same time.
+        var fps = FpsHistory.Load().GroupBy(r => (r.GameName, r.Profile)).Select(g => g.OrderByDescending(r => r.Time).First()).OrderBy(r => r.GameName).ThenBy(r => r.Profile).ToList();
+        foreach (var r in fps)
+        {
+            Comparison.Add(new ComparisonLine($"{r.GameName} · {(r.Profile == "Normal" ? "Normal" : r.Profile)}", T(r.AverageTemperature, "n/a"), T(r.MaxTemperature, "n/a"),
+                r.AverageCpuMhz is double mhz2 ? $"{mhz2 / 1000:0.00} GHz" : "n/a", "–", r.Time.ToString("dd.MM. HH:mm"), $"{r.AverageFps:0} FPS (1 % {r.Low1:0})"));
+        }
+
+        foreach (var game in fps.GroupBy(r => r.GameName).Where(g => g.Count() >= 2))
+        {
+            var fastest = game.OrderByDescending(r => r.AverageFps).First();
+            var coolest = game.Where(r => r.AverageTemperature.HasValue).OrderBy(r => r.AverageTemperature).FirstOrDefault();
+            ComparisonStatements.Add($"{game.Key}: {fastest.Profile} gives higher performance ({fastest.AverageFps:0} FPS measured).");
+            if (coolest != null && coolest != fastest)
+            {
+                ComparisonStatements.Add($"{game.Key}: {coolest.Profile} runs cooler ({coolest.AverageTemperature:0} °C at {coolest.AverageFps:0} FPS). You decide.");
+            }
+        }
+
         var withTemp = latest.Where(r => r.AverageTemperature.HasValue).ToList();
         var withClock = latest.Where(r => r.AverageCpuMhz.HasValue).ToList();
         if (latest.Count >= 2)

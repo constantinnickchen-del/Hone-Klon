@@ -9,6 +9,11 @@ using ConstiBoost.WinSys;
 
 namespace ConstiBoost.Services;
 
+public sealed record UpgradeTip(string Title, string WhatToGet, string Why, string Effect, ImpactLevel Priority)
+{
+    public string PriorityText => Priority switch { ImpactLevel.High => "BEST UPGRADE", ImpactLevel.Medium => "WORTH IT", _ => "OPTIONAL" };
+}
+
 public sealed record HardwareInsight(string Title, CheckStatus Status, string Current, string Detail, string Recommendation, ImpactLevel Impact)
 {
     public string ImpactText => Impact.ToString().ToUpperInvariant();
@@ -20,6 +25,62 @@ public sealed record HardwareInsight(string Title, CheckStatus Status, string Cu
 /// </summary>
 public static class HardwareInsightsService
 {
+    /// <summary>Concrete, honest upgrade advice based on the real slots/modules/drives of this PC.</summary>
+    public static List<UpgradeTip> UpgradeAdvice(HardwareInfo hw, IEnumerable<string> gameDrives)
+    {
+        var tips = new List<UpgradeTip>();
+        var layout = MemoryInfo.Read();
+        bool igpu = hw.Gpus.FirstOrDefault()?.IsIntegrated == true;
+        var first = layout.Modules.FirstOrDefault();
+        string spec = first is null ? "matching module" : $"{first.Type} {(first.SpeedMts?.ToString() ?? "")} MT/s {first.FormFactor}".Replace("  ", " ");
+        long totalGb = (hw.TotalRamBytes ?? 0) / 1024 / 1024 / 1024;
+
+        if (layout.Modules.Count == 1 && layout.FreeSlots is > 0)
+        {
+            string size = first != null ? $"{first.CapacityBytes / 1024 / 1024 / 1024} GB" : "same size";
+            tips.Add(new UpgradeTip("Add a second RAM module (dual-channel)",
+                $"1× {size} {spec}" + (first is { PartNumber.Length: > 0 } ? $" – ideally the same model as installed ({first.Manufacturer} {first.PartNumber})" : string.Empty),
+                $"{layout.FreeSlots} free slot detected and only one module installed. Dual-channel doubles memory bandwidth.",
+                igpu ? "Typically the biggest FPS gain for integrated graphics (often 20–40 % more FPS in GPU-limited games, according to common test results). Also more RAM for the game." : "Smoother frame times and more RAM.",
+                igpu ? ImpactLevel.High : ImpactLevel.Medium));
+        }
+        else if (layout.Modules.Count == 1 && layout.FreeSlots == 0)
+        {
+            tips.Add(new UpgradeTip("RAM is single-channel, but no free slot was detected",
+                "Check your laptop's manual – some models have soldered memory plus one slot that Windows reports differently.",
+                "Only one memory module is reported.", "If a slot exists, a second module is the best upgrade for integrated graphics.", ImpactLevel.Medium));
+        }
+
+        if (totalGb is > 0 and < 12 && layout.FreeSlots is > 0 && layout.Modules.Count != 1)
+        {
+            tips.Add(new UpgradeTip("More RAM (16 GB total)", $"Add a {spec} module so that the total reaches 16 GB",
+                $"{totalGb} GB installed – modern games plus Windows and the iGPU use most of it.", "Fewer stutters when switching areas or with Discord/browser open.", ImpactLevel.Medium));
+        }
+
+        var media = StorageInfo.Read();
+        foreach (string d in gameDrives.Select(x => x.TrimEnd('\\').ToUpperInvariant()).Distinct())
+        {
+            if (media.FirstOrDefault(m => m.Letter.Equals(d, StringComparison.OrdinalIgnoreCase)) is { MediaType: "HDD" })
+            {
+                tips.Add(new UpgradeTip($"SSD for your games (drive {d} is a hard disk)", "A SATA or NVMe SSD (check which your laptop supports)",
+                    "Games installed on a hard disk.", "Much faster loading and fewer texture-streaming stutters – no FPS change in already-loaded scenes.", ImpactLevel.High));
+            }
+        }
+
+        if (hw.HasBattery)
+        {
+            tips.Add(new UpgradeTip("Laptop cooling pad (cheap, optional)", "A simple cooling pad or a stand that lifts the back",
+                "Laptops pull air from the bottom – more airflow = lower temperatures.", "Lower temperatures can keep boost clocks higher for longer. Effect depends on the laptop.", ImpactLevel.Low));
+        }
+
+        if (tips.Count == 0)
+        {
+            tips.Add(new UpgradeTip("No obvious cheap upgrade", "Your memory and storage are already well configured.", "Dual-channel memory and SSD detected.", "Further gains would need a faster CPU/GPU.", ImpactLevel.Low));
+        }
+
+        return tips;
+    }
+
     public static List<HardwareInsight> Analyze(HardwareInfo hw, IEnumerable<string> gameDrives)
     {
         var list = new List<HardwareInsight>();

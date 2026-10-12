@@ -50,6 +50,8 @@ public partial class App : Application
         ThemeService.Apply(SettingsService.Instance.Current.Theme, SettingsService.Instance.Current.AccentColor);
         GamingModeService.Instance.LoadPersistedState();
         Games.GameFocusService.Instance.LoadPersisted();
+        Games.AutoProfileService.Instance.Load();
+        CleanupTemp();
         AutoCoolService.Instance.RestoreLeftover();
         if (SettingsService.Instance.Current.ThermalMonitoringEnabled || SettingsService.Instance.Current.AutoCoolEnabled)
         {
@@ -66,7 +68,15 @@ public partial class App : Application
         }
 
         window.Show();
+        TrayService.Instance.Initialize();
+        if (minimized && SettingsService.Instance.Current.MinimizeToTray)
+        {
+            window.Hide();
+        }
+
         viewModel.Start(minimized);
+        MaintenanceService.Instance.Start();
+        _ = UpdateService.Instance.CheckOnStartupAsync();
         if (GamingModeService.Instance.IsActive)
         {
             NotificationService.Instance.Show("Gaming Mode is still active from your last session. Stop it on the Dashboard to restore your settings.", NotificationKind.Warning);
@@ -78,6 +88,9 @@ public partial class App : Application
         try
         {
             AppLog.Info("ConstiBoost exited");
+            OverlayService.Instance.Hide();
+            HotkeyService.Instance.Dispose();
+            TrayService.Instance.Dispose();
             _singleInstance?.Dispose();
         }
         catch
@@ -86,6 +99,25 @@ public partial class App : Application
         }
 
         base.OnExit(e);
+    }
+
+    /// <summary>Removes leftover task/capture files older than a day.</summary>
+    private static void CleanupTemp()
+    {
+        try
+        {
+            foreach (string file in System.IO.Directory.EnumerateFiles(Core.AppPaths.Temp))
+            {
+                if (System.IO.File.GetLastWriteTime(file) < DateTime.Now.AddDays(-1))
+                {
+                    System.IO.File.Delete(file);
+                }
+            }
+        }
+        catch
+        {
+            // ignore
+        }
     }
 
     private static void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)

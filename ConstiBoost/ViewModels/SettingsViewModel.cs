@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Input;
@@ -141,9 +142,54 @@ public sealed class SettingsViewModel : PageViewModel
         }
     }
 
+    // ---------- Tray, hotkeys, overlay ----------
+    public bool MinimizeToTray { get => _settings.Current.MinimizeToTray; set { _settings.Current.MinimizeToTray = value; _settings.Save(); OnPropertyChanged(); } }
+    public bool HotkeysEnabled { get => _settings.Current.HotkeysEnabled; set { _settings.Current.HotkeysEnabled = value; _settings.Save(); OnPropertyChanged(); NotificationService.Instance.Show("Hotkey change applies after restarting ConstiBoost.", Models.NotificationKind.Info); } }
+    public string HotkeyStatus => HotkeyService.Instance.Status;
+    public bool OverlayShowsFps { get => _settings.Current.OverlayShowsFps; set { _settings.Current.OverlayShowsFps = value; _settings.Save(); OnPropertyChanged(); } }
+    public bool OverlayTopLeft { get => _settings.Current.OverlayCorner == "TopLeft"; set { if (value) SetCorner("TopLeft"); } }
+    public bool OverlayTopRight { get => _settings.Current.OverlayCorner == "TopRight"; set { if (value) SetCorner("TopRight"); } }
+    public bool OverlayBottomLeft { get => _settings.Current.OverlayCorner == "BottomLeft"; set { if (value) SetCorner("BottomLeft"); } }
+    public bool OverlayBottomRight { get => _settings.Current.OverlayCorner == "BottomRight"; set { if (value) SetCorner("BottomRight"); } }
+    public ICommand ToggleOverlayCommand => new RelayCommand(() => OverlayService.Instance.Toggle());
+
+    private void SetCorner(string corner)
+    {
+        _settings.Current.OverlayCorner = corner;
+        _settings.Save();
+        if (OverlayService.Instance.IsVisible)
+        {
+            OverlayService.Instance.Hide();
+            OverlayService.Instance.Show();
+        }
+
+        OnPropertyChanged(string.Empty);
+    }
+
+    // ---------- Updates ----------
+    public UpdateService Updates => UpdateService.Instance;
+    public bool CheckForUpdates { get => _settings.Current.CheckForUpdates; set { _settings.Current.CheckForUpdates = value; _settings.Save(); OnPropertyChanged(); } }
+    public ICommand CheckUpdatesCommand => new AsyncRelayCommand(() => UpdateService.Instance.CheckAsync(true));
+    public ICommand InstallUpdateCommand => new AsyncRelayCommand(async () =>
+    {
+        if (UpdateService.Instance.Available is { } u && DialogService.Confirm($"Install ConstiBoost {u.Tag}?", "The installer is downloaded from GitHub Releases and started. ConstiBoost closes and restarts after the update. Your settings, backups and logs are kept.", string.IsNullOrWhiteSpace(u.Notes) ? null : new[] { u.Notes }, "UPDATE"))
+        {
+            await UpdateService.Instance.InstallAsync(new Progress<string>(t => NotificationService.Instance.Show(t, Models.NotificationKind.Info)));
+        }
+    });
+
+    // ---------- Maintenance ----------
+    public bool WeeklyMaintenance { get => _settings.Current.WeeklyMaintenance; set { _settings.Current.WeeklyMaintenance = value; _settings.Save(); OnPropertyChanged(); } }
+    public string LastMaintenanceText => _settings.Current.LastMaintenance is DateTime d ? $"Last run: {d:dd.MM.yyyy HH:mm}" : "Never run";
+    public ICommand RunMaintenanceCommand => new AsyncRelayCommand(async () =>
+    {
+        await MaintenanceService.Instance.RunAsync(false);
+        OnPropertyChanged(nameof(LastMaintenanceText));
+    });
+
     public string DataFolder => AppPaths.Root;
 
-    public string VersionText => "ConstiBoost 2.0 PRO · local only · no accounts · no telemetry";
+    public string VersionText => $"ConstiBoost {UpdateService.CurrentVersion.ToString(3)} PRO · local · no accounts · no telemetry";
 
     private void Save()
     {

@@ -10,6 +10,7 @@ using System.Windows;
 using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Threading;
+using ConstiBoost.Backup;
 using ConstiBoost.Core;
 using ConstiBoost.Fortnite;
 using ConstiBoost.Games;
@@ -309,11 +310,24 @@ public sealed class GameDetailViewModel : ObservableObject
         _focusProfile = SettingsService.Instance.Current.GamingProfile;
         _capFps = game.IsFortnite && _focusProfile != GamingProfile.MaxFps;
 
+        if (AutoProfileService.Instance.Get(game.Id) is { } saved)
+        {
+            _focusProfile = saved.Profile;
+            _boostPriority = saved.BoostPriority;
+            _gpuPreference = saved.GpuPreference;
+            _muteNotifications = saved.MuteNotifications;
+            _lowerPriority = saved.LowerPriority;
+            _capFps = saved.CapFps;
+        }
+
         LaunchCommand = new RelayCommand(() => Report(GameActions.Launch(Game)));
         UninstallCommand = new RelayCommand(Uninstall);
         OpenFolderCommand = new RelayCommand(() => GameActions.OpenFolder(Game));
         FocusCommand = new AsyncRelayCommand(FocusAsync, () => !IsBusy);
         LoadAppsCommand = new AsyncRelayCommand(LoadAppsAsync);
+        MeasureCommand = new AsyncRelayCommand(p => MeasureAsync(int.TryParse(p as string, out int sec) ? sec : 60), _ => !IsMeasuring);
+        CancelMeasureCommand = new RelayCommand(() => _measureCts?.Cancel(), () => IsMeasuring);
+        AutoProfile = AutoProfileService.Instance.Get(game.Id);
         SelectResolutionCommand = new RelayCommand(p =>
         {
             if (p is ResolutionOption r)
@@ -334,6 +348,308 @@ public sealed class GameDetailViewModel : ObservableObject
     public ICommand FocusCommand { get; }
     public ICommand LoadAppsCommand { get; }
     public ICommand SelectResolutionCommand { get; }
+    public ICommand SelectMeasuredPresetCommand => new RelayCommand(p => MeasuredPreset = p as string);
+    public ICommand MeasureCommand { get; }
+    public ICommand CancelMeasureCommand { get; }
+
+    // ---------- Real FPS measurement ----------
+    private System.Threading.CancellationTokenSource? _measureCts;
+    private bool _isMeasuring;
+    private string _measureText = string.Empty;
+    private FpsResult? _lastResult;
+    private string _calibrationText = string.Empty;
+    private string? _measuredPreset;
+
+    public ObservableCollection<FpsRecord> History { get; } = new();
+    public bool IsMeasuring { get => _isMeasuring; private set { if (SetProperty(ref _isMeasuring, value)) CommandManager.InvalidateRequerySuggested(); } }
+    public string MeasureText { get => _measureText; private set => SetProperty(ref _measureText, value); }
+    public string CalibrationText { get => _calibrationText; private set => SetProperty(ref _calibrationText, value); }
+    public bool HasResult => _lastResult != null;
+    public string ResultAvg => _lastResult is null ? "–" : $"{_lastResult.AverageFps:0}";
+    public string ResultLow1 => _lastResult is null ? "–" : $"{_lastResult.Low1:0}";
+    public string ResultLow01 => _lastResult is null ? "–" : $"{_lastResult.Low01:0}";
+    public string ResultStutters => _lastResult is null ? "–" : $"{_lastResult.Stutters}";
+    public string ResultFrameTime => _lastResult is null ? "–" : $"{_lastResult.MedianFrameTimeMs:0.0} ms";
+    public IReadOnlyList<double> ResultChart => _lastResult?.PerSecond ?? new List<double>();
+    public double ResultChartMax => Math.Max(30, (_lastResult?.MaxFps ?? 60) * 1.15);
+    public List<string> PresetNames => _profile?.Presets.Select(p => p.Name).ToList() ?? new List<string> { "Low", "Medium", "High", "Ultra / Epic" };
+    public string? MeasuredPreset { get => _measuredPreset; set => SetProperty(ref _measuredPreset, value); }
+
+    public string CompareText
+    {
+        get
+        {
+            if (History.Count < 2)
+            {
+                return History.Count == 1 ? "Measure again after a change to see Before / After." : string.Empty;
+            }
+
+            var after = History[0];
+            var before = History[1];
+            double diff = after.AverageFps - before.AverageFps;
+            double pct = before.AverageFps > 0 ? diff / before.AverageFps * 100 : 0;
+            string verdict = Math.Abs(pct) < 3 ? "No measurable difference (within normal variation)." : diff > 0 ? "Faster than before." : "Slower than before.";
+            return $"Before ({before.TimeText}, {before.Setting}, {before.Profile}): {before.AverageFps:0} FPS · 1 % low {before.Low1:0}\n" +
+                   $"After ({after.TimeText}, {after.Setting}, {after.Profile}): {after.AverageFps:0} FPS · 1 % low {after.Low1:0}\n" +
+                   $"Difference: {diff:+0;-0;0} FPS ({pct:+0.0;-0.0;0} %) – {verdict}";
+        }
+    }
+
+    // ---------- Game settings editor (Minecraft / Unreal Engine) ----------
+    private IGameConfigEditor? _editor;
+    private bool _editorCapFps;
+
+    public bool HasEditor => _editor != null;
+    public string EditorTitle => _editor?.Title ?? string.Empty;
+    public string EditorFile => _editor?.FileInfo ?? string.Empty;
+    public ObservableCollection<ConfigValue> EditorValues { get; } = new();
+    public IReadOnlyList<ConfigPreset> EditorPresets => _editor?.Presets ?? Array.Empty<ConfigPreset>();
+    public bool EditorCapFps { get => _editorCapFps; set => SetProperty(ref _editorCapFps, value); }
+    public ICommand ApplyEditorPresetCommand => new AsyncRelayCommand(p => ApplyEditorPresetAsync(p as ConfigPreset));
+
+    private void LoadEditor()
+    {
+        _editor = GameConfigEditors.For(Game);
+        EditorValues.Clear();
+        if (_editor != null)
+        {
+            foreach (var v in _editor.ReadCurrent())
+            {
+                EditorValues.Add(v);
+            }
+        }
+
+        foreach (string n in new[] { nameof(HasEditor), nameof(EditorTitle), nameof(EditorFile), nameof(EditorPresets) })
+        {
+            OnPropertyChanged(n);
+        }
+    }
+
+    private async Task ApplyEditorPresetAsync(ConfigPreset? preset)
+    {
+        if (_editor is null || preset is null)
+        {
+            return;
+        }
+
+        bool running = await Task.Run(() =>
+        {
+            var p = GameFocusService.FindGameProcesses(Game.ProcessRoots);
+            bool any = p.Count > 0;
+            p.ForEach(x => x.Dispose());
+            return any;
+        });
+        if (running)
+        {
+            DialogService.Info("Close the game first", $"{Game.Name} saves its settings when it exits and would overwrite the change. Close it completely, then apply again.");
+            return;
+        }
+
+        if (!DialogService.Confirm($"Apply {preset.Name} to {Game.Name}?", preset.Description, new[] { "The settings file is backed up first (Backups → RESTORE).", _editor.FileInfo }, "APPLY"))
+        {
+            return;
+        }
+
+        var backup = BackupSession.Create($"{Game.Name} settings {preset.Name}");
+        var result = await Task.Run(() => _editor.Apply(preset.Name, EditorCapFps ? FpsCap : null, backup));
+        Report(result);
+        LoadEditor();
+        MainViewModel.Instance?.Backups.Reload();
+    }
+
+    // ---------- Guided FPS Tuner (Fortnite) ----------
+    private int _targetFps;
+    private string _tunerAdvice = string.Empty;
+    private Func<BackupSession, OperationResult>? _tunerAction;
+    private string _tunerActionText = string.Empty;
+
+    public int TargetFps { get => _targetFps; set { if (SetProperty(ref _targetFps, Math.Clamp(value, 30, 240))) UpdateTuner(); } }
+    public string TunerAdvice { get => _tunerAdvice; private set => SetProperty(ref _tunerAdvice, value); }
+    public string TunerActionText { get => _tunerActionText; private set => SetProperty(ref _tunerActionText, value); }
+    public bool HasTunerAction => _tunerAction != null;
+    public ICommand ApplyTunerStepCommand => new RelayCommand(ApplyTunerStep);
+
+    private void UpdateTuner()
+    {
+        _tunerAction = null;
+        TunerActionText = string.Empty;
+        if (!Game.IsFortnite)
+        {
+            return;
+        }
+
+        var last = FpsHistory.ForGame(Game.Id).FirstOrDefault();
+        var cfg = FortniteConfigService.Read();
+        if (last is null)
+        {
+            TunerAdvice = "Step 1: press MEASURE REAL FPS and play a normal match for 60 s. The tuner then tells you exactly what to change next.";
+        }
+        else if (!cfg.Exists)
+        {
+            TunerAdvice = "Fortnite's settings file was not found – start Fortnite once.";
+        }
+        else
+        {
+            double avg = last.AverageFps;
+            double low = last.Low1;
+            double res = double.TryParse(cfg.Get("sg.ResolutionQuality"), NumberStyles.Float, CultureInfo.InvariantCulture, out double r) ? r : 100;
+            bool anyHigh = new[] { "sg.ViewDistanceQuality", "sg.ShadowQuality", "sg.EffectsQuality", "sg.PostProcessQuality", "sg.TextureQuality", "sg.FoliageQuality", "sg.ShadingQuality", "sg.AntiAliasingQuality", "sg.GlobalIlluminationQuality", "sg.ReflectionQuality" }
+                .Any(k => double.TryParse(cfg.Get(k), NumberStyles.Float, CultureInfo.InvariantCulture, out double v) && v > 0);
+            string measured = $"Last measurement ({last.TimeText}): {avg:0} FPS, 1 % low {low:0}. Target: {TargetFps} FPS.";
+            if (avg < TargetFps * 0.95)
+            {
+                if (cfg.RenderingMode != "Performance" && (ScanService.Instance.Last?.Profile.IsLowPowerIntegrated ?? true))
+                {
+                    TunerAdvice = measured + "\nNext step: switch Rendering Mode to PERFORMANCE in Fortnite (Settings > Video > Advanced Graphics) and restart the game – the biggest single gain on integrated graphics. Then measure again.";
+                }
+                else if (anyHigh)
+                {
+                    TunerAdvice = measured + "\nNext step: set all graphics groups to Low (MAX FPS preset). Then play and measure again.";
+                    TunerActionText = "APPLY: all graphics Low";
+                    _tunerAction = b => FortniteConfigService.Apply(FortnitePreset.All[0], new PresetOptions((int)res, true, true, null, false), b).result;
+                }
+                else if (res > 65)
+                {
+                    int next = (int)Math.Max(60, Math.Round((res - 10) / 5) * 5);
+                    TunerAdvice = measured + $"\nNext step: lower 3D resolution from {res:0} % to {next} % (sharper image loss is small, GPU load drops a lot). Then measure again.";
+                    TunerActionText = $"APPLY: 3D resolution {next} %";
+                    _tunerAction = b => FortniteConfigService.SetValues(new Dictionary<string, string> { ["sg.ResolutionQuality"] = next.ToString("0.000000", CultureInfo.InvariantCulture) }, b, "FPS Tuner");
+                }
+                else
+                {
+                    TunerAdvice = measured + "\nYour PC is at its limit for this target with these settings. Options: lower the target, use 1280×720 in-game, close background apps (Game Focus), keep the laptop plugged in and check the Thermal page for heat throttling.";
+                }
+            }
+            else if (avg >= TargetFps * 1.15 && low >= TargetFps * 0.75 && res < 100)
+            {
+                int next = (int)Math.Min(100, Math.Round((res + 10) / 5) * 5);
+                TunerAdvice = measured + $"\nYou have headroom ✓ – you can raise 3D resolution to {next} % for a sharper image, or cap FPS at {TargetFps} for cooler, smoother play.";
+                TunerActionText = $"APPLY: 3D resolution {next} %";
+                _tunerAction = b => FortniteConfigService.SetValues(new Dictionary<string, string> { ["sg.ResolutionQuality"] = next.ToString("0.000000", CultureInfo.InvariantCulture) }, b, "FPS Tuner");
+            }
+            else
+            {
+                TunerAdvice = measured + $"\nTarget reached ✓. Tip: cap FPS at {TargetFps} – more even frame times and less heat.";
+                TunerActionText = $"APPLY: FPS limit {TargetFps}";
+                _tunerAction = b => FortniteConfigService.SetValues(new Dictionary<string, string> { ["FrameRateLimit"] = TargetFps.ToString("0.000000", CultureInfo.InvariantCulture) }, b, "FPS Tuner");
+            }
+        }
+
+        OnPropertyChanged(nameof(HasTunerAction));
+    }
+
+    private void ApplyTunerStep()
+    {
+        if (_tunerAction is null)
+        {
+            return;
+        }
+
+        if (!DialogService.Confirm("Apply tuner step?", TunerActionText.Replace("APPLY: ", string.Empty), new[] { "Fortnite must be closed. GameUserSettings.ini is backed up first.", "Afterwards: start Fortnite, play the same situation and press MEASURE REAL FPS again." }, "APPLY"))
+        {
+            return;
+        }
+
+        var result = _tunerAction(BackupSession.Create("Fortnite FPS Tuner"));
+        Report(result);
+        ReadFortniteSettings();
+        UpdateEstimates();
+        UpdateTuner();
+        MainViewModel.Instance?.Backups.Reload();
+    }
+
+    private void LoadHistory()
+    {
+        History.Clear();
+        foreach (var r in FpsHistory.ForGame(Game.Id).Take(12))
+        {
+            History.Add(r);
+        }
+
+        OnPropertyChanged(nameof(CompareText));
+    }
+
+    private async Task MeasureAsync(int seconds)
+    {
+        if (!DialogService.Confirm($"Measure real FPS in {Game.Name}?",
+                $"ConstiBoost records the frames Windows reports for the game (DirectX present events – no injection, anti-cheat safe). Windows only allows this with administrator rights, so a UAC prompt appears once.\n\nStart the game, then play normally for {seconds} seconds – measuring starts automatically as soon as the game renders.",
+                new[] { "Tip: measure the same situation each time (e.g. a Creative map or the same match phase) for a fair Before / After." }, "START MEASURING"))
+        {
+            return;
+        }
+
+        IsMeasuring = true;
+        _measureCts = new System.Threading.CancellationTokenSource();
+        var roots = Game.ProcessRoots.Select(r => GameLibraryService.NormalizePath(r) + "\\").ToList();
+        var exeNames = new HashSet<string>(Game.ExecutableNames, StringComparer.OrdinalIgnoreCase);
+        var temps = new List<double>();
+        var clocks = new List<double>();
+        var sensorTask = Task.Run(async () =>
+        {
+            using var freq = new Hardware.CpuFrequencySampler(ScanService.Instance.Last?.Hardware.CpuMaxClockMhz);
+            freq.Sample();
+            while (!_measureCts.IsCancellationRequested)
+            {
+                await Task.Delay(2000);
+                if (Hardware.Sensors.SensorHub.Instance.Read().BestTemperature is double t) temps.Add(t);
+                if (freq.Sample() is double mhz) clocks.Add(mhz);
+            }
+        });
+
+        try
+        {
+            var result = await FpsCaptureService.Instance.MeasureAsync(seconds,
+                (path, name) => path != null ? roots.Any(r => path.StartsWith(r, StringComparison.OrdinalIgnoreCase)) : exeNames.Contains(name),
+                new Progress<string>(t => MeasureText = t), _measureCts.Token);
+            if (result is null)
+            {
+                MeasureText = FpsCaptureService.Instance.LastError ?? "Measurement not possible.";
+                NotificationService.Instance.Show(MeasureText, NotificationKind.Warning);
+                return;
+            }
+
+            _lastResult = result;
+            var profile = GamingModeService.Instance.ActiveProfile;
+            FpsHistory.Add(new FpsRecord
+            {
+                GameId = Game.Id,
+                GameName = Game.Name,
+                Time = DateTime.Now,
+                Profile = profile is null ? "Normal" : GamingModeService.ProfileName(profile.Value),
+                Setting = MeasuredPreset ?? "Unknown",
+                Resolution = _resolution.Label,
+                RenderScale = _scale,
+                AverageFps = result.AverageFps,
+                Low1 = result.Low1,
+                Low01 = result.Low01,
+                Stutters = result.Stutters,
+                Seconds = result.Seconds,
+                AverageTemperature = temps.Count > 0 ? temps.Average() : null,
+                MaxTemperature = temps.Count > 0 ? temps.Max() : null,
+                AverageCpuMhz = clocks.Count > 0 ? clocks.Average() : null,
+            });
+            ActionLog.Success($"FPS measured: {Game.Name}", null, result.Summary);
+            MeasureText = $"Measured {result.ProcessName} for {result.Seconds:0} s: {result.Summary}";
+            foreach (string n in new[] { nameof(HasResult), nameof(ResultAvg), nameof(ResultLow1), nameof(ResultLow01), nameof(ResultStutters), nameof(ResultFrameTime), nameof(ResultChart), nameof(ResultChartMax) })
+            {
+                OnPropertyChanged(n);
+            }
+
+            LoadHistory();
+            UpdateEstimates();
+            UpdateTuner();
+            MainViewModel.Instance?.Thermal.RefreshComparison();
+        }
+        catch (OperationCanceledException)
+        {
+            MeasureText = "Measurement cancelled.";
+        }
+        finally
+        {
+            _measureCts.Cancel();
+            IsMeasuring = false;
+        }
+    }
 
     public List<ResolutionOption> Resolutions { get; }
     public ObservableCollection<FpsEstimate> Estimates { get; } = new();
@@ -384,6 +700,40 @@ public sealed class GameDetailViewModel : ObservableObject
 
     public int FpsCap => ScanService.Instance.Last?.Hardware.Gpus.FirstOrDefault()?.RefreshRate is int hz and >= 30 and <= 240 ? hz : 60;
 
+    public GameAutoProfile? AutoProfile { get; private set; }
+
+    /// <summary>Saves the current Focus options as this game's auto profile.</summary>
+    public bool AutoFocusEnabled
+    {
+        get => AutoProfile?.Enabled == true;
+        set
+        {
+            AutoProfile = new GameAutoProfile
+            {
+                GameId = Game.Id,
+                GameName = Game.Name,
+                InstallPath = Game.InstallPath,
+                ProcessRoots = Game.ProcessRoots.ToList(),
+                MainExecutable = Game.MainExecutable,
+                EpicAppName = Game.EpicAppName,
+                Enabled = value,
+                Profile = _focusProfile,
+                BoostPriority = BoostPriority,
+                GpuPreference = GpuPreference,
+                MuteNotifications = MuteNotifications,
+                LowerPriority = LowerPriority,
+                CapFps = CapFps && Game.IsFortnite,
+                FpsCap = FpsCap,
+                CloseApps = Apps.Where(a => a.IsSelected).Select(a => a.ProcessName).ToList(),
+            };
+            AutoProfileService.Instance.Save(AutoProfile);
+            OnPropertyChanged();
+            NotificationService.Instance.Show(value
+                ? $"Auto-Focus for {Game.Name} is on: when the game starts, ConstiBoost applies these options automatically (ConstiBoost must be running, e.g. in the tray)."
+                : $"Auto-Focus for {Game.Name} is off.", NotificationKind.Info);
+        }
+    }
+
     public bool IsFocused => GameFocusService.Instance.FocusedGameId == Game.Id;
     public string FocusButtonText => IsFocused ? "STOP FOCUS" : "🎯 FOCUS ON THIS GAME";
 
@@ -401,6 +751,16 @@ public sealed class GameDetailViewModel : ObservableObject
             ReadFortniteSettings();
         }
 
+        MeasuredPreset ??= _fortnitePreset ?? _profile?.Presets.FirstOrDefault()?.Name;
+        if (_targetFps == 0)
+        {
+            _targetFps = FpsCap;
+            OnPropertyChanged(nameof(TargetFps));
+        }
+
+        LoadHistory();
+        LoadEditor();
+        UpdateTuner();
         UpdateEstimates();
         OnPropertyChanged(nameof(HasEstimate));
         OnPropertyChanged(nameof(EstimateHeader));
@@ -487,12 +847,29 @@ public sealed class GameDetailViewModel : ObservableObject
             Factors.Add(new KeyValuePair<string, string>(name, value));
         }
 
+        // Calibration: compare the latest real measurement with the estimate for the same setting.
+        double factor = 1.0;
+        CalibrationText = string.Empty;
+        var reference = FpsHistory.ForGame(Game.Id).FirstOrDefault(r => _profile.Presets.Any(p => p.Name == r.Setting));
+        if (reference != null)
+        {
+            var refPreset = _profile.Presets.First(p => p.Name == reference.Setting);
+            var refRes = Resolutions.FirstOrDefault(r => r.Label == reference.Resolution) ?? _resolution;
+            var refEstimate = FpsEstimator.Estimate(_profile, refPreset, refRes.Width, refRes.Height, reference.RenderScale / 100.0, _context);
+            if (refEstimate != null)
+            {
+                double mid = (refEstimate.Low + refEstimate.High) / 2.0;
+                factor = Math.Clamp(reference.AverageFps / Math.Max(1, mid), 0.4, 2.5);
+                CalibrationText = $"✓ Calibrated with your real measurement from {reference.TimeText} ({reference.AverageFps:0} FPS at {reference.Setting}) – correction ×{factor:0.00}.";
+            }
+        }
+
         foreach (var preset in _profile.Presets)
         {
             var e = FpsEstimator.Estimate(_profile, preset, _resolution.Width, _resolution.Height, _scale / 100.0, _context, preset.Name == _fortnitePreset);
             if (e != null)
             {
-                Estimates.Add(e);
+                Estimates.Add(Math.Abs(factor - 1.0) < 0.001 ? e : e with { Low = (int)Math.Round(e.Low * factor), High = (int)Math.Round(e.High * factor) });
             }
         }
     }
@@ -508,8 +885,10 @@ public sealed class GameDetailViewModel : ObservableObject
                                        (Game.Source == GameSource.Epic && g.ProcessName.StartsWith("EpicGames", StringComparison.OrdinalIgnoreCase)) ||
                                        (Game.Source == GameSource.Minecraft && g.ProcessName.Contains("Minecraft", StringComparison.OrdinalIgnoreCase)) ||
                                        (Game.Source == GameSource.Xbox && g.ProcessName.StartsWith("XboxPcApp", StringComparison.OrdinalIgnoreCase));
-            g.IsSelected = g.IsKnownBackgroundApp && !launcherForThisGame && !BackgroundAppsService.KeepPriority.Contains(g.ProcessName) &&
-                           !BackgroundAppsService.BrowserProcesses.Contains(g.ProcessName);
+            g.IsSelected = AutoProfile is { } ap
+                ? ap.CloseApps.Contains(g.ProcessName, StringComparer.OrdinalIgnoreCase)
+                : g.IsKnownBackgroundApp && !launcherForThisGame && !BackgroundAppsService.KeepPriority.Contains(g.ProcessName) &&
+                  !BackgroundAppsService.BrowserProcesses.Contains(g.ProcessName);
             Apps.Add(g);
         }
     }

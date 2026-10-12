@@ -10,6 +10,7 @@ public static class ElevatedOperations
     public const string CleanPaths = "clean-paths";
     public const string CreateRestorePoint = "create-restore-point";
     public const string ProcessorMaxState = "processor-max-state";
+    public const string FrameCapture = "frame-capture";
 }
 
 public sealed class DwordWrite
@@ -30,6 +31,10 @@ public sealed class ElevatedTask
     public string? Description { get; set; }
     public double MinAgeHours { get; set; }
     public string? PowerScheme { get; set; }
+    public int DurationSeconds { get; set; }
+    public int ParentPid { get; set; }
+    public string? OutputFile { get; set; }
+    public string? StopFile { get; set; }
     public uint AcValue { get; set; }
     public uint DcValue { get; set; }
 }

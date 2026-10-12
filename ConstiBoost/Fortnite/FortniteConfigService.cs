@@ -142,6 +142,53 @@ public static class FortniteConfigService
         return delta <= 2 ? ImpactLevel.Low : delta <= 8 ? ImpactLevel.Medium : ImpactLevel.High;
     }
 
+    /// <summary>Sets several existing keys at once (FPS Tuner). Unknown keys are reported, never added.</summary>
+    public static OperationResult SetValues(IReadOnlyDictionary<string, string> values, BackupSession backup, string action)
+    {
+        string path = ConfigPath;
+        if (!File.Exists(path))
+        {
+            return OperationResult.Unavailable("Fortnite's settings file was not found.");
+        }
+
+        if (IsFortniteRunning())
+        {
+            return OperationResult.Fail("Please close Fortnite first – it overwrites its settings file when it exits.");
+        }
+
+        try
+        {
+            backup.CaptureFile(path, "Fortnite GameUserSettings.ini");
+            var ini = IniDocument.Load(path);
+            var missing = new List<string>();
+            int changed = 0;
+            foreach (var (key, value) in values)
+            {
+                string? old = ini.Get(key);
+                if (old is null)
+                {
+                    missing.Add(key);
+                    continue;
+                }
+
+                if (!string.Equals(old, value, StringComparison.OrdinalIgnoreCase))
+                {
+                    ini.Set(key, value);
+                    ActionLog.Success($"{action}: {key}", old, value);
+                    changed++;
+                }
+            }
+
+            ini.Save(path);
+            return OperationResult.Ok($"{changed} setting(s) changed" + (missing.Count > 0 ? $" ({string.Join(", ", missing)} not in your file)" : string.Empty));
+        }
+        catch (Exception ex)
+        {
+            ActionLog.Failed(action, null, null, Safe.Describe(ex));
+            return OperationResult.Fail("The change couldn't be applied.", Safe.Describe(ex));
+        }
+    }
+
     /// <summary>Changes only FrameRateLimit (used by Cool Gaming Mode). Returns the previous raw value.</summary>
     public static (OperationResult result, string? previous) SetFrameRateLimit(string value, BackupSession? backup)
     {

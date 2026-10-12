@@ -58,6 +58,42 @@
             </ItemsControl>
 
             <DockPanel Margin="0,16,0,12">
+                <Button DockPanel.Dock="Right" Style="{StaticResource SecondaryButton}" Content="📸 CREATE PC REPORT" Command="{Binding ReportCommand}" VerticalAlignment="Center" />
+                <StackPanel>
+                    <TextBlock Text="🛒 Upgrade advisor" Style="{StaticResource Text.H2}" />
+                    <TextBlock Text="Based on the slots, modules and drives Windows reports – only upgrades that make sense for this PC." Style="{StaticResource Text.Body}" />
+                </StackPanel>
+            </DockPanel>
+            <ItemsControl ItemsSource="{Binding Upgrades}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border Style="{StaticResource Card}" Margin="0,0,0,10" Padding="18">
+                            <StackPanel>
+                                <DockPanel>
+                                    <Border DockPanel.Dock="Right" Style="{StaticResource Pill}" Background="{Binding Priority, Converter={StaticResource StatusSoftBrush}}">
+                                        <TextBlock Text="{Binding PriorityText}" FontSize="10.5" FontWeight="Bold" Foreground="{Binding Priority, Converter={StaticResource StatusBrush}}" />
+                                    </Border>
+                                    <TextBlock Text="{Binding Title}" Style="{StaticResource Text.H3}" FontSize="15" />
+                                </DockPanel>
+                                <TextBlock Text="{Binding WhatToGet, StringFormat='🛒 {0}'}" Style="{StaticResource Text.Body}" Foreground="{DynamicResource AccentBrush}" Margin="0,6,0,0" />
+                                <TextBlock Text="{Binding Why}" Style="{StaticResource Text.Body}" Margin="0,4,0,0" />
+                                <TextBlock Text="{Binding Effect, StringFormat='Effect: {0}'}" Style="{StaticResource Text.Body}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,4,0,0" />
+                            </StackPanel>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <Border Style="{StaticResource InnerCard}" Margin="0,0,0,8">
+                <ItemsControl ItemsSource="{Binding MemoryModules}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding}" Style="{StaticResource Text.Body}" FontSize="12" />
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </Border>
+
+            <DockPanel Margin="0,16,0,12">
                 <Button DockPanel.Dock="Right" Style="{StaticResource HeroButton}" Content="⚡ APPLY BOOST PACK" Command="{Binding ApplyCommand}" VerticalAlignment="Center" />
                 <StackPanel>
                     <TextBlock Text="Low-End Boost Pack" Style="{StaticResource Text.H2}" />

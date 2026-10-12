@@ -101,6 +101,9 @@ public static class ElevatedTaskRunner
                     PowerManager.SetProcessorMaxState(Guid.Parse(task.PowerScheme ?? string.Empty), task.AcValue, task.DcValue);
                     return new ElevatedResult { Success = true, Message = "Maximum processor state set." };
 
+                case ElevatedOperations.FrameCapture:
+                    return FrameCaptureRunner.Run(task);
+
                 case ElevatedOperations.CreateRestorePoint:
                     return RestorePointService.CreateInProcess(task.Description ?? "ConstiBoost");
 

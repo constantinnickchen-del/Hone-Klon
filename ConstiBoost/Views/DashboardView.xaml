@@ -85,7 +85,11 @@
                         <Button Style="{StaticResource HeroButton}" Command="{Binding OptimizeCommand}" HorizontalAlignment="Stretch">
                             <TextBlock Text="⚡ OPTIMIZE MY PC" />
                         </Button>
-                        <UniformGrid Columns="3" Margin="0,16,0,0">
+                        <UniformGrid Columns="2" Margin="0,8,0,0">
+                            <Button Style="{StaticResource SecondaryButton}" Command="{Binding OverlayCommand}" Margin="0,0,3,0" Padding="8,10" Content="📊 FPS Overlay" />
+                            <Button Style="{StaticResource SecondaryButton}" Command="{Binding ReportCommand}" Margin="3,0,0,0" Padding="8,10" Content="📸 PC Report" />
+                        </UniformGrid>
+                        <UniformGrid Columns="3" Margin="0,8,0,0">
                             <Button Style="{StaticResource SecondaryButton}" Command="{Binding BoostLabCommand}" Margin="0,0,6,0" Padding="8,10" Content="🧪 Boost Lab" />
                             <Button Style="{StaticResource SecondaryButton}" Command="{Binding FortniteCommand}" Margin="3,0" Padding="8,10" Content="🎮 Games" />
                             <Button Style="{StaticResource SecondaryButton}" Command="{Binding ThermalCommand}" Margin="6,0,0,0" Padding="8,10" Content="🌡️ Thermal" />

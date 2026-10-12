@@ -77,9 +77,73 @@
 
             <Border Style="{StaticResource Card}" Margin="0,0,0,12">
                 <StackPanel>
+                    <TextBlock Text="Tray, hotkeys &amp; overlay" Style="{StaticResource Text.H3}" />
+                    <DockPanel Margin="0,12,0,12">
+                        <CheckBox DockPanel.Dock="Right" Style="{StaticResource ToggleSwitch}" IsChecked="{Binding MinimizeToTray}" />
+                        <StackPanel>
+                            <TextBlock Text="Keep running in the tray when closed" Foreground="{DynamicResource TextPrimaryBrush}" FontWeight="SemiBold" />
+                            <TextBlock Text="Needed for Auto-Focus, hotkeys, Auto-Cool and weekly maintenance. Exit via the tray icon." Style="{StaticResource Text.Body}" />
+                        </StackPanel>
+                    </DockPanel>
+                    <DockPanel Margin="0,0,0,12">
+                        <CheckBox DockPanel.Dock="Right" Style="{StaticResource ToggleSwitch}" IsChecked="{Binding HotkeysEnabled}" />
+                        <StackPanel>
+                            <TextBlock Text="Global hotkeys" Foreground="{DynamicResource TextPrimaryBrush}" FontWeight="SemiBold" />
+                            <TextBlock Text="{Binding HotkeyStatus}" Style="{StaticResource Text.Body}" />
+                        </StackPanel>
+                    </DockPanel>
+                    <DockPanel Margin="0,0,0,8">
+                        <Button DockPanel.Dock="Right" Style="{StaticResource SecondaryButton}" Content="SHOW / HIDE OVERLAY" Command="{Binding ToggleOverlayCommand}" />
+                        <StackPanel>
+                            <TextBlock Text="FPS overlay" Foreground="{DynamicResource TextPrimaryBrush}" FontWeight="SemiBold" />
+                            <TextBlock Text="Small click-through window with real FPS, 1 % low, temperature, CPU/GPU/RAM. Visible in borderless/windowed mode (exclusive fullscreen can hide it). No injection – anti-cheat safe." Style="{StaticResource Text.Body}" />
+                        </StackPanel>
+                    </DockPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,4,0,8">
+                        <RadioButton Style="{StaticResource Segment}" GroupName="Corner" Content="Top left" IsChecked="{Binding OverlayTopLeft}" />
+                        <RadioButton Style="{StaticResource Segment}" GroupName="Corner" Content="Top right" IsChecked="{Binding OverlayTopRight}" />
+                        <RadioButton Style="{StaticResource Segment}" GroupName="Corner" Content="Bottom left" IsChecked="{Binding OverlayBottomLeft}" />
+                        <RadioButton Style="{StaticResource Segment}" GroupName="Corner" Content="Bottom right" IsChecked="{Binding OverlayBottomRight}" />
+                    </StackPanel>
+                    <CheckBox Content="Overlay shows real FPS (one UAC prompt per session)" IsChecked="{Binding OverlayShowsFps}" />
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+                <StackPanel>
+                    <TextBlock Text="Updates &amp; maintenance" Style="{StaticResource Text.H3}" />
+                    <DockPanel Margin="0,12,0,8">
+                        <CheckBox DockPanel.Dock="Right" Style="{StaticResource ToggleSwitch}" IsChecked="{Binding CheckForUpdates}" />
+                        <StackPanel>
+                            <TextBlock Text="Check for updates on start" Foreground="{DynamicResource TextPrimaryBrush}" FontWeight="SemiBold" />
+                            <TextBlock Text="One anonymous request to GitHub Releases – no personal or system data is sent." Style="{StaticResource Text.Body}" />
+                        </StackPanel>
+                    </DockPanel>
+                    <TextBlock Text="{Binding Updates.Status}" Style="{StaticResource Text.Body}" Foreground="{DynamicResource AccentBrush}" />
+                    <StackPanel Orientation="Horizontal" Margin="0,8,0,16">
+                        <Button Style="{StaticResource SecondaryButton}" Content="CHECK NOW" Command="{Binding CheckUpdatesCommand}" Margin="0,0,10,0" />
+                        <Button Style="{StaticResource AccentButton}" Content="INSTALL UPDATE" Command="{Binding InstallUpdateCommand}"
+                                Visibility="{Binding Updates.Available, Converter={StaticResource NullToVis}}" />
+                    </StackPanel>
+                    <DockPanel Margin="0,0,0,8">
+                        <CheckBox DockPanel.Dock="Right" Style="{StaticResource ToggleSwitch}" IsChecked="{Binding WeeklyMaintenance}" />
+                        <StackPanel>
+                            <TextBlock Text="Weekly maintenance" Foreground="{DynamicResource TextPrimaryBrush}" FontWeight="SemiBold" />
+                            <TextBlock Text="Once a week (never while gaming): removes old temp files and crash reports, checks startup apps, free space and driver age." Style="{StaticResource Text.Body}" />
+                        </StackPanel>
+                    </DockPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <Button Style="{StaticResource SecondaryButton}" Content="RUN NOW" Command="{Binding RunMaintenanceCommand}" Margin="0,0,12,0" />
+                        <TextBlock Text="{Binding LastMaintenanceText}" Style="{StaticResource Text.Body}" VerticalAlignment="Center" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+                <StackPanel>
                     <TextBlock Text="Privacy &amp; safety" Style="{StaticResource Text.H3}" />
                     <TextBlock Style="{StaticResource Text.Body}" Margin="0,8,0,0"
-                               Text="ConstiBoost works 100 % locally: no account, no cloud, no telemetry, no ads. It never disables Defender, the firewall or Windows Update, never reads passwords, cookies or browser data, and never deletes personal files. The only network access is the optional speed/ping/DNS test you start yourself." />
+                               Text="ConstiBoost works 100 % locally: no account, no cloud, no telemetry, no ads. It never disables Defender, the firewall or Windows Update, never reads passwords, cookies or browser data, and never deletes personal files. Network access: the tests you start yourself (ping, DNS, speed, bufferbloat) and – if enabled – the anonymous update check on GitHub." />
                     <TextBlock Text="{Binding DataFolder, StringFormat='Data folder (settings, backups, logs): {0}'}" Style="{StaticResource Text.Caption}" Margin="0,10,0,0" TextWrapping="Wrap" />
                     <TextBlock Text="{Binding VersionText}" Style="{StaticResource Text.Caption}" Margin="0,4,0,0" />
                     <Button Style="{StaticResource GhostButton}" Content="Show welcome screen again" Command="{Binding ShowWelcomeCommand}" HorizontalAlignment="Left" Padding="0,10,0,0" />

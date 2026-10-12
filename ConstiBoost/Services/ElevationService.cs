@@ -18,6 +18,47 @@ public static class ElevationService
 {
     public const string Argument = "--elevated";
 
+    /// <summary>
+    /// Starts a long-running elevated task (frame capture) without waiting for it. Returns null when UAC was declined.
+    /// If ConstiBoost already runs as administrator, the task runs on a background thread instead.
+    /// </summary>
+    public static Process? StartDetached(ElevatedTask task, out string? error)
+    {
+        error = null;
+        if (SystemInfo.IsAdministrator)
+        {
+            var thread = new System.Threading.Thread(() => ElevatedTaskRunner.Execute(task)) { IsBackground = true, Name = "ConstiBoost elevated task" };
+            thread.Start();
+            return Process.GetCurrentProcess();
+        }
+
+        string id = Guid.NewGuid().ToString("N");
+        string taskFile = Path.Combine(AppPaths.Temp, $"task-{id}.json");
+        string resultFile = Path.Combine(AppPaths.Temp, $"task-{id}.result.json");
+        try
+        {
+            File.WriteAllText(taskFile, JsonSerializer.Serialize(task));
+            string exe = AppPaths.ExecutablePath;
+            string args = $"{Argument} \"{taskFile}\" \"{resultFile}\"";
+            if (Path.GetFileNameWithoutExtension(exe).Equals("dotnet", StringComparison.OrdinalIgnoreCase))
+            {
+                args = $"\"{Path.Combine(AppContext.BaseDirectory, "ConstiBoost.dll")}\" {args}";
+            }
+
+            return Process.Start(new ProcessStartInfo(exe, args) { UseShellExecute = true, Verb = "runas", WindowStyle = ProcessWindowStyle.Hidden });
+        }
+        catch (Win32Exception ex) when (ex.NativeErrorCode == 1223)
+        {
+            error = "Administrator permission was declined (UAC). Windows only allows FPS capture with administrator rights.";
+            return null;
+        }
+        catch (Exception ex)
+        {
+            error = Safe.Describe(ex);
+            return null;
+        }
+    }
+
     public static async Task<ElevatedResult> RunAsync(ElevatedTask task)
     {
         if (SystemInfo.IsAdministrator)

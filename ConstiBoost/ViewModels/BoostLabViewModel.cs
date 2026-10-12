@@ -44,6 +44,9 @@ public sealed class BoostLabViewModel : PageViewModel
     public override string Icon => "";
 
     public ObservableCollection<HardwareInsight> Insights { get; } = new();
+    public ObservableCollection<UpgradeTip> Upgrades { get; } = new();
+    public ObservableCollection<string> MemoryModules { get; } = new();
+    public ICommand ReportCommand => new RelayCommand(() => ReportCardService.CreateAndShow());
     public ObservableCollection<Optimization> Pack { get; }
     public ObservableCollection<string> Results { get; } = new();
 
@@ -80,6 +83,20 @@ public sealed class BoostLabViewModel : PageViewModel
             var gameDrives = MainViewModel.Instance?.Games.Games.Select(g => Path.GetPathRoot(g.InstallPath) ?? string.Empty).Where(d => d.Length > 0).Distinct().ToList() ?? new List<string>();
             ProgressText = "Checking memory, drivers, storage and display…";
             var insights = await Task.Run(() => HardwareInsightsService.Analyze(scan.Hardware, gameDrives));
+            var upgrades = await Task.Run(() => HardwareInsightsService.UpgradeAdvice(scan.Hardware, gameDrives));
+            var layout = await Task.Run(Hardware.MemoryInfo.Read);
+            Upgrades.Clear();
+            foreach (var u in upgrades)
+            {
+                Upgrades.Add(u);
+            }
+
+            MemoryModules.Clear();
+            MemoryModules.Add($"Memory slots: {layout.Slots?.ToString() ?? "unknown"} · installed modules: {layout.Modules.Count}" + (layout.FreeSlots is int free ? $" · free: {free}" : string.Empty));
+            foreach (var m in layout.Modules)
+            {
+                MemoryModules.Add($"{m.Slot}: {m.CapacityBytes / 1024 / 1024 / 1024} GB {m.Type} {m.SpeedMts?.ToString() ?? "?"} MT/s {m.FormFactor} {m.Manufacturer} {m.PartNumber}".Trim());
+            }
             Insights.Clear();
             foreach (var i in insights)
             {

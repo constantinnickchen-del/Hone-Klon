@@ -255,6 +255,66 @@
                             </StackPanel>
                         </Border>
 
+                        <Grid Margin="0,0,0,16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="16" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Border Style="{StaticResource Card}">
+                                <StackPanel>
+                                    <DockPanel>
+                                        <Button DockPanel.Dock="Right" Style="{StaticResource SecondaryButton}" Content="PING SERVERS" Command="{Binding ServerPingCommand}" />
+                                        <TextBlock Text="🎮 GAME SERVER PING (FORTNITE)" Style="{StaticResource Text.Caption}" VerticalAlignment="Center" />
+                                    </DockPanel>
+                                    <ItemsControl ItemsSource="{Binding ServerPings}" Margin="0,10,0,0">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Grid Margin="0,2">
+                                                    <Grid.ColumnDefinitions><ColumnDefinition Width="2*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                                    <TextBlock Text="{Binding Target}" Foreground="{DynamicResource TextPrimaryBrush}" />
+                                                    <TextBlock Grid.Column="1" Text="{Binding AverageText}" FontWeight="SemiBold" Foreground="{DynamicResource AccentBrush}" />
+                                                    <TextBlock Grid.Column="2" Text="{Binding JitterText, StringFormat='Jitter {0}'}" Style="{StaticResource Text.Body}" />
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                    <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,8,0,0"
+                                               Text="Uses Epic's public ping endpoints per data center. Choose the region with the lowest ping in Fortnite (Settings > Game > Matchmaking Region). 'Timeout' = the server does not answer pings." />
+                                </StackPanel>
+                            </Border>
+                            <Border Grid.Column="2" Style="{StaticResource Card}">
+                                <StackPanel>
+                                    <DockPanel>
+                                        <Button DockPanel.Dock="Right" Style="{StaticResource SecondaryButton}" Content="TEST" Command="{Binding BufferbloatCommand}" />
+                                        <TextBlock Text="📶 LATENCY UNDER LOAD (BUFFERBLOAT)" Style="{StaticResource Text.Caption}" VerticalAlignment="Center" />
+                                    </DockPanel>
+                                    <TextBlock Text="{Binding BloatGrade}" Style="{StaticResource Text.Big}" Margin="0,8,0,0" Foreground="{DynamicResource AccentBrush}" />
+                                    <TextBlock Text="{Binding BloatText}" Style="{StaticResource Text.Body}" TextWrapping="Wrap" />
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+
+                        <Border Style="{StaticResource Card}" Margin="0,0,0,16" Visibility="{Binding HasWifi, Converter={StaticResource BoolToVis}}">
+                            <StackPanel>
+                                <TextBlock Text="📡 WI-FI QUALITY" Style="{StaticResource Text.Caption}" />
+                                <UniformGrid Columns="5" Margin="0,10,0,0">
+                                    <StackPanel><TextBlock Text="Signal" Style="{StaticResource Text.Body}" /><TextBlock Text="{Binding Wifi.SignalPercent, StringFormat='{}{0} %'}" Style="{StaticResource Text.Value}" /></StackPanel>
+                                    <StackPanel><TextBlock Text="Band" Style="{StaticResource Text.Body}" /><TextBlock Text="{Binding Wifi.Band}" Style="{StaticResource Text.Value}" /></StackPanel>
+                                    <StackPanel><TextBlock Text="Channel" Style="{StaticResource Text.Body}" /><TextBlock Text="{Binding Wifi.Channel}" Style="{StaticResource Text.Value}" /></StackPanel>
+                                    <StackPanel><TextBlock Text="Standard" Style="{StaticResource Text.Body}" /><TextBlock Text="{Binding Wifi.RadioType}" Style="{StaticResource Text.Value}" /></StackPanel>
+                                    <StackPanel><TextBlock Text="Link (down/up)" Style="{StaticResource Text.Body}" /><TextBlock Style="{StaticResource Text.Value}"><Run Text="{Binding Wifi.ReceiveRate, Mode=OneWay}" /><Run Text=" / " /><Run Text="{Binding Wifi.TransmitRate, Mode=OneWay}" /></TextBlock></StackPanel>
+                                </UniformGrid>
+                                <ItemsControl ItemsSource="{Binding Wifi.Tips}" Margin="0,10,0,0">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding StringFormat='• {0}'}" Style="{StaticResource Text.Body}" Foreground="{DynamicResource TextPrimaryBrush}" />
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </Border>
+
                         <Border Style="{StaticResource InnerCard}">
                             <TextBlock Style="{StaticResource Text.Body}" FontSize="12"
                                        Text="Honest note: no registry tweak reliably lowers your ping – ping depends on your connection, Wi-Fi signal and the server distance. For lower ping use a LAN cable and close downloads/streams. The DNS test only measures; ConstiBoost never changes your DNS settings. If a different DNS is faster, you can set it yourself in Windows Settings > Network." />
